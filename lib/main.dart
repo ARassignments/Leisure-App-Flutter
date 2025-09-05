@@ -32,35 +32,37 @@ class MyApp extends StatelessWidget {
         primaryColor: AppColor.black,
       ),
       darkTheme: ThemeData(
-        // brightness: Brightness.light,
-        // scaffoldBackgroundColor: AppColor.white,
-        // inputDecorationTheme: AppInputDecoration.inputDecorationTheme(false),
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: AppColor.white,
+        inputDecorationTheme: AppInputDecoration.inputDecorationTheme(false),
         iconTheme: IconThemeData(color: AppColor.neutral_70),
         primaryColor: AppColor.black,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: AppColor.neutral_100,
-        inputDecorationTheme: AppInputDecoration.inputDecorationTheme(true),
+        // brightness: Brightness.dark,
+        // scaffoldBackgroundColor: AppColor.neutral_100,
+        // inputDecorationTheme: AppInputDecoration.inputDecorationTheme(true),
       ),
       themeMode: ThemeMode.system,
       // 👇 Wrap all screens with constraints
       builder: (context, child) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth > 500) {
-              // Center with maxWidth constraint
-              return Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 500),
-                  child: child,
-                ),
-              );
-            } else {
-              // Just take full available width (no center)
-              return child!;
-            }
-          },
+        return ColoredBox(
+          color: Theme.of(context).scaffoldBackgroundColor, // Apply scaffold background from ThemeData
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth > 500) {
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: child,
+                  ),
+                );
+              } else {
+                return child!;
+              }
+            },
+          ),
         );
       },
+
       home: SplashScreen(
         nextScreen: const LoginScreen(),
         duration: const Duration(seconds: 3),

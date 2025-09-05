@@ -225,6 +225,12 @@ class AppTheme {
         : 'assets/images/logo.png';
   }
 
+  static String onboardingBg(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? 'assets/images/onboarding/background_pattern_dark.svg'
+        : 'assets/images/onboarding/background_pattern.svg';
+  }
+
   static Color checkBox(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
       ? AppColor.white

@@ -1,6 +1,9 @@
-import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons_pro/hugeicons.dart';
+import '../screens/dashboard_screen.dart';
+import '/services/api_service.dart';
+import '/utils/session_manager.dart';
 import '../screens/forgot_password_screen.dart';
 import '../screens/otp_verification_screen.dart';
 import '../screens/auth/signup_screen.dart';
@@ -20,8 +23,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isFormValid = false;
   bool _isLoading = false;
-  bool _rememberMe = true;
+  bool _rememberMe = false;
   bool _obscurePassword = true;
+  String? _errorMessage;
   bool get _isFormDisabled => _isLoading || !_isFormValid;
 
   TextInputType _keyboardType = TextInputType.text;
@@ -29,6 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    _checkAutoLogin();
     _emailController.addListener(() {
       _updateKeyboardType();
       _validateForm();
@@ -44,6 +49,24 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkAutoLogin() async {
+    final remember = await SessionManager.getRememberMe();
+    final token = await SessionManager.getUserToken();
+    final user = await SessionManager.getUser();
+
+    if (remember && token != null && user != null) {
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => DashboardScreen(),
+          transitionsBuilder: (_, a, __, c) =>
+              FadeTransition(opacity: a, child: c),
+        ),
+      );
+    }
   }
 
   void _updateKeyboardType() {
@@ -67,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
     final usernameRegex = RegExp(
-      r'^(?=.*[a-zA-Z])(?=.*\d)(?!_)(?!.*__)[a-zA-Z0-9_]{3,20}(?<!_)$',
+      r'^(?=.*[A-Za-z])[A-Za-z0-9](?:[A-Za-z0-9_]{1,18}[A-Za-z0-9])?$',
     );
 
     final isEmailOrUsernameValid = isEmail
@@ -127,6 +150,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 labelText: 'Email / Username*',
                 hintText: 'e.g. david@example.com or david123',
                 counter: const SizedBox.shrink(),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                  child: Icon(HugeIconsSolid.mail02),
+                ),
+                suffixIcon: _isLoading
+                    ? null
+                    : _emailController.text.isNotEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: IconButton(
+                          icon: Icon(HugeIconsStroke.cancel02),
+                          onPressed: () {
+                            _emailController.clear(); // Clear the text field
+                          },
+                        ),
+                      )
+                    : null,
               ),
               style: AppInputDecoration.inputTextStyle(context),
               keyboardType: _keyboardType,
@@ -144,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Username regex (letters, numbers, underscores, 3–20 chars)
                 final usernameRegex = RegExp(
-                  r'^(?=.*[a-zA-Z])(?=.*\d)(?!_)(?!.*__)[a-zA-Z0-9_]{3,20}(?<!_)$',
+                  r'^(?=.*[A-Za-z])[A-Za-z0-9](?:[A-Za-z0-9_]{1,18}[A-Za-z0-9])?$',
                 );
 
                 if (isEmail && !emailRegex.hasMatch(value)) {
@@ -164,14 +204,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 labelText: 'Password*',
                 hintText: 'e.g. dav*****',
                 counter: const SizedBox.shrink(),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                  child: Icon(HugeIconsSolid.lockKey),
+                ),
+                suffixIcon: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? HugeIconsSolid.viewOff
+                          : HugeIconsSolid.eye,
+                    ),
+                    splashRadius: 20, // Smaller tap area
+                    onPressed: () {
+                      setState(() => _obscurePassword = !_obscurePassword);
+                    },
                   ),
-                  splashRadius: 20, // Smaller tap area
-                  onPressed: () {
-                    setState(() => _obscurePassword = !_obscurePassword);
-                  },
                 ),
               ),
               style: AppInputDecoration.inputTextStyle(context),
@@ -297,35 +346,48 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final formData = {
-        'email': _emailController.text.trim(),
-        'pwd': _passwordController.text.trim(),
-      };
+      final result = await ApiService.login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
 
-      // Call your API here
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
+      if (result["Success"] == true) {
+        final token = result["UserToken"];
+        final user = result["User"];
 
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Login successful!')));
-        // Navigator.of(context).push(
-        //   PageRouteBuilder(
-        //     pageBuilder: (_, __, ___) => SignupScreen(
-        //       phoneNumber: _contactController.text.trim(),
-        //       countryCode: _selectedCountryCode.dialCode ?? '',
-        //     ),
-        //     transitionsBuilder: (_, a, __, c) =>
-        //         FadeTransition(opacity: a, child: c),
-        //   ),
-        // );
+        // Save session
+        await SessionManager.saveUserSession(token, user, _rememberMe);
+
+        // Navigate to home
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Login successful!')));
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (_, __, ___) => DashboardScreen(),
+              transitionsBuilder: (_, a, __, c) =>
+                  FadeTransition(opacity: a, child: c),
+            ),
+          );
+        }
+      } else {
+        setState(() {
+          String _errorMessage =
+              result["ValidationErrors"]?[0]?["Message"] ?? "Login failed";
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_errorMessage, style: AppTheme.textLabel(context).copyWith(fontSize: 14),),
+              backgroundColor: Colors.red,
+            ),
+          );
+        });
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
-      }
+      setState(() {
+        _errorMessage = e.toString();
+      });
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

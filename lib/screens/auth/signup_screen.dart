@@ -1,6 +1,7 @@
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons_pro/hugeicons.dart';
 import '../../screens/login_screen.dart';
 import '../../screens/otp_verification_screen.dart';
 import '../../theme/theme.dart';
@@ -237,6 +238,23 @@ class _SignupScreenState extends State<SignupScreen> {
                 labelText: 'Full Name*',
                 hintText: 'e.g. David Smith',
                 counter: const SizedBox.shrink(),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                  child: Icon(HugeIconsSolid.user03),
+                ),
+                suffixIcon: _isLoading
+                    ? null
+                    : _nameController.text.isNotEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: IconButton(
+                          icon: Icon(HugeIconsStroke.cancel02),
+                          onPressed: () {
+                            _nameController.clear(); // Clear the text field
+                          },
+                        ),
+                      )
+                    : null,
               ),
               style: AppInputDecoration.inputTextStyle(context),
               keyboardType: TextInputType.text,
@@ -260,6 +278,23 @@ class _SignupScreenState extends State<SignupScreen> {
                 labelText: 'Email Address*',
                 hintText: 'e.g. david@example.com',
                 counter: const SizedBox.shrink(),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                  child: Icon(HugeIconsSolid.mail02),
+                ),
+                suffixIcon: _isLoading
+                    ? null
+                    : _emailController.text.isNotEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: IconButton(
+                          icon: Icon(HugeIconsStroke.cancel02),
+                          onPressed: () {
+                            _emailController.clear(); // Clear the text field
+                          },
+                        ),
+                      )
+                    : null,
               ),
               style: AppInputDecoration.inputTextStyle(context),
               keyboardType: TextInputType.emailAddress,
@@ -285,14 +320,23 @@ class _SignupScreenState extends State<SignupScreen> {
                 labelText: 'Password*',
                 hintText: 'e.g. dav*****',
                 counter: const SizedBox.shrink(),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                  child: Icon(HugeIconsSolid.lockKey),
+                ),
+                suffixIcon: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? HugeIconsSolid.viewOff
+                          : HugeIconsSolid.eye,
+                    ),
+                    splashRadius: 20, // Smaller tap area
+                    onPressed: () {
+                      setState(() => _obscurePassword = !_obscurePassword);
+                    },
                   ),
-                  splashRadius: 20, // Smaller tap area
-                  onPressed: () {
-                    setState(() => _obscurePassword = !_obscurePassword);
-                  },
                 ),
               ),
               style: AppInputDecoration.inputTextStyle(context),
@@ -317,14 +361,23 @@ class _SignupScreenState extends State<SignupScreen> {
                 labelText: 'Confirm Password*',
                 hintText: 'e.g. dav*****',
                 counter: const SizedBox.shrink(),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureCPassword ? Icons.visibility_off : Icons.visibility,
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                  child: Icon(HugeIconsSolid.lockKey),
+                ),
+                suffixIcon: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: IconButton(
+                    icon: Icon(
+                      _obscureCPassword
+                          ? HugeIconsSolid.viewOff
+                          : HugeIconsSolid.eye,
+                    ),
+                    splashRadius: 20, // Smaller tap area
+                    onPressed: () {
+                      setState(() => _obscureCPassword = !_obscureCPassword);
+                    },
                   ),
-                  splashRadius: 20, // Smaller tap area
-                  onPressed: () {
-                    setState(() => _obscureCPassword = !_obscureCPassword);
-                  },
                 ),
               ),
               style: AppInputDecoration.inputTextStyle(context),
@@ -460,6 +513,19 @@ class _SignupScreenState extends State<SignupScreen> {
                     ],
                   ),
                 ),
+                suffixIcon: _isLoading
+                    ? null
+                    : _contactController.text.isNotEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: IconButton(
+                          icon: Icon(HugeIconsStroke.cancel02),
+                          onPressed: () {
+                            _contactController.clear(); // Clear the text field
+                          },
+                        ),
+                      )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -553,7 +619,13 @@ class _SignupScreenState extends State<SignupScreen> {
             const SizedBox(height: 20),
             DropdownButtonFormField<String>(
               value: _selectedCountry.isEmpty ? null : _selectedCountry,
-              decoration: InputDecoration(labelText: 'Country*'),
+              decoration: InputDecoration(
+                labelText: 'Country*',
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                  child: Icon(HugeIconsSolid.globe),
+                ),
+              ),
               items: _isLoadingCountries
                   ? [
                       DropdownMenuItem(
@@ -596,7 +668,13 @@ class _SignupScreenState extends State<SignupScreen> {
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _selectedState.isEmpty ? null : _selectedState,
-              decoration: InputDecoration(labelText: 'State*'),
+              decoration: InputDecoration(
+                labelText: 'State*',
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                  child: Icon(HugeIconsSolid.location02),
+                ),
+              ),
               items: _isLoadingStates
                   ? [
                       DropdownMenuItem(
@@ -639,7 +717,13 @@ class _SignupScreenState extends State<SignupScreen> {
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _selectedCity.isEmpty ? null : _selectedCity,
-              decoration: InputDecoration(labelText: 'City*'),
+              decoration: InputDecoration(
+                labelText: 'City*',
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                  child: Icon(HugeIconsSolid.building02),
+                ),
+              ),
               items: _isLoadingCities
                   ? [
                       DropdownMenuItem(

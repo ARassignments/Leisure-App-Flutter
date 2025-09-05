@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons_pro/hugeicons.dart';
 import '../screens/email_sent_screen.dart';
 import '../theme/theme.dart';
 
@@ -35,15 +36,23 @@ class _ForgotPasswordState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  bool _validateForm() {
-    final isValid = _formKey.currentState?.validate() ?? false;
-    final allFieldsFilled = _emailController.text.isNotEmpty;
+  bool _validateCurrentForm() {
+    // final isValid = _formKey.currentState?.validate() ?? false;
+    final isEmailValid =
+          _emailController.text.isNotEmpty &&
+          _emailController.text.length >= 5 &&
+          RegExp(
+            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+          ).hasMatch(_emailController.text);
+    final allFieldsFilled = isEmailValid;
 
+    return allFieldsFilled;
+  }
+
+  void _validateForm() {
     setState(() {
-      _isFormValid = isValid && allFieldsFilled;
+      _isFormValid = _validateCurrentForm();
     });
-
-    return _isFormValid;
   }
 
   @override
@@ -88,6 +97,23 @@ class _ForgotPasswordState extends State<ForgotPasswordScreen> {
                 labelText: 'Email Address *',
                 hintText: 'e.g. david@example.com',
                 counter: const SizedBox.shrink(),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                  child: Icon(HugeIconsSolid.mail02),
+                ),
+                suffixIcon: _isLoading
+                    ? null
+                    : _emailController.text.isNotEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: IconButton(
+                          icon: Icon(HugeIconsStroke.cancel02),
+                          onPressed: () {
+                            _emailController.clear(); // Clear the text field
+                          },
+                        ),
+                      )
+                    : null,
               ),
               style: AppInputDecoration.inputTextStyle(context),
               keyboardType: TextInputType.emailAddress,
@@ -107,7 +133,7 @@ class _ForgotPasswordState extends State<ForgotPasswordScreen> {
               disabled: !_isFormValid || _isLoading,
               onPressed: (_isFormValid && !_isLoading)
                   ? () async {
-                      if (!_validateForm()) return; // Use validation method
+                      if (!_validateCurrentForm()) return; // Use validation method
                       await _submitForm();
                     }
                   : null,
