@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
+import '/responses/customer_response.dart';
 import '/services/api_service.dart';
 import '/Models/customer_model.dart';
 import '/theme/theme.dart';
@@ -19,13 +20,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   int _currentIndex = 0;
 
-  late Future<List<Customer>> _customersFuture;
+  late Future<CustomerResponse> _futureCustomers;
 
   @override
   void initState() {
     super.initState();
     _loadSession();
-    // _customersFuture = ApiService.fetchCustomers();
+    _futureCustomers = ApiService.getAllCustomers();
   }
 
   Future<void> _loadSession() async {
@@ -51,47 +52,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Widget> _pages() {
     return [
       Center(
-        child: user == null
-            ? const CircularProgressIndicator()
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Welcome, ${user!["FullName"]}"),
-                  Text("Email: ${user!["Email"]}"),
-                  Text("Token: $token"),
-                ],
-              ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("Welcome, ${user!["FullName"]}"),
+            Text("Email: ${user!["Email"]}"),
+            Text("Organization Id: ${user!["OrganizationId"]}"),
+            Text("Token: $token"),
+          ],
+        ),
       ),
       _allCustomers(),
+      // const Center(child: Text("💰 Accounts Screen")),
       const Center(child: Text("💰 Accounts Screen")),
     ];
   }
 
   Widget _allCustomers() {
-    return FutureBuilder<List<Customer>>(
-      future: _customersFuture,
+    return FutureBuilder<CustomerResponse>(
+      future: _futureCustomers,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
           return Center(child: Text("Error: ${snapshot.error}"));
-        } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-          final customers = snapshot.data!;
-          return ListView.builder(
-            itemCount: customers.length,
-            itemBuilder: (context, index) {
-              final customer = customers[index];
-              return ListTile(
-                leading: const Icon(Icons.person),
-                title: Text(customer.userName),
-                subtitle: Text("${customer.cityName}, ${customer.stateName}"),
-                trailing: Text(customer.phoneNo),
-              );
-            },
-          );
-        } else {
+        } else if (!snapshot.hasData || snapshot.data!.accounts.isEmpty) {
           return const Center(child: Text("No customers found"));
         }
+
+        final customers = snapshot.data!.accounts;
+        return ListView.builder(
+          itemCount: customers.length,
+          itemBuilder: (context, index) {
+            final customer = customers[index];
+            return ListTile(
+              title: Text(customer.UserName),
+              subtitle: Text(customer.CityName),
+              trailing: Text(
+                customer.OpeningBalance.toStringAsFixed(2),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            );
+          },
+        );
       },
     );
   }
@@ -103,10 +106,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: const Text("Dashboard"),
         actions: [
+          if (_currentIndex == 1)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                setState(() {
+                  _futureCustomers = ApiService.getAllCustomers();
+                });
+              },
+            ),
           IconButton(onPressed: _logout, icon: const Icon(Icons.logout)),
         ],
       ),
-      body: pages[_currentIndex],
+      body: user == null
+          ? const CircularProgressIndicator()
+          : Center(
+              child: SingleChildScrollView(
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [pages[_currentIndex]],
+                  ),
+                ),
+              ),
+            ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
