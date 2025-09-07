@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '/screens/dashboard_screen.dart';
+import '/utils/session_manager.dart';
 import '../theme/theme.dart';
 // For advanced animations
 
@@ -44,8 +46,31 @@ class _AnimatedSplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Future.delayed(widget.duration, () {
-      Navigator.of(context).pushReplacement(
+    Future.delayed(widget.duration, () async {
+      await _checkAutoLogin();
+    });
+  }
+
+  Future<void> _checkAutoLogin() async {
+    final remember = await SessionManager.getRememberMe();
+    final token = await SessionManager.getUserToken();
+    final user = await SessionManager.getUser();
+
+    if (!mounted) return;
+
+    if (remember && token != null && user != null) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          transitionDuration: const Duration(seconds: 1),
+          pageBuilder: (_, __, ___) => DashboardScreen(),
+          transitionsBuilder: (_, a, __, c) =>
+              FadeTransition(opacity: a, child: c),
+        ),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
         PageRouteBuilder(
           transitionDuration: const Duration(seconds: 1),
           pageBuilder: (_, __, ___) => widget.nextScreen,
@@ -53,7 +78,7 @@ class _AnimatedSplashScreenState extends State<SplashScreen>
               FadeTransition(opacity: a, child: c),
         ),
       );
-    });
+    }
   }
 
   @override

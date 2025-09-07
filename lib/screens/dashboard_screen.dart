@@ -19,7 +19,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? user;
 
   int _currentIndex = 0;
-
+  List<String> menus = ["Home", "Customers", "Accounts"];
   late Future<CustomerResponse> _futureCustomers;
 
   @override
@@ -104,32 +104,73 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final pages = _pages();
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Dashboard"),
+        backgroundColor: AppTheme.screenBg(context),
+        elevation: 0,
+        titleSpacing: 0,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                const SizedBox(width: 16),
+                Image.asset(AppTheme.appLogo(context), height: 120, width: 60),
+                const SizedBox(width: 10),
+                Text(
+                  "My",
+                  style: AppTheme.textTitle(context).copyWith(
+                    fontSize: 20,
+                    fontFamily: AppFontFamily.poppinsBold,
+                  ),
+                ),
+                Text(
+                  menus[_currentIndex],
+                  style: AppTheme.textTitle(context).copyWith(
+                    fontSize: 20,
+                    fontFamily: AppFontFamily.poppinsLight,
+                  ),
+                ),
+                Text(
+                  ".",
+                  style: AppTheme.textTitle(context).copyWith(fontSize: 30),
+                ),
+              ],
+            ),
+
+            // Right: Actions
+            // Row(
+            //   children: [
+            //     if (currentIndex == 1) // show only on Users tab
+            //       IconButton(
+            //         icon: const Icon(Icons.refresh, color: Colors.blue),
+            //         onPressed: onRefresh,
+            //       ),
+            //     IconButton(
+            //       icon: const Icon(Icons.logout, color: Colors.redAccent),
+            //       onPressed: onLogout,
+            //     ),
+            //   ],
+            // ),
+          ],
+        ),
         actions: [
           if (_currentIndex == 1)
             IconButton(
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(HugeIconsStroke.refresh, size: 20),
               onPressed: () {
                 setState(() {
                   _futureCustomers = ApiService.getAllCustomers();
                 });
               },
             ),
-          IconButton(onPressed: _logout, icon: const Icon(Icons.logout)),
+          IconButton(
+            onPressed: _logout,
+            icon: const Icon(HugeIconsStroke.logout02, size: 20),
+          ),
         ],
       ),
       body: user == null
           ? const CircularProgressIndicator()
-          : Center(
-              child: SingleChildScrollView(
-                child: IntrinsicHeight(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [pages[_currentIndex]],
-                  ),
-                ),
-              ),
-            ),
+          : pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -157,7 +198,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           BottomNavigationBarItem(
             icon: Icon(HugeIconsStroke.userMultiple02),
             activeIcon: Icon(HugeIconsSolid.userMultiple02),
-            label: "Users",
+            label: "Customers",
           ),
           BottomNavigationBarItem(
             icon: Icon(HugeIconsStroke.user03),
