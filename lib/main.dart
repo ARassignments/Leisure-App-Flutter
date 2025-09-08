@@ -21,51 +21,64 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: AppColor.white,
-        inputDecorationTheme: AppInputDecoration.inputDecorationTheme(false),
-        iconTheme: IconThemeData(color: AppColor.neutral_10),
-        primaryColor: AppColor.black,
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: AppColor.white,
-        inputDecorationTheme: AppInputDecoration.inputDecorationTheme(false),
-        iconTheme: IconThemeData(color: AppColor.neutral_70),
-        primaryColor: AppColor.black,
-        // brightness: Brightness.dark,
-        // scaffoldBackgroundColor: AppColor.neutral_100,
-        // inputDecorationTheme: AppInputDecoration.inputDecorationTheme(true),
-      ),
-      themeMode: ThemeMode.system,
-      // 👇 Wrap all screens with constraints
-      builder: (context, child) {
-        return ColoredBox(
-          color: Theme.of(context).scaffoldBackgroundColor, // Apply scaffold background from ThemeData
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth > 500) {
-                return Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 500),
-                    child: child,
-                  ),
-                );
-              } else {
-                return child!;
-              }
-            },
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeNotifier,
+      builder: (_, themeMode, __) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            splashFactory: NoSplash.splashFactory, // removes ripple globally
+            highlightColor: Colors.transparent, // removes highlight globally
+            splashColor: Colors.transparent, // removes splash globally
+            hoverColor: Colors.transparent,
+            brightness: Brightness.light,
+            scaffoldBackgroundColor: AppColor.white,
+            inputDecorationTheme: AppInputDecoration.inputDecorationTheme(
+              false,
+            ),
+            iconTheme: IconThemeData(color: AppColor.neutral_10),
+            primaryColor: AppColor.black,
+          ),
+          darkTheme: ThemeData(
+            splashFactory: NoSplash.splashFactory, // removes ripple globally
+            highlightColor: Colors.transparent, // removes highlight globally
+            splashColor: Colors.transparent, // removes splash globally
+            hoverColor: Colors.transparent,
+            // brightness: Brightness.light,
+            // scaffoldBackgroundColor: AppColor.white,
+            // inputDecorationTheme: AppInputDecoration.inputDecorationTheme(false),
+            iconTheme: IconThemeData(color: AppColor.neutral_70),
+            primaryColor: AppColor.black,
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: AppColor.neutral_100,
+            inputDecorationTheme: AppInputDecoration.inputDecorationTheme(true),
+          ),
+          themeMode: themeMode, // 👈 controlled by ThemeController
+          builder: (context, child) {
+            return ColoredBox(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth > 500) {
+                    return Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 500),
+                        child: child,
+                      ),
+                    );
+                  } else {
+                    return child!;
+                  }
+                },
+              ),
+            );
+          },
+          home: SplashScreen(
+            nextScreen: const LoginScreen(),
+            duration: const Duration(seconds: 3),
           ),
         );
       },
-
-      home: SplashScreen(
-        nextScreen: const LoginScreen(),
-        duration: const Duration(seconds: 3),
-      ),
     );
   }
 }

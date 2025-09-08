@@ -50,22 +50,186 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<Widget> _pages() {
-    return [
-      Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text("Welcome, ${user!["FullName"]}"),
-            Text("Email: ${user!["Email"]}"),
-            Text("Organization Id: ${user!["OrganizationId"]}"),
-            Text("Token: $token"),
-          ],
-        ),
+    return [_home(), _allCustomers(), _accounts()];
+  }
+
+  Widget _home() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text("Welcome, ${user!["FullName"]}"),
+          Text("Email: ${user!["Email"]}"),
+          Text("Organization Id: ${user!["OrganizationId"]}"),
+          Text("Token: $token"),
+        ],
       ),
-      _allCustomers(),
-      // const Center(child: Text("💰 Accounts Screen")),
-      const Center(child: Text("💰 Accounts Screen")),
-    ];
+    );
+  }
+
+  Widget _accounts() {
+    return ListView(
+      shrinkWrap: true,
+      children: [
+        SizedBox(height: 16),
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: CircleAvatar(
+            radius: 48,
+            backgroundColor: Colors.transparent,
+            child: ClipOval(
+              child: Image.asset(
+                AppTheme.appLogo(context), // replace with your image
+                width: 86,
+                height: 100,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          title: Text(
+            "${user!["FullName"]}",
+            style: AppTheme.textLabel(
+              context,
+            ).copyWith(fontSize: 17, fontFamily: AppFontFamily.poppinsSemiBold),
+          ),
+          subtitle: Text(
+            "View Profile",
+            style: AppTheme.textLink(
+              context,
+            ).copyWith(fontSize: 12, fontFamily: AppFontFamily.poppinsRegular),
+          ),
+          onTap: () {
+            // Handle profile click
+          },
+        ),
+        Divider(
+          thickness: 30,
+          height: 30,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColor.neutral_80
+              : AppColor.neutral_10,
+        ),
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: Icon(
+            Theme.of(context).brightness == Brightness.dark
+                ? HugeIconsStroke.moon02
+                : HugeIconsStroke.sun02,
+            size: 24,
+          ),
+          title: Text(
+            Theme.of(context).brightness == Brightness.dark
+                ? "Dark Mode"
+                : "Light Mode",
+            style: AppTheme.textLabel(context),
+          ),
+          trailing: Switch(
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            value: Theme.of(context).brightness == Brightness.dark,
+            onChanged: (value) {
+              ThemeController.setTheme(
+                value ? ThemeMode.dark : ThemeMode.light,
+              );
+            },
+          ),
+          onTap: () {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            ThemeController.setTheme(isDark ? ThemeMode.light : ThemeMode.dark);
+          },
+        ),
+        Divider(
+          height: 1,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColor.neutral_80
+              : AppColor.neutral_10,
+        ),
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: Icon(HugeIconsStroke.chartBreakoutCircle, size: 24),
+          title: Text("About App", style: AppTheme.textLabel(context)),
+          onTap: () {},
+        ),
+        Divider(
+          height: 1,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColor.neutral_80
+              : AppColor.neutral_10,
+        ),
+        SizedBox(height: 50),
+        ListTile(
+          title: OutlineErrorButton(
+            text: 'Log Out',
+            onPressed: () {
+              showModalBottomSheet(
+                showDragHandle: true,
+                isScrollControlled: true,
+                context: context,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                ),
+                builder: (context) {
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: 30,
+                      left: 30,
+                      right: 30,
+                    ),
+                    child: Wrap(
+                      children: [
+                        Column(
+                          spacing: 16,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              "Logout",
+                              textAlign: TextAlign.center,
+                              style: AppTheme.textLabel(context).copyWith(
+                                fontSize: 16,
+                                fontFamily: AppFontFamily.poppinsBold,
+                              ),
+                            ),
+                            const Divider(),
+                            Text(
+                              "Are you sure you want to log out?",
+                              textAlign: TextAlign.center,
+                              style: AppTheme.textLabel(context),
+                            ),
+                            OutlineErrorButton(
+                              text: "Yes, Logout",
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _logout();
+                              },
+                            ),
+                            FlatButton(
+                              text: "Cancel",
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        SizedBox(height: 30),
+      ],
+    );
   }
 
   Widget _allCustomers() {
@@ -104,7 +268,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final pages = _pages();
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppTheme.screenBg(context),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         titleSpacing: 0,
         title: Row(
@@ -135,21 +299,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
             ),
-
-            // Right: Actions
-            // Row(
-            //   children: [
-            //     if (currentIndex == 1) // show only on Users tab
-            //       IconButton(
-            //         icon: const Icon(Icons.refresh, color: Colors.blue),
-            //         onPressed: onRefresh,
-            //       ),
-            //     IconButton(
-            //       icon: const Icon(Icons.logout, color: Colors.redAccent),
-            //       onPressed: onLogout,
-            //     ),
-            //   ],
-            // ),
           ],
         ),
         actions: [
@@ -166,6 +315,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: _logout,
             icon: const Icon(HugeIconsStroke.logout02, size: 20),
           ),
+          const SizedBox(width: 16),
         ],
       ),
       body: user == null

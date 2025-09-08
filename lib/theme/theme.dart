@@ -1,5 +1,26 @@
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+
+class ThemeController {
+  static final ValueNotifier<ThemeMode> themeNotifier =
+      ValueNotifier(ThemeMode.system);
+
+  static const String _key = "theme_mode";
+
+  static Future<void> loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    final themeIndex = prefs.getInt(_key) ?? ThemeMode.system.index;
+    themeNotifier.value = ThemeMode.values[themeIndex];
+  }
+
+  static Future<void> setTheme(ThemeMode mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_key, mode.index);
+    themeNotifier.value = mode;
+  }
+}
 
 class AppColor {
   // Basic Colors
@@ -518,6 +539,66 @@ class GhostButton extends StatelessWidget {
             : Text(
                 text,
                 style: TextStyle(color: isDark ? Colors.white : AppColor.black),
+              ),
+      ),
+    );
+  }
+}
+
+class OutlineErrorButton extends StatelessWidget {
+  final String text;
+  final IconData? icon;
+  final VoidCallback? onPressed;
+  final bool disabled;
+  final bool loading;
+
+  const OutlineErrorButton({
+    required this.text,
+    this.icon,
+    this.onPressed,
+    this.disabled = false,
+    this.loading = false,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Opacity(
+      opacity: disabled ? 0.2 : 1.0,
+      child: OutlinedButton(
+        onPressed: disabled ? null : onPressed,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(
+            color: isDark ? AppColor.accent_50 : AppColor.accent_50,
+            width: 1,
+          ),
+          textStyle: AppFontFamily.medium_16,
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          overlayColor: isDark
+              ? AppColor.accent_50.withOpacity(0.2)
+              : AppColor.accent_50.withOpacity(0.2),
+        ),
+        child: icon != null
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: isDark ? AppColor.accent_50 : AppColor.accent_50),
+                  const SizedBox(width: 12),
+                  Text(
+                    text,
+                    style: TextStyle(
+                      color: isDark ? AppColor.accent_50 : AppColor.accent_50,
+                    ),
+                  ),
+                ],
+              )
+            : Text(
+                text,
+                style: TextStyle(color: isDark ? AppColor.accent_50 : AppColor.accent_50),
               ),
       ),
     );
