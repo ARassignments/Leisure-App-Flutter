@@ -5,7 +5,7 @@ import '/Models/customer_model.dart';
 import '/utils/session_manager.dart';
 
 class ApiService {
-  static const String baseUrl = "http://y2ksolutions.com/api/MobileAppApi";
+  static const String baseUrl = "https://y2ksolutions.com/api/MobileAppApi";
 
   static Future<Map<String, dynamic>> login(
     String username,
