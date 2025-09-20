@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
+import '../theme/appsnackbar.dart';
 import '../screens/dashboard_screen.dart';
 import '/services/api_service.dart';
 import '/utils/session_manager.dart';
@@ -127,8 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildLoginForm() {
     return Form(
       key: _formKey,
-      onChanged:
-          _validateForm, // This will trigger validation on any form change
+      onChanged: _validateForm,
       child: Padding(
         padding: const EdgeInsets.all(30.0),
         child: Column(
@@ -137,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Image.asset(AppTheme.appLogo(context), height: 100, width: 100),
             SizedBox(height: 40),
             Text(
-              "Login to Yet To Explore",
+              "Login to Y2ksolutions",
               style: AppTheme.textTitle(context),
               textAlign: TextAlign.start,
             ),
@@ -374,13 +374,11 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } else {
         setState(() {
-          String _errorMessage =
-              result["ValidationErrors"]?[0]?["Message"] ?? "Login failed";
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(_errorMessage, style: AppTheme.textLabel(context).copyWith(fontSize: 14),),
-              backgroundColor: Colors.red,
-            ),
+          AppSnackBar.show(
+            context,
+            message:
+                result["ValidationErrors"]?[0]?["Message"] ?? "Login failed",
+            type: AppSnackBarType.success,
           );
         });
       }
