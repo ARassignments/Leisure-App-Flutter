@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
-import '../theme/appsnackbar.dart';
+import '../components/appsnackbar.dart';
 import '../screens/dashboard_screen.dart';
 import '/services/api_service.dart';
 import '/utils/session_manager.dart';
@@ -360,9 +360,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Navigate to home
         if (mounted) {
-          ScaffoldMessenger.of(
+          AppSnackBar.show(
             context,
-          ).showSnackBar(const SnackBar(content: Text('Login successful!')));
+            message: 'Login successful!',
+            type: AppSnackBarType.success,
+          );
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
@@ -378,7 +380,7 @@ class _LoginScreenState extends State<LoginScreen> {
             context,
             message:
                 result["ValidationErrors"]?[0]?["Message"] ?? "Login failed",
-            type: AppSnackBarType.success,
+            type: AppSnackBarType.error,
           );
         });
       }

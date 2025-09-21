@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons_pro/hugeicons.dart';
+import 'package:yetoexplore/theme/theme.dart';
 
 enum AppSnackBarType { success, error, warning, info }
 
@@ -9,12 +11,17 @@ class AppSnackBar {
     AppSnackBarType type = AppSnackBarType.info,
     Duration duration = const Duration(seconds: 3),
   }) {
+    final capitalizedMessage = message
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join(' ');
+
     final overlay = Overlay.of(context);
     late OverlayEntry entry;
 
     entry = OverlayEntry(
       builder: (context) => _AnimatedSnackBar(
-        message: message,
+        message: capitalizedMessage,
         type: type,
         onDismissed: () => entry.remove(),
         duration: duration,
@@ -97,30 +104,30 @@ class _AnimatedSnackBarState extends State<_AnimatedSnackBar>
   IconData get icon {
     switch (widget.type) {
       case AppSnackBarType.success:
-        return Icons.check_circle;
+        return HugeIconsSolid.checkmarkCircle01;
       case AppSnackBarType.error:
-        return Icons.error;
+        return HugeIconsSolid.alert01;
       case AppSnackBarType.warning:
-        return Icons.warning_amber_rounded;
+        return HugeIconsSolid.alert01;
       case AppSnackBarType.info:
       default:
-        return Icons.info;
+        return HugeIconsSolid.informationCircle;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      bottom: 30,
-      left: 20,
-      right: 20,
+      bottom: 20,
+      left: 30,
+      right: 30,
       child: SlideTransition(
         position: _slideAnimation,
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: Material(
-            borderRadius: BorderRadius.circular(12),
-            elevation: 6,
+            borderRadius: BorderRadius.circular(8),
+            elevation: 0,
             color: backgroundColor,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -131,7 +138,9 @@ class _AnimatedSnackBarState extends State<_AnimatedSnackBar>
                   Expanded(
                     child: Text(
                       widget.message,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: AppTheme.textLabel(
+                        context,
+                      ).copyWith(fontSize: 12, color: Colors.white),
                     ),
                   ),
                 ],

@@ -2,10 +2,10 @@ import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class ThemeController {
-  static final ValueNotifier<ThemeMode> themeNotifier =
-      ValueNotifier(ThemeMode.system);
+  static final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(
+    ThemeMode.system,
+  );
 
   static const String _key = "theme_mode";
 
@@ -300,6 +300,26 @@ class AppTheme {
     );
   }
 
+  static TextStyle textSearchInfo(BuildContext context) {
+    return TextStyle(
+      fontFamily: AppFontFamily.poppinsSemiBold,
+      fontSize: 10,
+      color: Theme.of(context).brightness == Brightness.dark
+          ? AppColor.neutral_70
+          : AppColor.neutral_40,
+    );
+  }
+
+  static TextStyle textSearchInfoLabeled(BuildContext context) {
+    return TextStyle(
+      fontFamily: AppFontFamily.poppinsSemiBold,
+      fontSize: 10,
+      color: Theme.of(context).brightness == Brightness.dark
+          ? AppColor.neutral_50
+          : AppColor.neutral_60,
+    );
+  }
+
   static BoxDecoration dialogBg(BuildContext context) {
     return BoxDecoration(
       color: Theme.of(context).brightness == Brightness.dark
@@ -586,7 +606,10 @@ class OutlineErrorButton extends StatelessWidget {
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(icon, color: isDark ? AppColor.accent_50 : AppColor.accent_50),
+                  Icon(
+                    icon,
+                    color: isDark ? AppColor.accent_50 : AppColor.accent_50,
+                  ),
                   const SizedBox(width: 12),
                   Text(
                     text,
@@ -598,7 +621,9 @@ class OutlineErrorButton extends StatelessWidget {
               )
             : Text(
                 text,
-                style: TextStyle(color: isDark ? AppColor.accent_50 : AppColor.accent_50),
+                style: TextStyle(
+                  color: isDark ? AppColor.accent_50 : AppColor.accent_50,
+                ),
               ),
       ),
     );

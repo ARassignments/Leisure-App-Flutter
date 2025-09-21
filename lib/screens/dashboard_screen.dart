@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
+import 'package:intl/intl.dart';
+import 'package:yetoexplore/Models/customer_model.dart';
+import 'package:yetoexplore/components/dialog_logout.dart';
+import 'package:yetoexplore/components/loading_screen.dart';
 import '/responses/customer_response.dart';
 import '/services/api_service.dart';
-import '/Models/customer_model.dart';
 import '/theme/theme.dart';
 import '/utils/session_manager.dart';
 import 'login_screen.dart';
@@ -21,18 +24,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
   List<String> menus = ["Home", "Customers", "Accounts"];
   late Future<CustomerResponse> _futureCustomers;
+  List<Customer> _allCustomers = [];
+  List<Customer> _filteredCustomers = [];
+
+  final TextEditingController _searchController = TextEditingController();
+  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
-    _loadSession();
-    _futureCustomers = ApiService.getAllCustomers();
+    _searchController.addListener(_onSearchChanged);
+    _loadSessionAndCustomers();
   }
 
-  Future<void> _loadSession() async {
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredCustomers = _allCustomers.where((cust) {
+        return cust.UserName.toLowerCase().contains(query) ||
+            cust.CityName.toLowerCase().contains(query);
+      }).toList();
+    });
+  }
+
+  Future<void> _loadSessionAndCustomers() async {
     token = await SessionManager.getUserToken();
     user = await SessionManager.getUser();
-    setState(() {});
+
+    _futureCustomers = ApiService.getAllCustomers();
+    try {
+      final response = await _futureCustomers;
+      setState(() {
+        _allCustomers = response.accounts;
+        _filteredCustomers = response.accounts;
+      });
+    } catch (e) {
+      debugPrint("Error loading customers: $e");
+    }
+  }
+
+  Future<void> _refreshCustomers() async {
+    setState(() => _isRefreshing = true);
+    try {
+      final response = await ApiService.getAllCustomers();
+      setState(() {
+        _allCustomers = response.accounts;
+        _filteredCustomers = response.accounts;
+        _searchController.clear();
+      });
+    } catch (e) {
+      debugPrint("Error refreshing customers: $e");
+    } finally {
+      setState(() => _isRefreshing = false);
+    }
   }
 
   Future<void> _logout() async {
@@ -50,10 +101,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<Widget> _pages() {
-    return [_home(), _allCustomers(), _accounts()];
+    return [_homePage(), _customersPage(), _accountsPage()];
   }
 
-  Widget _home() {
+  Widget _homePage() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -67,7 +118,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _accounts() {
+  Widget _accountsPage() {
     return ListView(
       shrinkWrap: true,
       children: [
@@ -169,61 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           title: OutlineErrorButton(
             text: 'Log Out',
             onPressed: () {
-              showModalBottomSheet(
-                showDragHandle: true,
-                isScrollControlled: true,
-                context: context,
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                ),
-                builder: (context) {
-                  return Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: 30,
-                      left: 30,
-                      right: 30,
-                    ),
-                    child: Wrap(
-                      children: [
-                        Column(
-                          spacing: 16,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              "Logout",
-                              textAlign: TextAlign.center,
-                              style: AppTheme.textLabel(context).copyWith(
-                                fontSize: 16,
-                                fontFamily: AppFontFamily.poppinsBold,
-                              ),
-                            ),
-                            const Divider(),
-                            Text(
-                              "Are you sure you want to log out?",
-                              textAlign: TextAlign.center,
-                              style: AppTheme.textLabel(context),
-                            ),
-                            OutlineErrorButton(
-                              text: "Yes, Logout",
-                              onPressed: () {
-                                Navigator.pop(context);
-                                _logout();
-                              },
-                            ),
-                            FlatButton(
-                              text: "Cancel",
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
+              DialogLogout().showDialog(context, _logout);
             },
           ),
         ),
@@ -232,34 +229,189 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _allCustomers() {
-    return FutureBuilder<CustomerResponse>(
-      future: _futureCustomers,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
-        } else if (!snapshot.hasData || snapshot.data!.accounts.isEmpty) {
-          return const Center(child: Text("No customers found"));
-        }
-
-        final customers = snapshot.data!.accounts;
-        return ListView.builder(
-          itemCount: customers.length,
-          itemBuilder: (context, index) {
-            final customer = customers[index];
-            return ListTile(
-              title: Text(customer.UserName),
-              subtitle: Text(customer.CityName),
-              trailing: Text(
-                customer.OpeningBalance.toStringAsFixed(2),
-                style: const TextStyle(fontWeight: FontWeight.bold),
+  Widget _customersPage() {
+    double grandTotal = _filteredCustomers.fold(
+      0.0,
+      (previousValue, customer) => previousValue + customer.OpeningBalance,
+    );
+    final formattedGrandTotal = NumberFormat('#,###.00').format(grandTotal);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _searchController,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: InputDecoration(
+                  labelText: 'Search Here',
+                  hintText: 'Search by name or city',
+                  counter: const SizedBox.shrink(),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                    child: Icon(HugeIconsSolid.search01),
+                  ),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: IconButton(
+                            icon: Icon(HugeIconsStroke.cancel02),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          ),
+                        )
+                      : null,
+                ),
+                style: AppInputDecoration.inputTextStyle(context),
+                keyboardType: TextInputType.name,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return null;
+                  } else if (!RegExp(r'^[a-zA-Z ]+$').hasMatch(value)) {
+                    return 'Must contain only letters';
+                  }
+                  return null;
+                },
+                maxLength: 20,
               ),
-            );
-          },
-        );
-      },
+              if (_searchController.text.isNotEmpty) ...[
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    RichText(
+                      textAlign: TextAlign.start,
+                      text: TextSpan(
+                        style: AppTheme.textSearchInfo(context),
+                        children: [
+                          TextSpan(text: 'Result for "'),
+                          TextSpan(
+                            text: _searchController.text,
+                            style: AppTheme.textSearchInfoLabeled(context),
+                          ),
+                          TextSpan(text: '"'),
+                        ],
+                      ),
+                    ),
+                    RichText(
+                      textAlign: TextAlign.end,
+                      text: TextSpan(
+                        style: AppTheme.textSearchInfoLabeled(context),
+                        children: [
+                          TextSpan(text: _filteredCustomers.length.toString()),
+                          TextSpan(text: ' found'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+        Expanded(
+          child: _isRefreshing
+              ? const Center(child: LoadingLogo())
+              : RefreshIndicator(
+                  onRefresh: _refreshCustomers,
+                  child: _filteredCustomers.isEmpty
+                      ? Center(
+                          child: Text(
+                            "No Customers Found",
+                            style: AppTheme.textTitle(
+                              context,
+                            ).copyWith(fontSize: 14),
+                          ),
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: _filteredCustomers.length,
+                          itemBuilder: (context, index) {
+                            final customer = _filteredCustomers[index];
+                            final formattedBalance = NumberFormat(
+                              '#,###.00',
+                            ).format(customer.OpeningBalance);
+                            return ListTile(
+                              leading: Text(
+                                (index + 1).toString().padLeft(2, '0'),
+                                style: const TextStyle(
+                                  fontFamily: AppFontFamily.poppinsMedium,
+                                ),
+                              ),
+                              title: Text(
+                                customer.UserName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTheme.textLabel(context).copyWith(
+                                  fontFamily: AppFontFamily.poppinsSemiBold,
+                                ),
+                              ),
+                              subtitle: Row(
+                                children: [
+                                  Icon(
+                                    HugeIconsStroke.mapsLocation02,
+                                    size: 14,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    customer.CityName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: AppFontFamily.poppinsRegular,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              trailing: Text(
+                                "Rs $formattedBalance",
+                                style: AppTheme.textSearchInfoLabeled(context)
+                                    .copyWith(
+                                      fontFamily: AppFontFamily.poppinsBold,
+                                    ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+        ),
+        if (_filteredCustomers.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    RichText(
+                      textAlign: TextAlign.start,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        style: AppTheme.textSearchInfo(
+                          context,
+                        ).copyWith(fontSize: 14),
+                        text: 'Total Balance:',
+                      ),
+                    ),
+                    RichText(
+                      textAlign: TextAlign.end,
+                      text: TextSpan(
+                        style: AppTheme.textSearchInfoLabeled(
+                          context,
+                        ).copyWith(fontSize: 14),
+                        text: "Rs $formattedGrandTotal",
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -288,6 +440,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 Text(
                   menus[_currentIndex],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTheme.textTitle(context).copyWith(
                     fontSize: 20,
                     fontFamily: AppFontFamily.poppinsLight,
@@ -306,13 +460,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             IconButton(
               icon: const Icon(HugeIconsStroke.refresh, size: 20),
               onPressed: () {
-                setState(() {
-                  _futureCustomers = ApiService.getAllCustomers();
-                });
+                _refreshCustomers;
               },
             ),
           IconButton(
-            onPressed: _logout,
+            onPressed: () {
+              DialogLogout().showDialog(context, _logout);
+            },
             icon: const Icon(HugeIconsStroke.logout02, size: 20),
           ),
           const SizedBox(width: 16),
@@ -331,7 +485,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         elevation: 0,
         iconSize: 24,
         landscapeLayout: BottomNavigationBarLandscapeLayout.centered,
-        selectedLabelStyle: AppTheme.textLabel(context).copyWith(fontSize: 14),
+        selectedLabelStyle: AppTheme.textLabel(context).copyWith(fontSize: 12),
         unselectedLabelStyle: AppTheme.textLabel(
           context,
         ).copyWith(fontSize: 11),
