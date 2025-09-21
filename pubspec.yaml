@@ -31,6 +31,8 @@ flutter:
   assets:
     - assets/images/logo.png
     - assets/images/logo_dark.png
+    - assets/images/not_found_frame.svg
+    - assets/images/not_found_frame_dark.svg
   fonts:
     - family: PoppinsLight
       fonts:

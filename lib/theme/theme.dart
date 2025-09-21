@@ -240,6 +240,12 @@ class AppTheme {
         : AppColor.white;
   }
 
+  static Color customListBg(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? AppColor.neutral_90
+        : AppColor.neutral_5;
+  }
+
   static String appLogo(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? 'assets/images/logo_dark.png'
@@ -250,6 +256,12 @@ class AppTheme {
     return Theme.of(context).brightness == Brightness.dark
         ? 'assets/images/onboarding/background_pattern_dark.svg'
         : 'assets/images/onboarding/background_pattern.svg';
+  }
+
+  static String notFoundImage(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? 'assets/images/not_found_frame_dark.svg'
+        : 'assets/images/not_found_frame.svg';
   }
 
   static Color checkBox(BuildContext context) =>

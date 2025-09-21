@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import 'package:yetoexplore/components/not_found.dart';
 import '/Models/customer_model.dart';
 import '/components/dialog_logout.dart';
 import '/components/loading_screen.dart';
@@ -317,13 +319,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               : RefreshIndicator(
                   onRefresh: _refreshCustomers,
                   child: _filteredCustomers.isEmpty
-                      ? Center(
-                          child: Text(
-                            "No Customers Found",
-                            style: AppTheme.textTitle(
-                              context,
-                            ).copyWith(fontSize: 14),
-                          ),
+                      ? NotFoundWidget(
+                          title: "No Customers Found",
+                          message:
+                              "Sorry, the keyword you entered cannot be found, please check again or search wit another keyword.",
                         )
                       : ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
@@ -333,45 +332,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             final formattedBalance = NumberFormat(
                               '#,###.00',
                             ).format(customer.OpeningBalance);
-                            return ListTile(
-                              leading: Text(
-                                (index + 1).toString().padLeft(2, '0'),
-                                style: const TextStyle(
-                                  fontFamily: AppFontFamily.poppinsMedium,
-                                ),
+
+                            return Card(
+                              margin: const EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 20,
                               ),
-                              title: Text(
-                                customer.UserName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTheme.textLabel(context).copyWith(
-                                  fontFamily: AppFontFamily.poppinsSemiBold,
-                                ),
+                              color: AppTheme.customListBg(context),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              subtitle: Row(
-                                children: [
-                                  Icon(
-                                    HugeIconsStroke.mapsLocation02,
-                                    size: 14,
+                              child: ListTile(
+                                leading: Text(
+                                  (index + 1).toString().padLeft(2, '0'),
+                                  style: const TextStyle(
+                                    fontFamily: AppFontFamily.poppinsMedium,
                                   ),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    customer.CityName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontFamily: AppFontFamily.poppinsRegular,
-                                      fontSize: 10,
-                                    ),
+                                ),
+                                title: Text(
+                                  customer.UserName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTheme.textLabel(context).copyWith(
+                                    fontFamily: AppFontFamily.poppinsSemiBold,
                                   ),
-                                ],
-                              ),
-                              trailing: Text(
-                                "Rs $formattedBalance",
-                                style: AppTheme.textSearchInfoLabeled(context)
-                                    .copyWith(
-                                      fontFamily: AppFontFamily.poppinsBold,
+                                ),
+                                subtitle: Row(
+                                  children: [
+                                    Icon(
+                                      HugeIconsStroke.mapsLocation02,
+                                      size: 14,
                                     ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      customer.CityName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontFamily:
+                                            AppFontFamily.poppinsRegular,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                trailing: Text(
+                                  "Rs $formattedBalance",
+                                  style: AppTheme.textSearchInfoLabeled(context)
+                                      .copyWith(
+                                        fontFamily: AppFontFamily.poppinsBold,
+                                      ),
+                                ),
                               ),
                             );
                           },
