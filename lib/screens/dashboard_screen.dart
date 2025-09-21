@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
-import 'package:yetoexplore/Models/customer_model.dart';
-import 'package:yetoexplore/components/dialog_logout.dart';
-import 'package:yetoexplore/components/loading_screen.dart';
+import '/Models/customer_model.dart';
+import '/components/dialog_logout.dart';
+import '/components/loading_screen.dart';
 import '/responses/customer_response.dart';
 import '/services/api_service.dart';
 import '/theme/theme.dart';

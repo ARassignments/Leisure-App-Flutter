@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
-import 'package:yetoexplore/theme/theme.dart';
+import '/theme/theme.dart';
 
 enum AppSnackBarType { success, error, warning, info }
 
