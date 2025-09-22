@@ -17,7 +17,7 @@ class _EmailSentState extends State<EmailSentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String _maskEmail(
+    String maskEmail(
       String email, {
       int visibleChars = 3,
       String maskChar = '*',
@@ -66,7 +66,7 @@ class _EmailSentState extends State<EmailSentScreen> {
                           children: [
                             TextSpan(text: "We sent an email to "),
                             TextSpan(
-                              text: _maskEmail(widget.email),
+                              text: maskEmail(widget.email),
                               style: AppTheme.textLink(context),
                             ),
                             TextSpan(

@@ -151,7 +151,7 @@ class _LocationScreenState extends State<LocationScreen> {
             Text("Where are you located?", style: AppTheme.textTitle(context)),
             const SizedBox(height: 20),
             DropdownButtonFormField<String>(
-              value: _selectedCountry.isEmpty ? null : _selectedCountry,
+              initialValue: _selectedCountry.isEmpty ? null : _selectedCountry,
               decoration: InputDecoration(labelText: 'Country*'),
               items:
                   _countries.map((String country) {
@@ -180,7 +180,7 @@ class _LocationScreenState extends State<LocationScreen> {
 
             // State Dropdown
             DropdownButtonFormField<String>(
-              value: _selectedState.isEmpty ? null : _selectedState,
+              initialValue: _selectedState.isEmpty ? null : _selectedState,
               decoration: InputDecoration(labelText: 'State*'),
               items:
                   _states.map((String state) {
@@ -210,7 +210,7 @@ class _LocationScreenState extends State<LocationScreen> {
 
             // City Dropdown
             DropdownButtonFormField<String>(
-              value: _selectedCity.isEmpty ? null : _selectedCity,
+              initialValue: _selectedCity.isEmpty ? null : _selectedCity,
               decoration: InputDecoration(labelText: 'City*'),
               items:
                   _cities.map((String city) {

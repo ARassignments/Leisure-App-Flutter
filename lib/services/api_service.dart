@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '/responses/customer_response.dart';
-import '/Models/customer_model.dart';
 import '/utils/session_manager.dart';
 
 class ApiService {

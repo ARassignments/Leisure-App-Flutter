@@ -301,8 +301,9 @@ class _LoginScreenState extends State<LoginScreen> {
               disabled: !_isFormValid || _isLoading,
               onPressed: (_isFormValid && !_isLoading)
                   ? () async {
-                      if (!_validateCurrentForm())
+                      if (!_validateCurrentForm()) {
                         return; // Use validation method
+                      }
                       await _submitLoginForm();
                     }
                   : null,

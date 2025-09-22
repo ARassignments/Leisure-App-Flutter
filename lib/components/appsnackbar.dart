@@ -39,12 +39,12 @@ class _AnimatedSnackBar extends StatefulWidget {
   final VoidCallback onDismissed;
 
   const _AnimatedSnackBar({
-    Key? key,
+    super.key,
     required this.message,
     required this.type,
     required this.duration,
     required this.onDismissed,
-  }) : super(key: key);
+  });
 
   @override
   State<_AnimatedSnackBar> createState() => _AnimatedSnackBarState();

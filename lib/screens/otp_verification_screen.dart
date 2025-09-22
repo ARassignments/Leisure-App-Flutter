@@ -256,7 +256,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               const SizedBox(width: 8),
               _resendTimeout > 0
                   ? Text(
-                    "Resend in $_resendTimeout" + "s",
+                    "Resend in $_resendTimeout" "s",
                     style: AppTheme.textLink(context),
                   )
                   : TextButton(

@@ -5,7 +5,7 @@ import '../theme/theme.dart';
 class LoadingLogo extends StatefulWidget {
   final double size;
 
-  const LoadingLogo({Key? key, this.size = 100}) : super(key: key);
+  const LoadingLogo({super.key, this.size = 100});
 
   @override
   State<LoadingLogo> createState() => _LoadingLogoState();

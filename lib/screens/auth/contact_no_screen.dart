@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = true;
   bool get _isFormDisabled => _isLoading || !_isFormValid;
   CountryCode _selectedCountryCode = CountryCode.fromCountryCode('IN');
-  String _previousCountryCode = '+1';
+  final String _previousCountryCode = '+1';
 
   @override
   void initState() {

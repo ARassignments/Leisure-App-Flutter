@@ -618,7 +618,7 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 20),
             DropdownButtonFormField<String>(
-              value: _selectedCountry.isEmpty ? null : _selectedCountry,
+              initialValue: _selectedCountry.isEmpty ? null : _selectedCountry,
               decoration: InputDecoration(
                 labelText: 'Country*',
                 prefixIcon: Padding(
@@ -667,7 +667,7 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedState.isEmpty ? null : _selectedState,
+              initialValue: _selectedState.isEmpty ? null : _selectedState,
               decoration: InputDecoration(
                 labelText: 'State*',
                 prefixIcon: Padding(
@@ -716,7 +716,7 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedCity.isEmpty ? null : _selectedCity,
+              initialValue: _selectedCity.isEmpty ? null : _selectedCity,
               decoration: InputDecoration(
                 labelText: 'City*',
                 prefixIcon: Padding(

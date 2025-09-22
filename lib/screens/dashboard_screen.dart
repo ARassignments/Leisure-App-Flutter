@@ -1,5 +1,5 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:yetoexplore/components/not_found.dart';
@@ -24,7 +24,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? user;
 
   int _currentIndex = 0;
-  List<String> menus = ["Home", "Customers", "Accounts"];
+  List<String> menus = ["Home", "Orders", "Customers", "Accounts"];
   late Future<CustomerResponse> _futureCustomers;
   List<Customer> _allCustomers = [];
   List<Customer> _filteredCustomers = [];
@@ -103,7 +103,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<Widget> _pages() {
-    return [_homePage(), _customersPage(), _accountsPage()];
+    return [_homePage(), _ordersPage(), _customersPage(), _accountsPage()];
   }
 
   Widget _homePage() {
@@ -120,6 +120,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _ordersPage() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          NotFoundWidget(
+            title: "No Orders Found",
+            message:
+                "Sorry, the keyword you entered cannot be found, please check again or search wit another keyword.",
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _accountsPage() {
     return ListView(
       shrinkWrap: true,
@@ -131,14 +146,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
             vertical: 8,
           ),
           leading: CircleAvatar(
-            radius: 48,
-            backgroundColor: Colors.transparent,
+            radius: 30,
+            backgroundColor: AppTheme.customListBg(context),
             child: ClipOval(
-              child: Image.asset(
-                AppTheme.appLogo(context), // replace with your image
-                width: 86,
-                height: 100,
+              child: CachedNetworkImage(
+                imageUrl:
+                    "https://firebasestorage.googleapis.com/v0/b/urban-harmony-8fd99.appspot.com/o/ProfileImages%2Fboy_14.png?alt=media&token=7e4a25da-ffca-4374-b9aa-727b28b7bf0c",
                 fit: BoxFit.cover,
+                width: 60,
+                height: 60,
+                placeholder: (context, url) =>
+                    const CircularProgressIndicator(),
+                errorWidget: (context, url, error) =>
+                    const Icon(HugeIconsSolid.user03, size: 24),
               ),
             ),
           ),
@@ -318,6 +338,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ? const Center(child: LoadingLogo())
               : RefreshIndicator(
                   onRefresh: _refreshCustomers,
+                  backgroundColor: Colors.transparent,
                   child: _filteredCustomers.isEmpty
                       ? NotFoundWidget(
                           title: "No Customers Found",
@@ -344,6 +365,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: ListTile(
+                                onTap: () {},
                                 leading: Text(
                                   (index + 1).toString().padLeft(2, '0'),
                                   style: const TextStyle(
@@ -468,7 +490,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         actions: [
-          if (_currentIndex == 1)
+          if (_currentIndex == 2)
             IconButton(
               icon: const Icon(HugeIconsStroke.refresh, size: 20),
               onPressed: () {
@@ -510,6 +532,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: Icon(HugeIconsStroke.home11),
             activeIcon: Icon(HugeIconsSolid.home11),
             label: "Home",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(HugeIconsStroke.shoppingBasket01),
+            activeIcon: Icon(HugeIconsSolid.shoppingBasket01),
+            label: "Orders",
           ),
           BottomNavigationBarItem(
             icon: Icon(HugeIconsStroke.userMultiple02),
