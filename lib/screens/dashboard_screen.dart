@@ -206,9 +206,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             _searchOrderController.clear();
                           },
                         ),
-                      IconButton(
-                        icon: const Icon(HugeIconsSolid.dateTime),
-                        onPressed: () => _selectDateRange(context),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: IconButton(
+                          icon: const Icon(HugeIconsSolid.dateTime),
+                          onPressed: () => _selectDateRange(context),
+                        ),
                       ),
                     ],
                   ),
@@ -257,22 +260,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ],
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}\nTo:   ${DateFormat('yyyy-MM-dd').format(_toDate)}",
-                  style: AppTheme.textLabel(context).copyWith(fontSize: 13),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(HugeIconsSolid.dateTime),
-                onPressed: () => _selectDateRange(context),
+              Text(
+                "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}\nTo:   ${DateFormat('yyyy-MM-dd').format(_toDate)}",
+                style: AppTheme.textLabel(context).copyWith(fontSize: 13),
               ),
             ],
           ),
