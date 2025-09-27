@@ -209,7 +209,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: IconButton(
-                          icon: const Icon(HugeIconsSolid.dateTime),
+                          icon: const Icon(HugeIconsSolid.calendar01),
                           onPressed: () => _selectDateRange(context),
                         ),
                       ),
