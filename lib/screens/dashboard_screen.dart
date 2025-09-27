@@ -261,7 +261,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
               Text(
-                "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}\nTo:   ${DateFormat('yyyy-MM-dd').format(_toDate)}",
+                "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDate)}",
                 style: AppTheme.textLabel(context).copyWith(fontSize: 13),
               ),
             ],
