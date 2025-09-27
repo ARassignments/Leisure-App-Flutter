@@ -316,6 +316,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             final formattedAmount = NumberFormat(
                               '#,###.00',
                             ).format(order.Payable);
+                            final checkOrderType = order.OrderType.contains(
+                              "Credit",
+                            );
 
                             return Card(
                               margin: const EdgeInsets.symmetric(
@@ -365,7 +368,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           order.UserName,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
+                                          softWrap: true,
+
+                                          style: const TextStyle(
                                             fontSize: 11,
                                             fontFamily:
                                                 AppFontFamily.poppinsMedium,
@@ -384,8 +389,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           formattedDate,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 12,
+                                          style: const TextStyle(
+                                            fontSize: 11,
                                             fontFamily:
                                                 AppFontFamily.poppinsMedium,
                                           ),
@@ -394,17 +399,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                     Row(
                                       children: [
-                                        Icon(HugeIconsStroke.package, size: 16),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          "Qty: ${order.Quantity.toString().padLeft(2, '0')}",
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontFamily:
-                                                AppFontFamily.poppinsMedium,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              HugeIconsStroke.package,
+                                              size: 16,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              "Qty: ${order.Quantity.toString().padLeft(2, '0')}",
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontFamily:
+                                                    AppFontFamily.poppinsMedium,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(width: 8),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              checkOrderType
+                                                  ? HugeIconsStroke.moneySend01
+                                                  : HugeIconsStroke
+                                                        .moneyReceive01,
+                                              size: 16,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              "Order Type: ${checkOrderType ? 'Credit' : 'Debit'}",
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontFamily:
+                                                    AppFontFamily.poppinsMedium,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -414,7 +449,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Container(
-                                      padding: EdgeInsets.symmetric(
+                                      padding: const EdgeInsets.symmetric(
                                         horizontal: 6,
                                         vertical: 3,
                                       ),
@@ -439,7 +474,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             order.OrderStatus,
                                             style: AppTheme.textLink(context)
                                                 .copyWith(
-                                                  fontSize: 10,
+                                                  fontSize: 8,
                                                   color: _getStatusColor(
                                                     order.OrderStatus,
                                                   ),
@@ -448,7 +483,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         ],
                                       ),
                                     ),
-                                    SizedBox(height: 6),
+                                    const SizedBox(height: 6),
                                     Text(
                                       "Rs $formattedAmount",
                                       style:
