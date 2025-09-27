@@ -37,7 +37,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isRefreshing = false;
 
   //Orders Screen
-  List<Order> _orders = [];
+  List<Order> _allOrders = []; // always keep original full list
+  List<Order> _filteredOrders = []; // filtered list for UI
   bool _isLoadingOrders = true;
   bool _isRefreshingOrders = false;
 
@@ -45,11 +46,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   DateTime _toDate = DateTime.now();
   final TextEditingController _searchOrderController = TextEditingController();
 
+  String? _selectedOrderStatus;
+  String? _selectedTransactionType;
+  String? _selectedOrderType;
+
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
-    _searchOrderController.addListener(_onSearchChanged);
+    _searchOrderController.addListener(_onOrderSearchChanged);
     _loadSessionAndCustomers();
     _loadOrders();
   }
@@ -58,7 +63,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
-    _searchOrderController.removeListener(_onSearchChanged);
+    _searchOrderController.removeListener(_onOrderSearchChanged);
     _searchOrderController.dispose();
     super.dispose();
   }
@@ -71,6 +76,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             cust.CityName.toLowerCase().contains(query);
       }).toList();
     });
+  }
+
+  void _onOrderSearchChanged() {
+    _applyFilters();
   }
 
   Future<void> _loadSessionAndCustomers() async {
@@ -128,7 +137,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
       debugPrint("Orders fetched: ${response.orders.length}");
       setState(() {
-        _orders = response.orders;
+        _allOrders = response.orders;
+        _filteredOrders = List.from(_allOrders); // show all initially
       });
     } catch (e) {
       debugPrint("Error fetching orders: $e");
@@ -138,7 +148,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _refreshOrders() async {
-    setState(() => _isRefreshingOrders = true);
+    setState(() {
+      _isRefreshingOrders = true;
+      _resetFilters(); // ✅ reset filters & search before reload
+    });
     await _loadOrders();
     setState(() => _isRefreshingOrders = false);
   }
@@ -186,6 +199,178 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      showDragHandle: true,
+      isScrollControlled: true,
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            bool hasFilters() {
+              return _selectedOrderStatus != null ||
+                  _selectedTransactionType != null ||
+                  _selectedOrderType != null;
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 30, left: 30, right: 30),
+              child: Wrap(
+                children: [
+                  Column(
+                    spacing: 16,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        "Filter Orders",
+                        textAlign: TextAlign.center,
+                        style: AppTheme.textLabel(context).copyWith(
+                          fontSize: 16,
+                          fontFamily: AppFontFamily.poppinsBold,
+                        ),
+                      ),
+
+                      // Order Status
+                      Text("Order Status", style: AppTheme.textLabel(context)),
+                      Wrap(
+                        spacing: 8,
+                        children: ["Pending", "Paid", "InProgress"].map((
+                          status,
+                        ) {
+                          return ChoiceChip(
+                            label: Text(status),
+                            selected: _selectedOrderStatus == status,
+                            onSelected: (selected) {
+                              setModalState(() {
+                                _selectedOrderStatus = selected ? status : null;
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+
+                      // Transaction Type
+                      Text(
+                        "Transaction Type",
+                        style: AppTheme.textLabel(context),
+                      ),
+                      Wrap(
+                        spacing: 8,
+                        children: ["Sale", "Purchase"].map((type) {
+                          return ChoiceChip(
+                            label: Text(type),
+                            selected: _selectedTransactionType == type,
+                            onSelected: (selected) {
+                              setModalState(() {
+                                _selectedTransactionType = selected
+                                    ? type
+                                    : null;
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+
+                      // Order Type
+                      Text("Order Type", style: AppTheme.textLabel(context)),
+                      Wrap(
+                        spacing: 8,
+                        children: ["Credit", "Debit"].map((type) {
+                          return ChoiceChip(
+                            label: Text(type),
+                            selected: _selectedOrderType == type,
+                            onSelected: (selected) {
+                              setModalState(() {
+                                _selectedOrderType = selected ? type : null;
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+
+                      const SizedBox(height: 5),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        spacing: 16,
+                        children: [
+                          FlatButton(
+                            text: "Apply",
+                            disabled:
+                                !hasFilters(), // enable only if filters selected
+                            onPressed: hasFilters()
+                                ? () {
+                                    Navigator.pop(context);
+                                    _applyFilters();
+                                  }
+                                : null,
+                          ),
+                          GhostButton(
+                            text: "Reset All",
+                            disabled:
+                                !hasFilters(), // enable only if filters selected
+                            onPressed: hasFilters()
+                                ? () {
+                                    _refreshOrders();
+                                    Navigator.pop(context);
+                                  }
+                                : null,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _applyFilters() {
+    setState(() {
+      _filteredOrders = _allOrders.where((order) {
+        final statusMatch =
+            _selectedOrderStatus == null ||
+            order.OrderStatus.toLowerCase() ==
+                _selectedOrderStatus!.toLowerCase();
+
+        final transactionMatch =
+            _selectedTransactionType == null ||
+            order.TransactionType.toLowerCase() ==
+                _selectedTransactionType!.toLowerCase();
+
+        final typeMatch =
+            _selectedOrderType == null ||
+            order.OrderType.toLowerCase() == _selectedOrderType!.toLowerCase();
+
+        final searchMatch =
+            _searchOrderController.text.isEmpty ||
+            order.UserName.toLowerCase().contains(
+              _searchOrderController.text.toLowerCase(),
+            ) ||
+            order.RefNo.toLowerCase().contains(
+              _searchOrderController.text.toLowerCase(),
+            );
+
+        return statusMatch && transactionMatch && typeMatch && searchMatch;
+      }).toList();
+    });
+  }
+
+  void _resetFilters() {
+    _selectedOrderStatus = null;
+    _selectedTransactionType = null;
+    _selectedOrderType = null;
+    _searchOrderController.clear();
+    _filteredOrders = List.from(_allOrders);
+  }
+
   List<Widget> _pages() {
     return [_homePage(), _ordersPage(), _customersPage(), _accountsPage()];
   }
@@ -205,11 +390,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _ordersPage() {
+    double grandCreditTotal = _filteredOrders.fold(
+      0.0,
+      (previousValue, order) => previousValue + order.Balance,
+    );
+    final formattedCreditGrandTotal = NumberFormat(
+      '#,###.00',
+    ).format(grandCreditTotal);
+    double grandDebitTotal = _filteredOrders.fold(
+      0.0,
+      (previousValue, order) => previousValue + order.Paid,
+    );
+    final formattedDebitGrandTotal = NumberFormat(
+      '#,###.00',
+    ).format(grandDebitTotal);
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
                 controller: _searchOrderController,
@@ -230,6 +430,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           icon: const Icon(HugeIconsStroke.cancel02),
                           onPressed: () {
                             _searchOrderController.clear();
+                            _applyFilters();
                           },
                         ),
                       Padding(
@@ -254,8 +455,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
                 maxLength: 20,
               ),
+
               if (_searchOrderController.text.isNotEmpty) ...[
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -264,12 +466,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       text: TextSpan(
                         style: AppTheme.textSearchInfo(context),
                         children: [
-                          TextSpan(text: 'Result for "'),
+                          const TextSpan(text: 'Result for "'),
                           TextSpan(
                             text: _searchOrderController.text,
                             style: AppTheme.textSearchInfoLabeled(context),
                           ),
-                          TextSpan(text: '"'),
+                          const TextSpan(text: '"'),
                         ],
                       ),
                     ),
@@ -278,18 +480,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       text: TextSpan(
                         style: AppTheme.textSearchInfoLabeled(context),
                         children: [
-                          TextSpan(text: _filteredCustomers.length.toString()),
-                          TextSpan(text: ' found'),
+                          TextSpan(text: _filteredOrders.length.toString()),
+                          const TextSpan(text: ' found'),
                         ],
                       ),
                     ),
                   ],
                 ),
               ],
-              SizedBox(height: 10),
-              Text(
-                "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDate)}",
-                style: AppTheme.textLabel(context).copyWith(fontSize: 13),
+
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (_selectedOrderStatus != null)
+                    Chip(
+                      label: Text("Status: $_selectedOrderStatus"),
+                      avatar: Icon(
+                        _getStatusIcon(_selectedOrderStatus!),
+                        color: _getStatusColor(_selectedOrderStatus!),
+                      ),
+                      onDeleted: () {
+                        setState(() => _selectedOrderStatus = null);
+                        _applyFilters();
+                      },
+                    ),
+                  if (_selectedTransactionType != null)
+                    Chip(
+                      label: Text("Transaction: $_selectedTransactionType"),
+                      avatar: Icon(
+                        HugeIconsStroke.refresh,
+                        color: AppTheme.iconColor(context),
+                      ),
+                      onDeleted: () {
+                        setState(() => _selectedTransactionType = null);
+                        _applyFilters();
+                      },
+                    ),
+                  if (_selectedOrderType != null)
+                    Chip(
+                      label: Text("Type: $_selectedOrderType"),
+                      avatar: Icon(
+                        _selectedOrderType == "Credit"
+                            ? HugeIconsStroke.moneySend01
+                            : HugeIconsStroke.moneyReceive01,
+                        color: _selectedOrderType == "Credit"
+                            ? Colors.green
+                            : Colors.red,
+                      ),
+                      onDeleted: () {
+                        setState(() => _selectedOrderType = null);
+                        _applyFilters();
+                      },
+                    ),
+                  if (_searchOrderController.text.isNotEmpty)
+                    Chip(
+                      label: Text("Search: ${_searchOrderController.text}"),
+                      avatar: const Icon(Icons.search, color: Colors.grey),
+                      onDeleted: () {
+                        setState(() => _searchOrderController.clear());
+                        _applyFilters();
+                      },
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(
+                    HugeIconsSolid.calendar02,
+                    size: 20,
+                    color: AppTheme.iconColor(context),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDate)}",
+                    style: AppTheme.textLabel(context).copyWith(fontSize: 13),
+                  ),
+                ],
               ),
             ],
           ),
@@ -299,7 +569,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ? const Center(child: LoadingLogo())
               : RefreshIndicator(
                   onRefresh: _refreshOrders,
-                  child: _orders.isEmpty
+                  child: _filteredOrders.isEmpty
                       ? NotFoundWidget(
                           title: "No Orders Found",
                           message:
@@ -307,9 +577,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         )
                       : ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: _orders.length,
+                          itemCount: _filteredOrders.length,
                           itemBuilder: (context, index) {
-                            final order = _orders[index];
+                            final order = _filteredOrders[index];
                             final formattedDate = DateFormat(
                               'MMMM dd, yyyy',
                             ).format(order.OrderDate);
@@ -502,6 +772,85 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                 ),
         ),
+        if (_filteredOrders.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    RichText(
+                      textAlign: TextAlign.start,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        style: AppTheme.textSearchInfo(
+                          context,
+                        ).copyWith(fontSize: 14),
+                        text: 'Total Credit:',
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          HugeIconsStroke.moneySend01,
+                          size: 20,
+                          color: AppTheme.iconColor(context),
+                        ),
+                        const SizedBox(width: 6),
+                        RichText(
+                          textAlign: TextAlign.end,
+                          text: TextSpan(
+                            style: AppTheme.textSearchInfoLabeled(
+                              context,
+                            ).copyWith(fontSize: 14),
+                            text: "Rs $formattedCreditGrandTotal",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    RichText(
+                      textAlign: TextAlign.start,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        style: AppTheme.textSearchInfo(
+                          context,
+                        ).copyWith(fontSize: 14),
+                        text: 'Total Debit:',
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          HugeIconsStroke.moneyReceive01,
+                          size: 20,
+                          color: AppTheme.iconColor(context),
+                        ),
+                        const SizedBox(width: 6),
+                        RichText(
+                          textAlign: TextAlign.end,
+                          text: TextSpan(
+                            style: AppTheme.textSearchInfoLabeled(
+                              context,
+                            ).copyWith(fontSize: 14),
+                            text: "Rs $formattedDebitGrandTotal",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -864,7 +1213,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           if (_currentIndex == 1)
             IconButton(
               icon: const Icon(HugeIconsStroke.refresh, size: 20),
-              onPressed: _refreshOrders, // ✅ Correct function
+              onPressed: _refreshOrders,
             ),
           if (_currentIndex == 2)
             IconButton(
@@ -873,6 +1222,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _refreshCustomers;
               },
             ),
+          IconButton(
+            icon: const Icon(HugeIconsStroke.filterHorizontal, size: 20),
+            onPressed: _showFilterSheet,
+          ),
           IconButton(
             onPressed: () {
               DialogLogout().showDialog(context, _logout);
