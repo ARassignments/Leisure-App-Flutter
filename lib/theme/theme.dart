@@ -284,6 +284,31 @@ class AppTheme {
       ? AppColor.neutral_60
       : AppColor.neutral_80;
 
+  static Color dividerBg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+      ? AppColor.neutral_90
+      : AppColor.neutral_5;
+
+  static Color cardBg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+      ? AppColor.neutral_90.withOpacity(0.4)
+      : AppColor.neutral_5;
+
+  static Color cardDarkBg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+      ? AppColor.neutral_100
+      : AppColor.white;
+
+  static Color iconColor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+      ? AppColor.white
+      : AppColor.neutral_80;
+
+  static Color iconColorTwo(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+      ? AppColor.neutral_50
+      : AppColor.neutral_60;
+
   static TextStyle textLink(BuildContext context) => TextStyle(
     fontFamily: AppFontFamily.poppinsSemiBold,
     fontSize: 14,

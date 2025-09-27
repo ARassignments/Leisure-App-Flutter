@@ -52,7 +52,11 @@ class _LoadingLogoState extends State<LoadingLogo>
               child: child,
             );
           },
-          child: Image.asset(AppTheme.appLogo(context), width: 70, height: 70),
+          child: Image.asset(
+            AppTheme.appLogo(context),
+            width: 100,
+            height: 100,
+          ),
         ),
       ),
     );

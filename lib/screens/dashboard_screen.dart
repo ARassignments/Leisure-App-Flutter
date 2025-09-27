@@ -2,7 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
-import 'package:yetoexplore/components/not_found.dart';
+import '/screens/order_detail_screen.dart';
+import '/Models/order_model.dart';
+import '/components/not_found.dart';
 import '/Models/customer_model.dart';
 import '/components/dialog_logout.dart';
 import '/components/loading_screen.dart';
@@ -25,6 +27,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   int _currentIndex = 0;
   List<String> menus = ["Home", "Orders", "Customers", "Accounts"];
+
+  //Customers Screen
   late Future<CustomerResponse> _futureCustomers;
   List<Customer> _allCustomers = [];
   List<Customer> _filteredCustomers = [];
@@ -32,17 +36,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isRefreshing = false;
 
+  //Orders Screen
+  List<Order> _orders = [];
+  bool _isLoadingOrders = true;
+  bool _isRefreshingOrders = false;
+
+  DateTime _fromDate = DateTime.now();
+  DateTime _toDate = DateTime.now();
+  final TextEditingController _searchOrderController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    _searchOrderController.addListener(_onSearchChanged);
     _loadSessionAndCustomers();
+    _loadOrders();
   }
 
   @override
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _searchOrderController.removeListener(_onSearchChanged);
+    _searchOrderController.dispose();
     super.dispose();
   }
 
@@ -102,6 +119,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _loadOrders() async {
+    setState(() => _isLoadingOrders = true);
+    try {
+      final response = await ApiService.getAllOrders(
+        fromDate: DateFormat('yyyy-MM-dd').format(_fromDate),
+        toDate: DateFormat('yyyy-MM-dd').format(_toDate),
+      );
+      debugPrint("Orders fetched: ${response.orders.length}");
+      setState(() {
+        _orders = response.orders;
+      });
+    } catch (e) {
+      debugPrint("Error fetching orders: $e");
+    } finally {
+      setState(() => _isLoadingOrders = false);
+    }
+  }
+
+  Future<void> _refreshOrders() async {
+    setState(() => _isRefreshingOrders = true);
+    await _loadOrders();
+    setState(() => _isRefreshingOrders = false);
+  }
+
+  Future<void> _selectDateRange(BuildContext context) async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: DateTimeRange(start: _fromDate, end: _toDate),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _fromDate = picked.start;
+        _toDate = picked.end;
+      });
+      await _loadOrders();
+    }
+  }
+
   List<Widget> _pages() {
     return [_homePage(), _ordersPage(), _customersPage(), _accountsPage()];
   }
@@ -121,17 +179,191 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _ordersPage() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          NotFoundWidget(
-            title: "No Orders Found",
-            message:
-                "Sorry, the keyword you entered cannot be found, please check again or search wit another keyword.",
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _searchOrderController,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: InputDecoration(
+                  labelText: 'Search Here',
+                  hintText: 'Search by name or ref no',
+                  counter: const SizedBox.shrink(),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                    child: Icon(HugeIconsSolid.search01),
+                  ),
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_searchOrderController.text.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(HugeIconsStroke.cancel02),
+                          onPressed: () {
+                            _searchOrderController.clear();
+                          },
+                        ),
+                      IconButton(
+                        icon: const Icon(HugeIconsSolid.dateTime),
+                        onPressed: () => _selectDateRange(context),
+                      ),
+                    ],
+                  ),
+                ),
+                style: AppInputDecoration.inputTextStyle(context),
+                keyboardType: TextInputType.name,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return null;
+                  } else if (!RegExp(r'^[a-zA-Z0-9 ]+$').hasMatch(value)) {
+                    return 'Must contain only letters or digits';
+                  }
+                  return null;
+                },
+                maxLength: 20,
+              ),
+              if (_searchOrderController.text.isNotEmpty) ...[
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    RichText(
+                      textAlign: TextAlign.start,
+                      text: TextSpan(
+                        style: AppTheme.textSearchInfo(context),
+                        children: [
+                          TextSpan(text: 'Result for "'),
+                          TextSpan(
+                            text: _searchOrderController.text,
+                            style: AppTheme.textSearchInfoLabeled(context),
+                          ),
+                          TextSpan(text: '"'),
+                        ],
+                      ),
+                    ),
+                    RichText(
+                      textAlign: TextAlign.end,
+                      text: TextSpan(
+                        style: AppTheme.textSearchInfoLabeled(context),
+                        children: [
+                          TextSpan(text: _filteredCustomers.length.toString()),
+                          TextSpan(text: ' found'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
           ),
-        ],
-      ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}\nTo:   ${DateFormat('yyyy-MM-dd').format(_toDate)}",
+                  style: AppTheme.textLabel(context).copyWith(fontSize: 13),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(HugeIconsSolid.dateTime),
+                onPressed: () => _selectDateRange(context),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _isLoadingOrders
+              ? const Center(child: LoadingLogo())
+              : RefreshIndicator(
+                  onRefresh: _refreshOrders,
+                  child: _orders.isEmpty
+                      ? NotFoundWidget(
+                          title: "No Orders Found",
+                          message:
+                              "No orders found for the selected date range.",
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: _orders.length,
+                          itemBuilder: (context, index) {
+                            final order = _orders[index];
+                            final formattedDate = DateFormat(
+                              'dd MMM yyyy',
+                            ).format(order.OrderDate);
+                            final formattedAmount = NumberFormat(
+                              '#,###.00',
+                            ).format(order.Payable);
+
+                            return Card(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 8,
+                              ),
+                              color: AppTheme.customListBg(context),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: ListTile(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => OrderDetailScreen(
+                                        orderId: order.OrderId,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                leading: Text(
+                                  (index + 1).toString().padLeft(2, '0'),
+                                  style: const TextStyle(
+                                    fontFamily: AppFontFamily.poppinsMedium,
+                                  ),
+                                ),
+                                title: Text(
+                                  order.UserName,
+                                  style: AppTheme.textLabel(context).copyWith(
+                                    fontFamily: AppFontFamily.poppinsSemiBold,
+                                  ),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("Ref No: ${order.RefNo}"),
+                                    Text("Date: $formattedDate"),
+                                    Text("Status: ${order.OrderStatus}"),
+                                  ],
+                                ),
+                                trailing: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      "Rs $formattedAmount",
+                                      style:
+                                          AppTheme.textSearchInfoLabeled(
+                                            context,
+                                          ).copyWith(
+                                            fontFamily:
+                                                AppFontFamily.poppinsBold,
+                                          ),
+                                    ),
+                                    Text("Qty: ${order.Quantity}"),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+        ),
+      ],
     );
   }
 
@@ -490,6 +722,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         actions: [
+          if (_currentIndex == 1)
+            IconButton(
+              icon: const Icon(HugeIconsStroke.refresh, size: 20),
+              onPressed: _refreshOrders, // ✅ Correct function
+            ),
           if (_currentIndex == 2)
             IconButton(
               icon: const Icon(HugeIconsStroke.refresh, size: 20),
