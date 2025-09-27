@@ -160,6 +160,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case "pending":
+        return Colors.orange;
+      case "paid":
+        return Colors.green;
+      case "inprogress":
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case "pending":
+        return HugeIconsSolid.clock01;
+      case "paid":
+        return HugeIconsSolid.checkmarkCircle01;
+      case "inprogress":
+        return HugeIconsSolid.arrowReloadHorizontal;
+      default:
+        return Icons.info;
+    }
+  }
+
   List<Widget> _pages() {
     return [_homePage(), _ordersPage(), _customersPage(), _accountsPage()];
   }
@@ -209,7 +235,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: IconButton(
-                          icon: const Icon(HugeIconsSolid.calendar01),
+                          icon: const Icon(HugeIconsSolid.calendar03),
                           onPressed: () => _selectDateRange(context),
                         ),
                       ),
@@ -260,6 +286,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ],
+              SizedBox(height: 10),
               Text(
                 "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDate)}",
                 style: AppTheme.textLabel(context).copyWith(fontSize: 13),
@@ -284,7 +311,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           itemBuilder: (context, index) {
                             final order = _orders[index];
                             final formattedDate = DateFormat(
-                              'dd MMM yyyy',
+                              'MMMM dd, yyyy',
                             ).format(order.OrderDate);
                             final formattedAmount = NumberFormat(
                               '#,###.00',
@@ -318,22 +345,110 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                 ),
                                 title: Text(
-                                  order.UserName,
+                                  "#Ref ${order.RefNo}",
                                   style: AppTheme.textLabel(context).copyWith(
                                     fontFamily: AppFontFamily.poppinsSemiBold,
+                                    fontSize: 16,
                                   ),
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text("Ref No: ${order.RefNo}"),
-                                    Text("Date: $formattedDate"),
-                                    Text("Status: ${order.OrderStatus}"),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          HugeIconsStroke.userAccount,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          order.UserName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontFamily:
+                                                AppFontFamily.poppinsMedium,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          HugeIconsStroke.calendar03,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          formattedDate,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontFamily:
+                                                AppFontFamily.poppinsMedium,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Icon(HugeIconsStroke.package, size: 16),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          "Qty: ${order.Quantity.toString().padLeft(2, '0')}",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontFamily:
+                                                AppFontFamily.poppinsMedium,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                                 trailing: Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _getStatusColor(
+                                          order.OrderStatus,
+                                        ).withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            _getStatusIcon(order.OrderStatus),
+                                            size: 10,
+                                            color: _getStatusColor(
+                                              order.OrderStatus,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            order.OrderStatus,
+                                            style: AppTheme.textLink(context)
+                                                .copyWith(
+                                                  fontSize: 10,
+                                                  color: _getStatusColor(
+                                                    order.OrderStatus,
+                                                  ),
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: 6),
                                     Text(
                                       "Rs $formattedAmount",
                                       style:
@@ -344,7 +459,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                 AppFontFamily.poppinsBold,
                                           ),
                                     ),
-                                    Text("Qty: ${order.Quantity}"),
                                   ],
                                 ),
                               ),

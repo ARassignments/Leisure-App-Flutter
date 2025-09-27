@@ -117,7 +117,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         final detail = snapshot.data!;
         final order = detail.orderDetails.first;
         final items = detail.orderItems;
-        final numberCheck = order.Contact.toString().contains("00");
+        final numberCheck =
+            order.Contact.toString() == "00" || order.Contact.toString() == "0";
 
         return Scaffold(
           appBar: AppBar(
@@ -137,6 +138,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               },
             ),
             actions: [
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(HugeIconsStroke.pdf01, size: 20),
+              ),
               if (!numberCheck)
                 PopupMenuButton<String>(
                   elevation: 0,
@@ -182,6 +187,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ],
           ),
           body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
                 width: double.infinity,
@@ -227,20 +233,20 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             color: _getStatusColor(
                               order.OrderStatus,
                             ).withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             children: [
                               Icon(
                                 _getStatusIcon(order.OrderStatus),
-                                size: 14,
+                                size: 12,
                                 color: _getStatusColor(order.OrderStatus),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 order.OrderStatus,
                                 style: AppTheme.textLink(context).copyWith(
-                                  fontSize: 12,
+                                  fontSize: 10,
                                   color: _getStatusColor(order.OrderStatus),
                                 ),
                               ),
@@ -345,7 +351,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               // 🔹 Order Items + Charges
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
                     const SizedBox(height: 10),
                     ...items.asMap().entries.map((entry) {
@@ -444,15 +450,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               // 🔹 Bottom Button
               Padding(
                 padding: const EdgeInsets.all(20.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: FlatButton(
-                    text: "Download Reciept",
-                    icon: HugeIconsSolid.download03,
-                    disabled: true,
-                    onPressed: () {},
-                  ),
+                child: FlatButton(
+                  text: "Download Reciept",
+                  icon: HugeIconsSolid.download03,
+                  disabled: true,
+                  onPressed: () {},
                 ),
               ),
             ],
