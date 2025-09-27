@@ -534,15 +534,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _applyFilters();
                       },
                     ),
-                  if (_searchOrderController.text.isNotEmpty)
-                    Chip(
-                      label: Text("Search: ${_searchOrderController.text}"),
-                      avatar: const Icon(Icons.search, color: Colors.grey),
-                      onDeleted: () {
-                        setState(() => _searchOrderController.clear());
-                        _applyFilters();
-                      },
-                    ),
                 ],
               ),
 
