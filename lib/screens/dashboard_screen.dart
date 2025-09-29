@@ -193,7 +193,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case "paid":
         return HugeIconsSolid.checkmarkCircle01;
       case "inprogress":
-        return HugeIconsSolid.arrowReloadHorizontal;
+        return HugeIconsSolid.loading02;
       default:
         return Icons.info;
     }
@@ -233,7 +233,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           fontFamily: AppFontFamily.poppinsBold,
                         ),
                       ),
-
+                      Divider(color: AppTheme.dividerBg(context)),
                       // Order Status
                       Text("Order Status", style: AppTheme.textLabel(context)),
                       Wrap(
@@ -241,13 +241,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: ["Pending", "Paid", "InProgress"].map((
                           status,
                         ) {
+                          final isSelected = _selectedOrderStatus == status;
                           return ChoiceChip(
                             label: Text(status),
-                            selected: _selectedOrderStatus == status,
+                            labelStyle: AppTheme.textLabel(context).copyWith(
+                              color: isSelected
+                                  ? _getStatusColor(status)
+                                  : AppTheme.iconColorThree(context),
+                              fontSize: 12,
+                            ),
+                            labelPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 0,
+                            ),
+                            backgroundColor: AppTheme.customListBg(context),
+                            side: BorderSide(color: Colors.transparent),
+                            selectedColor: _getStatusColor(
+                              status,
+                            ).withOpacity(0.3),
+                            checkmarkColor: _getStatusColor(status),
+                            selected: isSelected,
                             onSelected: (selected) {
                               setModalState(() {
                                 _selectedOrderStatus = selected ? status : null;
                               });
+                              _applyFilters();
                             },
                           );
                         }).toList(),
@@ -261,15 +279,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Wrap(
                         spacing: 8,
                         children: ["Sale", "Purchase"].map((type) {
+                          final isSelected = _selectedTransactionType == type;
                           return ChoiceChip(
                             label: Text(type),
-                            selected: _selectedTransactionType == type,
+                            labelStyle: AppTheme.textLabel(context).copyWith(
+                              color: AppTheme.iconColorThree(context),
+                              fontSize: 12,
+                            ),
+                            labelPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 0,
+                            ),
+                            backgroundColor: AppTheme.customListBg(context),
+                            side: BorderSide(color: Colors.transparent),
+                            selectedColor: AppTheme.customListBg(context),
+                            checkmarkColor: AppTheme.iconColorThree(context),
+                            selected: isSelected,
                             onSelected: (selected) {
                               setModalState(() {
                                 _selectedTransactionType = selected
                                     ? type
                                     : null;
                               });
+                              _applyFilters();
                             },
                           );
                         }).toList(),
@@ -280,19 +312,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Wrap(
                         spacing: 8,
                         children: ["Credit", "Debit"].map((type) {
+                          final isSelected = _selectedOrderType == type;
+                          final typeColor = type == "Credit"
+                              ? Colors.green
+                              : Colors.red;
                           return ChoiceChip(
                             label: Text(type),
-                            selected: _selectedOrderType == type,
+                            labelStyle: AppTheme.textLabel(context).copyWith(
+                              color: isSelected
+                                  ? typeColor
+                                  : AppTheme.iconColorThree(context),
+                              fontSize: 12,
+                            ),
+                            labelPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 0,
+                            ),
+                            backgroundColor: AppTheme.customListBg(context),
+                            side: BorderSide(color: Colors.transparent),
+                            selectedColor: typeColor.withOpacity(0.3),
+                            checkmarkColor: typeColor,
+                            selected: isSelected,
                             onSelected: (selected) {
                               setModalState(() {
                                 _selectedOrderType = selected ? type : null;
                               });
+                              _applyFilters();
                             },
                           );
                         }).toList(),
                       ),
-
-                      const SizedBox(height: 5),
+                      Divider(color: AppTheme.dividerBg(context)),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         spacing: 16,
@@ -497,34 +547,93 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   if (_selectedOrderStatus != null)
                     Chip(
                       label: Text("Status: $_selectedOrderStatus"),
+                      backgroundColor: _getStatusColor(
+                        _selectedOrderStatus!,
+                      ).withOpacity(0.10),
+                      side: BorderSide(
+                        color: _getStatusColor(
+                          _selectedOrderStatus!,
+                        ).withOpacity(0.3),
+                      ),
+                      labelStyle: AppTheme.textLabel(context).copyWith(
+                        color: _getStatusColor(_selectedOrderStatus!),
+                        fontSize: 10,
+                      ),
+                      labelPadding: const EdgeInsets.symmetric(
+                        horizontal: 3,
+                        vertical: 0,
+                      ),
                       avatar: Icon(
                         _getStatusIcon(_selectedOrderStatus!),
                         color: _getStatusColor(_selectedOrderStatus!),
+                        size: 14,
                       ),
                       onDeleted: () {
                         setState(() => _selectedOrderStatus = null);
                         _applyFilters();
                       },
+                      deleteIcon: Icon(
+                        HugeIconsStroke.cancel02,
+                        size: 14,
+                        color: _getStatusColor(_selectedOrderStatus!),
+                      ),
                     ),
                   if (_selectedTransactionType != null)
                     Chip(
                       label: Text("Transaction: $_selectedTransactionType"),
+                      backgroundColor: AppTheme.customListBg(context),
+                      side: BorderSide(
+                        color: AppTheme.customListBg(context).withOpacity(0.3),
+                      ),
+                      labelStyle: AppTheme.textLabel(context).copyWith(
+                        color: AppTheme.iconColor(context).withOpacity(0.8),
+                        fontSize: 10,
+                      ),
+                      labelPadding: const EdgeInsets.symmetric(
+                        horizontal: 3,
+                        vertical: 0,
+                      ),
                       avatar: Icon(
-                        HugeIconsStroke.refresh,
-                        color: AppTheme.iconColor(context),
+                        HugeIconsStroke.chartIncrease,
+                        color: AppTheme.iconColor(context).withOpacity(0.8),
+                        size: 14,
                       ),
                       onDeleted: () {
                         setState(() => _selectedTransactionType = null);
                         _applyFilters();
                       },
+                      deleteIcon: Icon(
+                        HugeIconsStroke.cancel02,
+                        size: 14,
+                        color: AppTheme.iconColor(context).withOpacity(0.3),
+                      ),
                     ),
                   if (_selectedOrderType != null)
                     Chip(
                       label: Text("Type: $_selectedOrderType"),
+                      backgroundColor: _selectedOrderType == "Credit"
+                          ? Colors.green.withOpacity(0.10)
+                          : Colors.red.withOpacity(0.10),
+                      side: BorderSide(
+                        color: _selectedOrderType == "Credit"
+                            ? Colors.green.withOpacity(0.3)
+                            : Colors.red.withOpacity(0.3),
+                      ),
+                      labelStyle: AppTheme.textLabel(context).copyWith(
+                        color: _selectedOrderType == "Credit"
+                            ? Colors.green
+                            : Colors.red,
+                        fontSize: 10,
+                      ),
+                      labelPadding: const EdgeInsets.symmetric(
+                        horizontal: 3,
+                        vertical: 0,
+                      ),
                       avatar: Icon(
                         _selectedOrderType == "Credit"
                             ? HugeIconsStroke.moneySend01
                             : HugeIconsStroke.moneyReceive01,
+                        size: 14,
                         color: _selectedOrderType == "Credit"
                             ? Colors.green
                             : Colors.red,
@@ -533,6 +642,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         setState(() => _selectedOrderType = null);
                         _applyFilters();
                       },
+                      deleteIcon: Icon(
+                        HugeIconsStroke.cancel02,
+                        size: 14,
+                        color: _selectedOrderType == "Credit"
+                            ? Colors.green
+                            : Colors.red,
+                      ),
                     ),
                 ],
               ),
@@ -691,7 +807,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             ),
                                             const SizedBox(width: 6),
                                             Text(
-                                              "Order Type: ${checkOrderType ? 'Credit' : 'Debit'}",
+                                              "${checkOrderType ? 'Credit' : 'Debit'} Amount",
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
@@ -786,7 +902,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Icon(
                           HugeIconsStroke.moneySend01,
-                          size: 20,
+                          size: 14,
                           color: AppTheme.iconColor(context),
                         ),
                         const SizedBox(width: 6),
@@ -822,7 +938,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Icon(
                           HugeIconsStroke.moneyReceive01,
-                          size: 20,
+                          size: 14,
                           color: AppTheme.iconColor(context),
                         ),
                         const SizedBox(width: 6),
@@ -1201,11 +1317,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         actions: [
-          if (_currentIndex == 1)
+          if (_currentIndex == 1) ...[
             IconButton(
               icon: const Icon(HugeIconsStroke.refresh, size: 20),
               onPressed: _refreshOrders,
             ),
+            IconButton(
+              icon: const Icon(HugeIconsStroke.filterHorizontal, size: 20),
+              onPressed: _showFilterSheet,
+            ),
+          ],
+
           if (_currentIndex == 2)
             IconButton(
               icon: const Icon(HugeIconsStroke.refresh, size: 20),
@@ -1213,10 +1335,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _refreshCustomers;
               },
             ),
-          IconButton(
-            icon: const Icon(HugeIconsStroke.filterHorizontal, size: 20),
-            onPressed: _showFilterSheet,
-          ),
           IconButton(
             onPressed: () {
               DialogLogout().showDialog(context, _logout);

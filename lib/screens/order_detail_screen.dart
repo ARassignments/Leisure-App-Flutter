@@ -1,4 +1,18 @@
+import 'dart:io';
+import 'dart:ui';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:printing/printing.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,6 +32,172 @@ class OrderDetailScreen extends StatefulWidget {
 }
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
+  final GlobalKey _screenshotKey = GlobalKey();
+  bool _isDownloading = false;
+
+  /// 🔹 Capture current screen as PNG bytes
+  Future<Uint8List> _capturePng() async {
+    RenderRepaintBoundary boundary =
+        _screenshotKey.currentContext!.findRenderObject()
+            as RenderRepaintBoundary;
+    final image = await boundary.toImage(pixelRatio: 3.0);
+    final byteData = await image.toByteData(format: ImageByteFormat.png);
+    return byteData!.buffer.asUint8List();
+  }
+
+  /// 🔹 For Mobile (Android/iOS)
+  Future<void> _downloadReceiptMobile() async {
+    try {
+      final pngBytes = await _capturePng();
+
+      final pdf = pw.Document();
+      final pwImage = pw.MemoryImage(pngBytes);
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) => pw.Center(child: pw.Image(pwImage)),
+        ),
+      );
+
+      final dir = await getApplicationDocumentsDirectory();
+      final filePath = "${dir.path}/order_${widget.orderId}.pdf";
+      final file = File(filePath);
+      await file.writeAsBytes(await pdf.save());
+
+      await Share.shareXFiles([
+        XFile(filePath),
+      ], text: "Order #${widget.orderId}");
+    } catch (e) {
+      AppSnackBar.show(
+        context,
+        message: "Error saving receipt: $e",
+        type: AppSnackBarType.error,
+      );
+    }
+  }
+
+  /// 🔹 For Web
+  Future<void> _downloadReceiptWeb() async {
+    try {
+      final pngBytes = await _capturePng();
+
+      final pdf = pw.Document();
+      final pwImage = pw.MemoryImage(pngBytes);
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) => pw.Center(child: pw.Image(pwImage)),
+        ),
+      );
+
+      await Printing.sharePdf(
+        bytes: await pdf.save(),
+        filename: "order_${widget.orderId}.pdf",
+      );
+    } catch (e) {
+      AppSnackBar.show(
+        context,
+        message: "Error saving receipt: $e",
+        type: AppSnackBarType.error,
+      );
+    }
+  }
+
+  /// 🔹 Button Handler
+  Future<void> _handleDownload() async {
+    setState(() => _isDownloading = true); // Start loading
+    try {
+      if (kIsWeb) {
+        await _downloadReceiptWeb();
+      } else {
+        await _downloadReceiptMobile();
+      }
+    } finally {
+      setState(() => _isDownloading = false); // Stop loading
+    }
+  }
+
+  Future<void> _sharePdfMobile() async {
+    try {
+      final pngBytes = await _capturePng();
+
+      final pdf = pw.Document();
+      final pwImage = pw.MemoryImage(pngBytes);
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) => pw.Center(child: pw.Image(pwImage)),
+        ),
+      );
+
+      final dir = await getApplicationDocumentsDirectory();
+      final filePath = "${dir.path}/order_${widget.orderId}.pdf";
+      final file = File(filePath);
+      await file.writeAsBytes(await pdf.save());
+
+      // 🔹 Open share dialog (user can select WhatsApp, Email, etc.)
+      await Share.shareXFiles([
+        XFile(filePath),
+      ], text: "Order #${widget.orderId} receipt");
+    } catch (e) {
+      AppSnackBar.show(
+        context,
+        message: "Error sharing receipt: $e",
+        type: AppSnackBarType.error,
+      );
+    }
+  }
+
+  Future<void> _sharePdfWeb() async {
+    try {
+      final pngBytes = await _capturePng();
+
+      final pdf = pw.Document();
+      final pwImage = pw.MemoryImage(pngBytes);
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) => pw.Center(child: pw.Image(pwImage)),
+        ),
+      );
+
+      // Download first
+      await Printing.sharePdf(
+        bytes: await pdf.save(),
+        filename: "order_${widget.orderId}.pdf",
+      );
+
+      // 🔹 Optionally open WhatsApp Web
+      final Uri whatsappUri = Uri.parse("https://wa.me/");
+      if (await canLaunchUrl(whatsappUri)) {
+        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      AppSnackBar.show(
+        context,
+        message: "Error sharing receipt: $e",
+        type: AppSnackBarType.error,
+      );
+    }
+  }
+
+  Future<void> _handleShare() async {
+    setState(() => _isDownloading = true);
+    try {
+      if (kIsWeb) {
+        await _sharePdfWeb();
+      } else {
+        await _sharePdfMobile();
+      }
+    } finally {
+      setState(() => _isDownloading = false);
+    }
+  }
+
   late Future<OrderDetailResponse> _futureDetail;
 
   @override
@@ -94,7 +274,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       case "paid":
         return HugeIconsSolid.checkmarkCircle01;
       case "inprogress":
-        return HugeIconsSolid.arrowReloadHorizontal;
+        return HugeIconsSolid.loading02;
       default:
         return Icons.info;
     }
@@ -139,12 +319,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ),
             actions: [
               IconButton(
-                onPressed: () {},
+                onPressed: _isDownloading ? null : _handleShare,
                 icon: const Icon(HugeIconsStroke.pdf01, size: 20),
               ),
               if (!numberCheck)
                 PopupMenuButton<String>(
-                  elevation: 0,
+                  color: AppTheme.cardDarkBg(context),
+                  elevation: 10,
+                  shadowColor: Colors.black26,
                   icon: const Icon(
                     HugeIconsStroke.moreVerticalCircle01,
                     size: 20,
@@ -157,17 +339,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     }
                   },
                   itemBuilder: (BuildContext context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: "call",
                       child: Row(
                         children: [
                           Icon(HugeIconsStroke.call02, size: 18),
                           SizedBox(width: 8),
-                          Text("Call"),
+                          Text("Call", style: AppTheme.textLabel(context)),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: "whatsapp",
                       child: Row(
                         children: [
@@ -177,7 +359,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             color: Colors.green,
                           ),
                           SizedBox(width: 8),
-                          Text("WhatsApp"),
+                          Text(
+                            "Call via WhatsApp",
+                            style: AppTheme.textLabel(context),
+                          ),
                         ],
                       ),
                     ),
@@ -189,261 +374,304 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 40,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.cardBg(context),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Expanded(
+                child: SingleChildScrollView(
+                  child: RepaintBoundary(
+                    key: _screenshotKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Row(
-                          children: [
-                            Icon(
-                              HugeIconsStroke.userAccount,
-                              size: 18,
-                              color: AppTheme.iconColor(context),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              "ID# ${order.RefNo}",
-                              style: AppTheme.textLabel(
-                                context,
-                              ).copyWith(fontSize: 14),
-                            ),
-                          ],
-                        ),
                         Container(
+                          width: double.infinity,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
+                            horizontal: 20,
+                            vertical: 40,
                           ),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(
-                              order.OrderStatus,
-                            ).withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(10),
+                            color: AppTheme.cardBg(context),
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
+                            ),
+                            boxShadow: null,
                           ),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                _getStatusIcon(order.OrderStatus),
-                                size: 12,
-                                color: _getStatusColor(order.OrderStatus),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        HugeIconsStroke.userAccount,
+                                        size: 18,
+                                        color: AppTheme.iconColor(context),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        "ID# ${order.RefNo}",
+                                        style: AppTheme.textLabel(
+                                          context,
+                                        ).copyWith(fontSize: 14),
+                                      ),
+                                    ],
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _getStatusColor(
+                                        order.OrderStatus,
+                                      ).withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          _getStatusIcon(order.OrderStatus),
+                                          size: 12,
+                                          color: _getStatusColor(
+                                            order.OrderStatus,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          order.OrderStatus,
+                                          style: AppTheme.textLink(context)
+                                              .copyWith(
+                                                fontSize: 10,
+                                                color: _getStatusColor(
+                                                  order.OrderStatus,
+                                                ),
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(height: 8),
                               Text(
-                                order.OrderStatus,
-                                style: AppTheme.textLink(context).copyWith(
-                                  fontSize: 10,
-                                  color: _getStatusColor(order.OrderStatus),
+                                order.UserName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTheme.textTitle(
+                                  context,
+                                ).copyWith(fontSize: 20),
+                              ),
+                              SizedBox(height: 10),
+                              if (!numberCheck)
+                                Row(
+                                  children: [
+                                    Icon(
+                                      HugeIconsStroke.call02,
+                                      size: 15,
+                                      color: AppTheme.iconColorTwo(context),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      formatInternationalPhone(order.Contact),
+                                      style: AppTheme.textSearchInfoLabeled(
+                                        context,
+                                      ).copyWith(fontSize: 14),
+                                    ),
+                                  ],
                                 ),
+                              if (!order.Address.toString().contains("Null"))
+                                Row(
+                                  children: [
+                                    Icon(
+                                      HugeIconsStroke.mapsLocation02,
+                                      size: 15,
+                                      color: AppTheme.iconColorTwo(context),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        order.Address,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTheme.textSearchInfoLabeled(
+                                          context,
+                                        ).copyWith(fontSize: 14),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              const SizedBox(height: 16),
+                              // White Card for Amount + Date
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.cardDarkBg(context),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Total Due",
+                                          style: AppTheme.textSearchInfo(
+                                            context,
+                                          ).copyWith(fontSize: 12),
+                                        ),
+                                        Text(
+                                          "Rs ${NumberFormat('#,###.##').format(order.TotalAmount)}",
+                                          style: AppTheme.textTitle(context)
+                                              .copyWith(
+                                                fontSize: 22,
+                                                fontFamily:
+                                                    AppFontFamily.poppinsMedium,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          _formatDate(order.OrderDate),
+                                          style: AppTheme.textSearchInfoLabeled(
+                                            context,
+                                          ).copyWith(fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+                        // 🔹 Order Items + Charges
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            children: List.generate(items.length, (index) {
+                              final item = items[index];
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: Text(
+                                    (index + 1).toString().padLeft(2, '0'),
+                                    style: const TextStyle(
+                                      fontFamily: AppFontFamily.poppinsMedium,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    item.ProductName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTheme.textLabel(context).copyWith(
+                                      fontFamily: AppFontFamily.poppinsSemiBold,
+                                    ),
+                                  ),
+                                  subtitle: Row(
+                                    children: [
+                                      const Icon(
+                                        HugeIconsStroke.package,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        "Qty: ${item.Quantity.toString().padLeft(2, '0')}",
+                                        style: const TextStyle(
+                                          fontFamily:
+                                              AppFontFamily.poppinsRegular,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Icon(
+                                        HugeIconsStroke.money01,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        "Rate: Rs ${NumberFormat('#,###.##').format(item.Price)}",
+                                        style: const TextStyle(
+                                          fontFamily:
+                                              AppFontFamily.poppinsRegular,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  trailing: Text(
+                                    "Rs ${NumberFormat('#,###.##').format(item.TotalPrice)}",
+                                    style:
+                                        AppTheme.textSearchInfoLabeled(
+                                          context,
+                                        ).copyWith(
+                                          fontSize: 12,
+                                          fontFamily: AppFontFamily.poppinsBold,
+                                        ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            children: [
+                              Divider(color: AppTheme.dividerBg(context)),
+                              _buildSummaryRow(
+                                "Subtotal",
+                                order.SubTotal,
+                                HugeIconsStroke.nodeAdd,
+                              ),
+                              _buildSummaryRow(
+                                "Sales Tax",
+                                order.SalesTax,
+                                HugeIconsStroke.saleTag02,
+                              ),
+                              _buildSummaryRow(
+                                "Discount",
+                                order.Discount,
+                                HugeIconsStroke.discountTag02,
+                              ),
+                              Divider(color: AppTheme.dividerBg(context)),
+                              _buildSummaryRow(
+                                "Total Amount",
+                                order.TotalAmount,
+                                HugeIconsStroke.moneyAdd02,
+                                isBold: true,
+                              ),
+                              _buildSummaryRow(
+                                "Paid",
+                                order.Paid,
+                                HugeIconsStroke.notebook01,
+                              ),
+                              _buildSummaryRow(
+                                "Balance",
+                                order.Balance,
+                                HugeIconsStroke.invoice03,
+                                isBold: true,
                               ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      order.UserName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTheme.textTitle(context).copyWith(fontSize: 20),
-                    ),
-                    SizedBox(height: 10),
-                    if (!numberCheck)
-                      Row(
-                        children: [
-                          Icon(
-                            HugeIconsStroke.call02,
-                            size: 15,
-                            color: AppTheme.iconColorTwo(context),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            formatInternationalPhone(order.Contact),
-                            style: AppTheme.textSearchInfoLabeled(
-                              context,
-                            ).copyWith(fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    if (!order.Address.toString().contains("Null"))
-                      Row(
-                        children: [
-                          Icon(
-                            HugeIconsStroke.mapsLocation02,
-                            size: 15,
-                            color: AppTheme.iconColorTwo(context),
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              order.Address,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTheme.textSearchInfoLabeled(
-                                context,
-                              ).copyWith(fontSize: 14),
-                            ),
-                          ),
-                        ],
-                      ),
-                    const SizedBox(height: 16),
-                    // White Card for Amount + Date
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppTheme.cardDarkBg(context),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Total Due",
-                                style: AppTheme.textSearchInfo(
-                                  context,
-                                ).copyWith(fontSize: 12),
-                              ),
-                              Text(
-                                "Rs ${NumberFormat('#,###.##').format(order.TotalAmount)}",
-                                style: AppTheme.textTitle(context).copyWith(
-                                  fontSize: 22,
-                                  fontFamily: AppFontFamily.poppinsMedium,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                _formatDate(order.OrderDate),
-                                style: AppTheme.textSearchInfoLabeled(
-                                  context,
-                                ).copyWith(fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // 🔹 Order Items + Charges
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: [
-                    const SizedBox(height: 10),
-                    ...items.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final item = entry.value;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Text(
-                            (index + 1).toString().padLeft(2, '0'),
-                            style: const TextStyle(
-                              fontFamily: AppFontFamily.poppinsMedium,
-                            ),
-                          ),
-                          title: Text(
-                            item.ProductName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTheme.textLabel(context).copyWith(
-                              fontFamily: AppFontFamily.poppinsSemiBold,
-                            ),
-                          ),
-                          subtitle: Row(
-                            children: [
-                              const Icon(HugeIconsStroke.package, size: 14),
-                              const SizedBox(width: 6),
-                              Text(
-                                "Qty: ${item.Quantity.toString().padLeft(2, '0')}",
-                                style: const TextStyle(
-                                  fontFamily: AppFontFamily.poppinsRegular,
-                                  fontSize: 11,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              const Icon(HugeIconsStroke.money01, size: 14),
-                              const SizedBox(width: 6),
-                              Text(
-                                "Rate: Rs ${NumberFormat('#,###.##').format(item.Price)}",
-                                style: const TextStyle(
-                                  fontFamily: AppFontFamily.poppinsRegular,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                          trailing: Text(
-                            "Rs ${NumberFormat('#,###.##').format(item.TotalPrice)}",
-                            style: AppTheme.textSearchInfoLabeled(context)
-                                .copyWith(
-                                  fontSize: 12,
-                                  fontFamily: AppFontFamily.poppinsBold,
-                                ),
-                          ),
-                        ),
-                      );
-                    }),
-                    Divider(color: AppTheme.dividerBg(context)),
-                    _buildSummaryRow(
-                      "Subtotal",
-                      order.SubTotal,
-                      HugeIconsStroke.nodeAdd,
-                    ),
-                    _buildSummaryRow(
-                      "Sales Tax",
-                      order.SalesTax,
-                      HugeIconsStroke.saleTag02,
-                    ),
-                    _buildSummaryRow(
-                      "Discount",
-                      order.Discount,
-                      HugeIconsStroke.discountTag02,
-                    ),
-                    Divider(color: AppTheme.dividerBg(context)),
-                    _buildSummaryRow(
-                      "Total Amount",
-                      order.TotalAmount,
-                      HugeIconsStroke.moneyAdd02,
-                      isBold: true,
-                    ),
-                    _buildSummaryRow(
-                      "Paid",
-                      order.Paid,
-                      HugeIconsStroke.notebook01,
-                    ),
-                    _buildSummaryRow(
-                      "Balance",
-                      order.Balance,
-                      HugeIconsStroke.invoice03,
-                      isBold: true,
-                    ),
-                  ],
+                  ),
                 ),
               ),
 
@@ -453,8 +681,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 child: FlatButton(
                   text: "Download Reciept",
                   icon: HugeIconsSolid.download03,
-                  disabled: true,
-                  onPressed: () {},
+                  disabled: _isDownloading ? true : false,
+                  loading: _isDownloading ? true : false,
+                  onPressed: _isDownloading ? null : _handleDownload,
                 ),
               ),
             ],

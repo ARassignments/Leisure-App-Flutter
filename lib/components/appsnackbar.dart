@@ -39,7 +39,6 @@ class _AnimatedSnackBar extends StatefulWidget {
   final VoidCallback onDismissed;
 
   const _AnimatedSnackBar({
-    super.key,
     required this.message,
     required this.type,
     required this.duration,
@@ -96,7 +95,6 @@ class _AnimatedSnackBarState extends State<_AnimatedSnackBar>
       case AppSnackBarType.warning:
         return Colors.orange;
       case AppSnackBarType.info:
-      default:
         return Colors.blueAccent;
     }
   }
@@ -110,7 +108,6 @@ class _AnimatedSnackBarState extends State<_AnimatedSnackBar>
       case AppSnackBarType.warning:
         return HugeIconsSolid.alert01;
       case AppSnackBarType.info:
-      default:
         return HugeIconsSolid.informationCircle;
     }
   }

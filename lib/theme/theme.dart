@@ -309,6 +309,11 @@ class AppTheme {
       ? AppColor.neutral_50
       : AppColor.neutral_60;
 
+  static Color iconColorThree(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+      ? AppColor.neutral_50
+      : AppColor.neutral_30;
+
   static TextStyle textLink(BuildContext context) => TextStyle(
     fontFamily: AppFontFamily.poppinsSemiBold,
     fontSize: 14,
