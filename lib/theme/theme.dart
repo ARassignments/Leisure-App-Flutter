@@ -286,8 +286,8 @@ class AppTheme {
 
   static Color dividerBg(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-      ? AppColor.neutral_90
-      : AppColor.neutral_5;
+      ? AppColor.neutral_80
+      : AppColor.neutral_10;
 
   static Color cardBg(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark

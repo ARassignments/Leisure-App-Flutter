@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import '/notifiers/avatar_notifier.dart';
+import '/screens/profile_screen.dart';
 import '/screens/order_detail_screen.dart';
 import '/Models/order_model.dart';
 import '/components/not_found.dart';
@@ -57,6 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _searchOrderController.addListener(_onOrderSearchChanged);
     _loadSessionAndCustomers();
     _loadOrders();
+    _initAvatar();
   }
 
   @override
@@ -80,6 +83,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _onOrderSearchChanged() {
     _applyFilters();
+  }
+
+  Future<void> _initAvatar() async {
+    final avatarData = await SessionManager.getAvatarAndGender();
+    if (avatarData["avatar"] != null) {
+      avatarNotifier.updateAvatar(avatarData["avatar"]!);
+    }
   }
 
   Future<void> _loadSessionAndCustomers() async {
@@ -218,7 +228,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             }
 
             return Padding(
-              padding: const EdgeInsets.only(bottom: 30, left: 30, right: 30),
+              padding: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
               child: Wrap(
                 children: [
                   Column(
@@ -457,7 +467,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -653,18 +663,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 5),
               Row(
                 children: [
                   Icon(
                     HugeIconsSolid.calendar02,
-                    size: 20,
+                    size: 18,
                     color: AppTheme.iconColor(context),
                   ),
                   const SizedBox(width: 6),
                   Text(
                     "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDate)}",
-                    style: AppTheme.textLabel(context).copyWith(fontSize: 13),
+                    style: AppTheme.textLabel(context).copyWith(fontSize: 12),
                   ),
                 ],
               ),
@@ -698,9 +708,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             );
 
                             return Card(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 8,
+                              margin: EdgeInsets.only(
+                                left: 20,
+                                right: 20,
+                                top: index == 0 ? 0 : 8,
+                                bottom: index == _filteredOrders.length - 1
+                                    ? 0
+                                    : 8,
                               ),
                               color: AppTheme.customListBg(context),
                               elevation: 0,
@@ -881,7 +895,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         if (_filteredOrders.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
               children: [
                 Row(
@@ -966,52 +980,77 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return ListView(
       shrinkWrap: true,
       children: [
-        SizedBox(height: 16),
+        ValueListenableBuilder<String?>(
+          valueListenable: avatarNotifier, // 🔔 listens for avatar changes
+          builder: (context, avatar, _) {
+            return ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              title: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundColor: AppTheme.customListBg(context),
+                    foregroundImage: avatar != null
+                        ? AssetImage(avatar)
+                        : const AssetImage("assets/images/avatars/boy_14.png"),
+                  ),
+                  SizedBox(width: 16),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "${user!["FullName"]}",
+                        style: AppTheme.textLabel(context).copyWith(
+                          fontSize: 17,
+                          fontFamily: AppFontFamily.poppinsSemiBold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        "View Profile",
+                        style: AppTheme.textLink(context).copyWith(
+                          fontSize: 12,
+                          fontFamily: AppFontFamily.poppinsRegular,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
+            );
+          },
+        ),
+        Divider(thickness: 30, height: 30, color: AppTheme.dividerBg(context)),
         ListTile(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 8,
           ),
-          leading: CircleAvatar(
-            radius: 30,
-            backgroundColor: AppTheme.customListBg(context),
-            child: ClipOval(
-              child: CachedNetworkImage(
-                imageUrl:
-                    "https://firebasestorage.googleapis.com/v0/b/urban-harmony-8fd99.appspot.com/o/ProfileImages%2Fboy_14.png?alt=media&token=7e4a25da-ffca-4374-b9aa-727b28b7bf0c",
-                fit: BoxFit.cover,
-                width: 60,
-                height: 60,
-                placeholder: (context, url) =>
-                    const CircularProgressIndicator(),
-                errorWidget: (context, url, error) =>
-                    const Icon(HugeIconsSolid.user03, size: 24),
-              ),
-            ),
-          ),
-          title: Text(
-            "${user!["FullName"]}",
-            style: AppTheme.textLabel(
-              context,
-            ).copyWith(fontSize: 17, fontFamily: AppFontFamily.poppinsSemiBold),
-          ),
-          subtitle: Text(
-            "View Profile",
-            style: AppTheme.textLink(
-              context,
-            ).copyWith(fontSize: 12, fontFamily: AppFontFamily.poppinsRegular),
-          ),
-          onTap: () {
-            // Handle profile click
-          },
+          leading: Icon(HugeIconsStroke.userGroup03, size: 24),
+          title: Text("Users", style: AppTheme.textLabel(context)),
+          onTap: () {},
         ),
-        Divider(
-          thickness: 30,
-          height: 30,
-          color: Theme.of(context).brightness == Brightness.dark
-              ? AppColor.neutral_80
-              : AppColor.neutral_10,
+        Divider(height: 1, color: AppTheme.dividerBg(context)),
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: Icon(HugeIconsStroke.messageMultiple02, size: 24),
+          title: Text("Messages", style: AppTheme.textLabel(context)),
+          onTap: () {},
         ),
+        Divider(thickness: 30, height: 30, color: AppTheme.dividerBg(context)),
         ListTile(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
@@ -1043,28 +1082,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ThemeController.setTheme(isDark ? ThemeMode.light : ThemeMode.dark);
           },
         ),
-        Divider(
-          height: 1,
-          color: Theme.of(context).brightness == Brightness.dark
-              ? AppColor.neutral_80
-              : AppColor.neutral_10,
+        Divider(height: 1, color: AppTheme.dividerBg(context)),
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: Icon(HugeIconsStroke.crown03, size: 24),
+          title: Text("Subscription", style: AppTheme.textLabel(context)),
+          onTap: () {},
         ),
+        Divider(height: 1, color: AppTheme.dividerBg(context)),
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: Icon(HugeIconsStroke.note, size: 24),
+          title: Text("Privacy Policy", style: AppTheme.textLabel(context)),
+          onTap: () {},
+        ),
+        Divider(height: 1, color: AppTheme.dividerBg(context)),
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: Icon(HugeIconsStroke.headset, size: 24),
+          title: Text("Help Center", style: AppTheme.textLabel(context)),
+          onTap: () {},
+        ),
+        Divider(height: 1, color: AppTheme.dividerBg(context)),
         ListTile(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 8,
           ),
           leading: Icon(HugeIconsStroke.chartBreakoutCircle, size: 24),
-          title: Text("About App", style: AppTheme.textLabel(context)),
+          title: Text(
+            "About Y2K Solutions",
+            style: AppTheme.textLabel(context),
+          ),
           onTap: () {},
         ),
-        Divider(
-          height: 1,
-          color: Theme.of(context).brightness == Brightness.dark
-              ? AppColor.neutral_80
-              : AppColor.neutral_10,
-        ),
-        SizedBox(height: 50),
+        Divider(height: 1, color: AppTheme.dividerBg(context)),
+        const SizedBox(height: 50),
         ListTile(
           title: OutlineErrorButton(
             text: 'Log Out',
@@ -1073,7 +1135,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             },
           ),
         ),
-        SizedBox(height: 30),
+        const SizedBox(height: 30),
       ],
     );
   }
@@ -1087,7 +1149,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Column(
             children: [
               TextFormField(
@@ -1182,9 +1244,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ).format(customer.OpeningBalance);
 
                             return Card(
-                              margin: const EdgeInsets.symmetric(
-                                vertical: 8,
-                                horizontal: 20,
+                              margin: EdgeInsets.only(
+                                left: 20,
+                                right: 20,
+                                top: index == 0 ? 0 : 8,
+                                bottom: index == _filteredOrders.length - 1
+                                    ? 0
+                                    : 8,
                               ),
                               color: AppTheme.customListBg(context),
                               elevation: 0,
@@ -1241,7 +1307,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         if (_filteredCustomers.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
               children: [
                 Row(

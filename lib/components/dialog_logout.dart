@@ -13,7 +13,7 @@ class DialogLogout {
       ),
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.only(bottom: 30, left: 30, right: 30),
+          padding: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
           child: Wrap(
             children: [
               Column(

@@ -36,10 +36,49 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/images/
     - assets/images/logo.png
     - assets/images/logo_dark.png
     - assets/images/not_found_frame.svg
     - assets/images/not_found_frame_dark.svg
+    - assets/images/avatars/boy_1.png
+    - assets/images/avatars/boy_2.png
+    - assets/images/avatars/boy_3.png
+    - assets/images/avatars/boy_4.png
+    - assets/images/avatars/boy_5.png
+    - assets/images/avatars/boy_6.png
+    - assets/images/avatars/boy_7.png
+    - assets/images/avatars/boy_8.png
+    - assets/images/avatars/boy_9.png
+    - assets/images/avatars/boy_10.png
+    - assets/images/avatars/boy_11.png
+    - assets/images/avatars/boy_12.png
+    - assets/images/avatars/boy_13.png
+    - assets/images/avatars/boy_14.png
+    - assets/images/avatars/boy_15.png
+    - assets/images/avatars/boy_16.png
+    - assets/images/avatars/boy_17.png
+    - assets/images/avatars/boy_18.png
+    - assets/images/avatars/girl_1.png
+    - assets/images/avatars/girl_2.png
+    - assets/images/avatars/girl_3.png
+    - assets/images/avatars/girl_4.png
+    - assets/images/avatars/girl_5.png
+    - assets/images/avatars/girl_6.png
+    - assets/images/avatars/girl_7.png
+    - assets/images/avatars/girl_8.png
+    - assets/images/avatars/girl_9.png
+    - assets/images/avatars/girl_10.png
+    - assets/images/avatars/girl_11.png
+    - assets/images/avatars/girl_12.png
+    - assets/images/avatars/girl_13.png
+    - assets/images/avatars/girl_14.png
+    - assets/images/avatars/girl_15.png
+    - assets/images/avatars/girl_16.png
+    - assets/images/avatars/girl_17.png
+    - assets/images/avatars/girl_18.png
+    - assets/images/avatars/girl_19.png
+    - assets/images/avatars/girl_20.png
   fonts:
     - family: PoppinsLight
       fonts:

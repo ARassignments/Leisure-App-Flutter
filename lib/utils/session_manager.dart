@@ -1,11 +1,15 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../notifiers/avatar_notifier.dart';
 
 class SessionManager {
   static const String _userTokenKey = "USER_TOKEN";
   static const String _userKey = "USER";
   static const String _rememberMeKey = "REMEMBER_ME";
   static const String _organizationIdKey = "ORGANIZATION_ID";
+
+  static const String _avatarKey = "USER_AVATAR";
+  static const String _genderKey = "USER_GENDER";
 
   /// Save user session
   static Future<void> saveUserSession(
@@ -21,6 +25,23 @@ class SessionManager {
     if (user.containsKey("OrganizationId") && user["OrganizationId"] != null) {
       await prefs.setInt(_organizationIdKey, user["OrganizationId"]);
     }
+  }
+
+  /// Save avatar + gender (independent of API session)
+  static Future<void> saveAvatarAndGender(String gender, String avatarPath) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_avatarKey, avatarPath);
+    await prefs.setString(_genderKey, gender);
+    avatarNotifier.updateAvatar(avatarPath);
+  }
+
+  /// Get avatar + gender
+  static Future<Map<String, String?>> getAvatarAndGender() async {
+    final prefs = await SharedPreferences.getInstance();
+    return {
+      "gender": prefs.getString(_genderKey),
+      "avatar": prefs.getString(_avatarKey),
+    };
   }
 
   /// Get user token
@@ -58,5 +79,7 @@ class SessionManager {
     await prefs.remove(_userKey);
     await prefs.remove(_rememberMeKey);
     await prefs.remove(_organizationIdKey);
+    await prefs.remove(_avatarKey);
+    await prefs.remove(_genderKey);
   }
 }

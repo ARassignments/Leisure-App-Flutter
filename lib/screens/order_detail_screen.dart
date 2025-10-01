@@ -385,7 +385,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
-                            vertical: 40,
+                            vertical: 20,
                           ),
                           decoration: BoxDecoration(
                             color: AppTheme.cardBg(context),
