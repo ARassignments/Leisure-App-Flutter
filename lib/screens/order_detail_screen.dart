@@ -19,6 +19,7 @@ import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yetoexplore/components/appsnackbar.dart';
+import 'package:yetoexplore/components/dialog_orderdetail_pdf.dart';
 import 'package:yetoexplore/utils/session_manager.dart';
 import '/theme/theme.dart';
 import '../components/loading_screen.dart';
@@ -399,6 +400,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               IconButton(
                 onPressed: _isDownloading ? null : _handleShare,
                 icon: const Icon(HugeIconsStroke.pdf01, size: 20),
+              ),
+              IconButton(
+                onPressed: () {
+                  PdfBottomSheet.showPdfPreview(
+                    context,
+                    "https://y2ksolutions.com/Order/OrderInvoiceView/${order.Id}", // API URL
+                    "Order_${order.Id}", // File name
+                    order.Contact, // WhatsApp number
+                  );
+                },
+                icon: const Icon(HugeIconsStroke.share01, size: 20),
               ),
               if (!numberCheck)
                 PopupMenuButton<String>(
