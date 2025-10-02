@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import '/screens/customer_detail_screen.dart';
 import '/notifiers/avatar_notifier.dart';
 import '/screens/profile_screen.dart';
 import '/screens/order_detail_screen.dart';
@@ -39,8 +39,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isRefreshing = false;
 
   //Orders Screen
-  List<Order> _allOrders = []; // always keep original full list
-  List<Order> _filteredOrders = []; // filtered list for UI
+  List<Order> _allOrders = [];
+  List<Order> _filteredOrders = [];
   bool _isLoadingOrders = true;
   bool _isRefreshingOrders = false;
 
@@ -440,10 +440,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text("Welcome, ${user!["FullName"]}"),
-          Text("Email: ${user!["Email"]}"),
-          Text("Organization Id: ${user!["OrganizationId"]}"),
-          Text("Token: $token"),
+          Text("Welcome, ${user?["FullName"] ?? "Guest"}"),
+          Text("Email: ${user?["Email"] ?? "N/A"}"),
+          Text("Organization Id: ${user?["OrganizationId"] ?? "Unknown"}"),
+          Text("Token: ${token ?? "Not available"}"),
         ],
       ),
     );
@@ -711,7 +711,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               margin: EdgeInsets.only(
                                 left: 20,
                                 right: 20,
-                                top: index == 0 ? 0 : 8,
+                                top: index == 0 ? 0 : 2,
                                 bottom: index == _filteredOrders.length - 1
                                     ? 0
                                     : 8,
@@ -738,152 +738,261 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     fontFamily: AppFontFamily.poppinsMedium,
                                   ),
                                 ),
-                                title: Text(
-                                  "#Ref ${order.RefNo}",
-                                  style: AppTheme.textLabel(context).copyWith(
-                                    fontFamily: AppFontFamily.poppinsSemiBold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                title: Row(
                                   children: [
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          HugeIconsStroke.userAccount,
-                                          size: 16,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          order.UserName,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          softWrap: true,
-
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontFamily:
-                                                AppFontFamily.poppinsMedium,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          HugeIconsStroke.calendar03,
-                                          size: 16,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          formattedDate,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontFamily:
-                                                AppFontFamily.poppinsMedium,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              HugeIconsStroke.package,
-                                              size: 16,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              "Qty: ${order.Quantity.toString().padLeft(2, '0')}",
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontSize: 11,
-                                                fontFamily:
-                                                    AppFontFamily.poppinsMedium,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(width: 8),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              checkOrderType
-                                                  ? HugeIconsStroke.moneySend01
-                                                  : HugeIconsStroke
-                                                        .moneyReceive01,
-                                              size: 16,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              "${checkOrderType ? 'Credit' : 'Debit'} Amount",
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontSize: 11,
-                                                fontFamily:
-                                                    AppFontFamily.poppinsMedium,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                trailing: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 3,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _getStatusColor(
-                                          order.OrderStatus,
-                                        ).withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Row(
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Icon(
-                                            _getStatusIcon(order.OrderStatus),
-                                            size: 10,
-                                            color: _getStatusColor(
-                                              order.OrderStatus,
-                                            ),
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                "Id# ",
+                                                style:
+                                                    AppTheme.textLabel(
+                                                      context,
+                                                    ).copyWith(
+                                                      fontFamily: AppFontFamily
+                                                          .poppinsSemiBold,
+                                                      fontSize: 12,
+                                                    ),
+                                              ),
+                                              Text(
+                                                order.OrderId.toString(),
+                                                style:
+                                                    AppTheme.textLabel(
+                                                      context,
+                                                    ).copyWith(
+                                                      fontFamily: AppFontFamily
+                                                          .poppinsSemiBold,
+                                                      fontSize: 16,
+                                                    ),
+                                              ),
+                                              Text(
+                                                " - Ref# ",
+                                                style:
+                                                    AppTheme.textLabel(
+                                                      context,
+                                                    ).copyWith(
+                                                      fontFamily: AppFontFamily
+                                                          .poppinsSemiBold,
+                                                      fontSize: 12,
+                                                    ),
+                                              ),
+                                              Text(
+                                                order.RefNo.toString(),
+                                                style:
+                                                    AppTheme.textLabel(
+                                                      context,
+                                                    ).copyWith(
+                                                      fontFamily: AppFontFamily
+                                                          .poppinsSemiBold,
+                                                      fontSize: 16,
+                                                    ),
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            order.OrderStatus,
-                                            style: AppTheme.textLink(context)
-                                                .copyWith(
-                                                  fontSize: 8,
-                                                  color: _getStatusColor(
-                                                    order.OrderStatus,
-                                                  ),
+
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                HugeIconsStroke.userAccount,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                order.UserName,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                softWrap: true,
+
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  fontFamily: AppFontFamily
+                                                      .poppinsMedium,
                                                 ),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                HugeIconsStroke.calendar03,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                formattedDate,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  fontFamily: AppFontFamily
+                                                      .poppinsMedium,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    HugeIconsStroke.package,
+                                                    size: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    "Qty: ${order.Quantity.toString().padLeft(2, '0')}",
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      fontFamily: AppFontFamily
+                                                          .poppinsMedium,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              SizedBox(width: 8),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    checkOrderType
+                                                        ? HugeIconsStroke
+                                                              .moneySend01
+                                                        : HugeIconsStroke
+                                                              .moneyReceive01,
+                                                    size: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    "${checkOrderType ? 'Credit' : 'Debit'} Amount",
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      fontFamily: AppFontFamily
+                                                          .poppinsMedium,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      "Rs $formattedAmount",
-                                      style:
-                                          AppTheme.textSearchInfoLabeled(
-                                            context,
-                                          ).copyWith(
-                                            fontFamily:
-                                                AppFontFamily.poppinsBold,
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 3,
                                           ),
+                                          decoration: BoxDecoration(
+                                            color: _getStatusColor(
+                                              order.OrderStatus,
+                                            ).withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                _getStatusIcon(
+                                                  order.OrderStatus,
+                                                ),
+                                                size: 10,
+                                                color: _getStatusColor(
+                                                  order.OrderStatus,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                order.OrderStatus,
+                                                style:
+                                                    AppTheme.textLink(
+                                                      context,
+                                                    ).copyWith(
+                                                      fontSize: 8,
+                                                      color: _getStatusColor(
+                                                        order.OrderStatus,
+                                                      ),
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                order.TransactionType.toString()
+                                                    .contains("Sale")
+                                                ? Colors.green.withOpacity(0.15)
+                                                : Colors.blue.withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                HugeIconsStroke.chartIncrease,
+                                                size: 10,
+                                                color:
+                                                    order.TransactionType.toString()
+                                                        .contains("Sale")
+                                                    ? Colors.green
+                                                    : Colors.blue,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                order.TransactionType,
+                                                style:
+                                                    AppTheme.textLink(
+                                                      context,
+                                                    ).copyWith(
+                                                      fontSize: 8,
+                                                      color:
+                                                          order.TransactionType.toString()
+                                                              .contains("Sale")
+                                                          ? Colors.green
+                                                          : Colors.blue,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          "Rs $formattedAmount",
+                                          style:
+                                              AppTheme.textSearchInfoLabeled(
+                                                context,
+                                              ).copyWith(
+                                                fontFamily:
+                                                    AppFontFamily.poppinsBold,
+                                              ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -1258,7 +1367,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: ListTile(
-                                onTap: () {},
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          CustomerDetailScreen(
+                                            customer: customer,
+                                          ),
+                                    ),
+                                  );
+                                },
                                 leading: Text(
                                   (index + 1).toString().padLeft(2, '0'),
                                   style: const TextStyle(
@@ -1411,7 +1530,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       body: user == null
-          ? const CircularProgressIndicator()
+          ? const Center(child: LoadingLogo())
           : pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

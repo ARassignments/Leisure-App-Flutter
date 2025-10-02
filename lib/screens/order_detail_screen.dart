@@ -8,6 +8,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
@@ -17,6 +19,7 @@ import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yetoexplore/components/appsnackbar.dart';
+import 'package:yetoexplore/utils/session_manager.dart';
 import '/theme/theme.dart';
 import '../components/loading_screen.dart';
 import '../responses/order_detail_response.dart';
@@ -32,8 +35,11 @@ class OrderDetailScreen extends StatefulWidget {
 }
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
+  String? token;
+  Map<String, dynamic>? user;
   final GlobalKey _screenshotKey = GlobalKey();
   bool _isDownloading = false;
+  static const platform = MethodChannel('com.example.whatsapp/share');
 
   /// 🔹 Capture current screen as PNG bytes
   Future<Uint8List> _capturePng() async {
@@ -203,7 +209,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSession();
     _futureDetail = ApiService.getOrderDetail(widget.orderId);
+  }
+
+  Future<void> _loadSession() async {
+    final t = await SessionManager.getUserToken();
+    final u = await SessionManager.getUser();
+    setState(() {
+      token = t;
+      user = u;
+    });
   }
 
   String _formatDate(String dateString) {
@@ -249,6 +265,68 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       AppSnackBar.show(
         context,
         message: "Cannot open WhatsApp",
+        type: AppSnackBarType.error,
+      );
+    }
+  }
+
+  Future<void> downloadAndSendPdfToWhatsApp(
+    OrderDetail order,
+    String contact,
+    BuildContext context,
+  ) async {
+    final String url =
+        "https://y2ksolutions.com/Order/OrderInvoiceView/${order.Id}";
+
+    try {
+      AppSnackBar.show(
+        context,
+        message: "Downloading receipt...",
+        type: AppSnackBarType.success,
+      );
+
+      // 🔽 Download PDF from API
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode != 200) {
+        throw Exception("Failed to download PDF.");
+      }
+
+      // 📂 Save PDF to local file
+      final dir = await getTemporaryDirectory();
+      final filePath =
+          "${dir.path}/${order.UserName}-${user!["FullName"]}-Order Reciept-${_formatDate(order.OrderDate)}-ID_${order.Id}.pdf";
+      final file = File(filePath);
+      await file.writeAsBytes(response.bodyBytes);
+
+      // 📤 Prepare WhatsApp contact number
+      String formattedNumber = contact.replaceAll(" ", "");
+
+      if (formattedNumber.startsWith("0")) {
+        formattedNumber = formattedNumber.substring(1);
+      }
+      final whatsappUrl = Uri.parse("https://wa.me/+92$formattedNumber");
+
+      if (await canLaunchUrl(whatsappUrl)) {
+        // ✅ Launch WhatsApp chat window
+        // await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+
+        // ✅ Call platform method to send via WhatsApp directly
+        await platform.invokeMethod('sendPdfToWhatsApp', {
+          'filePath': file.path,
+          'contact': formattedNumber, // E.g. "3001234567"
+        });
+
+        // ✅ Then open share dialog with file
+        // await Share.shareXFiles([
+        //   XFile(filePath),
+        // ], text: "Order Receipt #$orderId");
+      } else {
+        throw Exception("WhatsApp is not installed or not accessible.");
+      }
+    } catch (e) {
+      AppSnackBar.show(
+        context,
+        message: "Error: $e",
         type: AppSnackBarType.error,
       );
     }
@@ -457,8 +535,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                               const SizedBox(height: 8),
                               Text(
                                 order.UserName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                // maxLines: 1,
+                                // overflow: TextOverflow.ellipsis,
                                 style: AppTheme.textTitle(
                                   context,
                                 ).copyWith(fontSize: 20),
@@ -575,8 +653,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                   ),
                                   title: Text(
                                     item.ProductName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    // maxLines: 1,
+                                    // overflow: TextOverflow.ellipsis,
                                     style: AppTheme.textLabel(context).copyWith(
                                       fontFamily: AppFontFamily.poppinsSemiBold,
                                     ),
@@ -683,7 +761,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   icon: HugeIconsSolid.download03,
                   disabled: _isDownloading ? true : false,
                   loading: _isDownloading ? true : false,
-                  onPressed: _isDownloading ? null : _handleDownload,
+                  onPressed: _isDownloading
+                      ? null
+                      : () async {
+                          setState(() => _isDownloading = true);
+                          await downloadAndSendPdfToWhatsApp(
+                            order,
+                            order.Contact,
+                            context,
+                          );
+                          setState(() => _isDownloading = false);
+                        },
                 ),
               ),
             ],
