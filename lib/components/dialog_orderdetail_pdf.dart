@@ -133,22 +133,32 @@ class PdfBottomSheet {
                         // 🚀 NEW: Share PDF as Image
                         ElevatedButton.icon(
                           onPressed: () async {
+                            // 📂 Open PDF
                             final pdfDoc = await PdfDocument.openFile(
                               file.path,
                             );
-                            final page = await pdfDoc.getPage(1);
+                            final page = await pdfDoc.getPage(
+                              1,
+                            ); // First page of PDF
+
+                            // 🔍 Render high-resolution image (scale factor for DPI)
+                            const scale = 3.5; // Increase for sharper quality
                             final pageImage = await page.render(
-                              width: page.width,
-                              height: page.height,
+                              width: (page.width * scale).toDouble(),
+                              height: (page.height * scale).toDouble(),
                               format: PdfPageImageFormat.png,
+                              backgroundColor:
+                                  '#FFFFFF', // optional: solid white background
                             );
 
                             if (pageImage != null) {
+                              // 📂 Save PNG image in temp directory
                               final imageFile = File(
                                 "${dir.path}/$fileName.png",
                               );
                               await imageFile.writeAsBytes(pageImage.bytes);
 
+                              // 📞 Format contact number
                               String formatted = contactNumber.replaceAll(
                                 " ",
                                 "",
@@ -157,10 +167,10 @@ class PdfBottomSheet {
                                 formatted = formatted.substring(1);
                               }
 
-                              // 🔽 Call native Android method
+                              // 🚀 Send image directly to WhatsApp via platform channel
                               await WhatsAppHelper.sendImageToWhatsApp(
                                 imageFile.path,
-                                "92$formatted",
+                                "92$formatted", // ✅ e.g. 92XXXXXXXXXX
                               );
                             }
 
