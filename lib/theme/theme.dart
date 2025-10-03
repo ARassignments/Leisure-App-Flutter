@@ -672,6 +672,68 @@ class OutlineErrorButton extends StatelessWidget {
   }
 }
 
+class CustomButton extends StatelessWidget {
+  final String text;
+  final IconData? icon;
+  final VoidCallback? onPressed;
+  final bool disabled;
+  final bool loading;
+  final bool iconLeft;
+  final Color color;
+
+  const CustomButton({
+    super.key,
+    required this.text,
+    this.icon,
+    this.onPressed,
+    this.disabled = false,
+    this.loading = false,
+    this.iconLeft = true,
+    this.color = AppColor.primary_50,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: disabled ? 0.2 : 1.0,
+      child: TextButton(
+        onPressed: disabled || loading ? null : onPressed,
+        style: TextButton.styleFrom(
+          textStyle: AppFontFamily.medium_16,
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          overlayColor: color.withOpacity(0.2),
+        ),
+        child: loading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : icon != null
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: iconLeft
+                    ? [
+                        Icon(icon, color: color),
+                        const SizedBox(width: 12),
+                        Text(text, style: TextStyle(color: color)),
+                      ]
+                    : [
+                        Text(text, style: TextStyle(color: AppColor.white)),
+                        const SizedBox(width: 12),
+                        Icon(icon, color: color),
+                      ],
+              )
+            : Text(text, style: TextStyle(color: color)),
+      ),
+    );
+  }
+}
+
 // Input Decoration Theme
 class AppInputDecoration {
   static TextStyle inputTextStyle(BuildContext context) {

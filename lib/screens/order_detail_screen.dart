@@ -1,20 +1,6 @@
-import 'dart:io';
-import 'dart:ui';
-
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'dart:io';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:pdf/pdf.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:printing/printing.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -40,170 +26,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Map<String, dynamic>? user;
   final GlobalKey _screenshotKey = GlobalKey();
   bool _isDownloading = false;
-  static const platform = MethodChannel('com.example.whatsapp/share');
-
-  /// 🔹 Capture current screen as PNG bytes
-  Future<Uint8List> _capturePng() async {
-    RenderRepaintBoundary boundary =
-        _screenshotKey.currentContext!.findRenderObject()
-            as RenderRepaintBoundary;
-    final image = await boundary.toImage(pixelRatio: 3.0);
-    final byteData = await image.toByteData(format: ImageByteFormat.png);
-    return byteData!.buffer.asUint8List();
-  }
-
-  /// 🔹 For Mobile (Android/iOS)
-  Future<void> _downloadReceiptMobile() async {
-    try {
-      final pngBytes = await _capturePng();
-
-      final pdf = pw.Document();
-      final pwImage = pw.MemoryImage(pngBytes);
-
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          build: (pw.Context context) => pw.Center(child: pw.Image(pwImage)),
-        ),
-      );
-
-      final dir = await getApplicationDocumentsDirectory();
-      final filePath = "${dir.path}/order_${widget.orderId}.pdf";
-      final file = File(filePath);
-      await file.writeAsBytes(await pdf.save());
-
-      await Share.shareXFiles([
-        XFile(filePath),
-      ], text: "Order #${widget.orderId}");
-    } catch (e) {
-      AppSnackBar.show(
-        context,
-        message: "Error saving receipt: $e",
-        type: AppSnackBarType.error,
-      );
-    }
-  }
-
-  /// 🔹 For Web
-  Future<void> _downloadReceiptWeb() async {
-    try {
-      final pngBytes = await _capturePng();
-
-      final pdf = pw.Document();
-      final pwImage = pw.MemoryImage(pngBytes);
-
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          build: (pw.Context context) => pw.Center(child: pw.Image(pwImage)),
-        ),
-      );
-
-      await Printing.sharePdf(
-        bytes: await pdf.save(),
-        filename: "order_${widget.orderId}.pdf",
-      );
-    } catch (e) {
-      AppSnackBar.show(
-        context,
-        message: "Error saving receipt: $e",
-        type: AppSnackBarType.error,
-      );
-    }
-  }
-
-  /// 🔹 Button Handler
-  Future<void> _handleDownload() async {
-    setState(() => _isDownloading = true); // Start loading
-    try {
-      if (kIsWeb) {
-        await _downloadReceiptWeb();
-      } else {
-        await _downloadReceiptMobile();
-      }
-    } finally {
-      setState(() => _isDownloading = false); // Stop loading
-    }
-  }
-
-  Future<void> _sharePdfMobile() async {
-    try {
-      final pngBytes = await _capturePng();
-
-      final pdf = pw.Document();
-      final pwImage = pw.MemoryImage(pngBytes);
-
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          build: (pw.Context context) => pw.Center(child: pw.Image(pwImage)),
-        ),
-      );
-
-      final dir = await getApplicationDocumentsDirectory();
-      final filePath = "${dir.path}/order_${widget.orderId}.pdf";
-      final file = File(filePath);
-      await file.writeAsBytes(await pdf.save());
-
-      // 🔹 Open share dialog (user can select WhatsApp, Email, etc.)
-      await Share.shareXFiles([
-        XFile(filePath),
-      ], text: "Order #${widget.orderId} receipt");
-    } catch (e) {
-      AppSnackBar.show(
-        context,
-        message: "Error sharing receipt: $e",
-        type: AppSnackBarType.error,
-      );
-    }
-  }
-
-  Future<void> _sharePdfWeb() async {
-    try {
-      final pngBytes = await _capturePng();
-
-      final pdf = pw.Document();
-      final pwImage = pw.MemoryImage(pngBytes);
-
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          build: (pw.Context context) => pw.Center(child: pw.Image(pwImage)),
-        ),
-      );
-
-      // Download first
-      await Printing.sharePdf(
-        bytes: await pdf.save(),
-        filename: "order_${widget.orderId}.pdf",
-      );
-
-      // 🔹 Optionally open WhatsApp Web
-      final Uri whatsappUri = Uri.parse("https://wa.me/");
-      if (await canLaunchUrl(whatsappUri)) {
-        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      AppSnackBar.show(
-        context,
-        message: "Error sharing receipt: $e",
-        type: AppSnackBarType.error,
-      );
-    }
-  }
-
-  Future<void> _handleShare() async {
-    setState(() => _isDownloading = true);
-    try {
-      if (kIsWeb) {
-        await _sharePdfWeb();
-      } else {
-        await _sharePdfMobile();
-      }
-    } finally {
-      setState(() => _isDownloading = false);
-    }
-  }
 
   late Future<OrderDetailResponse> _futureDetail;
 
@@ -235,10 +57,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   String formatInternationalPhone(String number) {
-    if (number.startsWith("3")) {
-      return "+92 ${number.substring(0, 3)}-${number.substring(3, 7)}-${number.substring(7)}";
+    if (number.startsWith("0")) {
+      number = number.substring(1);
     }
-    return number;
+    return "+92 ${number.substring(0, 3)} ${number.substring(3, 7)}${number.substring(7)}";
   }
 
   Future<void> _makePhoneCall(String phoneNumber, BuildContext context) async {
@@ -266,68 +88,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       AppSnackBar.show(
         context,
         message: "Cannot open WhatsApp",
-        type: AppSnackBarType.error,
-      );
-    }
-  }
-
-  Future<void> downloadAndSendPdfToWhatsApp(
-    OrderDetail order,
-    String contact,
-    BuildContext context,
-  ) async {
-    final String url =
-        "https://y2ksolutions.com/Order/OrderInvoiceView/${order.Id}";
-
-    try {
-      AppSnackBar.show(
-        context,
-        message: "Downloading receipt...",
-        type: AppSnackBarType.success,
-      );
-
-      // 🔽 Download PDF from API
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode != 200) {
-        throw Exception("Failed to download PDF.");
-      }
-
-      // 📂 Save PDF to local file
-      final dir = await getTemporaryDirectory();
-      final filePath =
-          "${dir.path}/${order.UserName}-${user!["FullName"]}-Order Reciept-${_formatDate(order.OrderDate)}-ID_${order.Id}.pdf";
-      final file = File(filePath);
-      await file.writeAsBytes(response.bodyBytes);
-
-      // 📤 Prepare WhatsApp contact number
-      String formattedNumber = contact.replaceAll(" ", "");
-
-      if (formattedNumber.startsWith("0")) {
-        formattedNumber = formattedNumber.substring(1);
-      }
-      final whatsappUrl = Uri.parse("https://wa.me/+92$formattedNumber");
-
-      if (await canLaunchUrl(whatsappUrl)) {
-        // ✅ Launch WhatsApp chat window
-        // await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-
-        // ✅ Call platform method to send via WhatsApp directly
-        await platform.invokeMethod('sendPdfToWhatsApp', {
-          'filePath': file.path,
-          'contact': formattedNumber, // E.g. "3001234567"
-        });
-
-        // ✅ Then open share dialog with file
-        // await Share.shareXFiles([
-        //   XFile(filePath),
-        // ], text: "Order Receipt #$orderId");
-      } else {
-        throw Exception("WhatsApp is not installed or not accessible.");
-      }
-    } catch (e) {
-      AppSnackBar.show(
-        context,
-        message: "Error: $e",
         type: AppSnackBarType.error,
       );
     }
@@ -398,19 +158,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ),
             actions: [
               IconButton(
-                onPressed: _isDownloading ? null : _handleShare,
-                icon: const Icon(HugeIconsStroke.pdf01, size: 20),
-              ),
-              IconButton(
                 onPressed: () {
                   PdfBottomSheet.showPdfPreview(
                     context,
                     "https://y2ksolutions.com/Order/OrderInvoiceView/${order.Id}", // API URL
-                    "Order_${order.Id}", // File name
-                    order.Contact, // WhatsApp number
+                    "${order.UserName}-${user!["FullName"]}-Order Reciept-${_formatDate(order.OrderDate)}-ID_${order.Id}",
+                    order.Contact,
                   );
                 },
-                icon: const Icon(HugeIconsStroke.share01, size: 20),
+                icon: const Icon(HugeIconsStroke.pdf01, size: 20),
               ),
               if (!numberCheck)
                 PopupMenuButton<String>(
@@ -762,28 +518,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       ],
                     ),
                   ),
-                ),
-              ),
-
-              // 🔹 Bottom Button
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: FlatButton(
-                  text: "Download Reciept",
-                  icon: HugeIconsSolid.download03,
-                  disabled: _isDownloading ? true : false,
-                  loading: _isDownloading ? true : false,
-                  onPressed: _isDownloading
-                      ? null
-                      : () async {
-                          setState(() => _isDownloading = true);
-                          await downloadAndSendPdfToWhatsApp(
-                            order,
-                            order.Contact,
-                            context,
-                          );
-                          setState(() => _isDownloading = false);
-                        },
                 ),
               ),
             ],

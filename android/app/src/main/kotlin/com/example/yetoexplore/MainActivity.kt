@@ -48,13 +48,16 @@ class MainActivity : FlutterActivity() {
         val file = File(filePath)
         val uri: Uri = FileProvider.getUriForFile(
             this,
-            applicationContext.packageName + ".provider",
+            applicationContext.packageName + ".fileprovider",
             file
         )
+
+        val jid = "${contact.replace("+", "").replace(" ", "")}@s.whatsapp.net"
 
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "application/pdf"
             putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra("jid", jid)
             setPackage("com.whatsapp")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
@@ -75,6 +78,7 @@ class MainActivity : FlutterActivity() {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "image/*"
             putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_TEXT, file.nameWithoutExtension)
             putExtra("jid", jid) // 👈 direct target
             setPackage("com.whatsapp")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
