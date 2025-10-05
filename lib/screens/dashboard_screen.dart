@@ -1356,7 +1356,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               margin: EdgeInsets.only(
                                 left: 20,
                                 right: 20,
-                                top: index == 0 ? 0 : 8,
+                                top: index == 0 ? 0 : 2,
                                 bottom: index == _filteredOrders.length - 1
                                     ? 0
                                     : 8,
