@@ -518,6 +518,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         Divider(height: 1, color: AppTheme.dividerBg(context)),
+                        SizedBox(height: 20),
                       ],
                     ),
                   ),

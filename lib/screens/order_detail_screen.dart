@@ -512,6 +512,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                 HugeIconsStroke.invoice03,
                                 isBold: true,
                               ),
+                              SizedBox(height: 20),
                             ],
                           ),
                         ),

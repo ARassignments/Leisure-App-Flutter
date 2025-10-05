@@ -483,6 +483,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     ),
                   ),
                   Divider(height: 1, color: AppTheme.dividerBg(context)),
+                  SizedBox(height: 20),
                 ],
               ),
             ),

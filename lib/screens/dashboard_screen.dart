@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import 'package:yetoexplore/screens/customers_screen.dart';
 import '/screens/customer_detail_screen.dart';
 import '/notifiers/avatar_notifier.dart';
 import '/screens/profile_screen.dart';
@@ -28,7 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? user;
 
   int _currentIndex = 0;
-  List<String> menus = ["Home", "Orders", "Customers", "Accounts"];
+  List<String> menus = ["Home", "Orders", "Ledgers", "Accounts"];
 
   //Customers Screen
   late Future<CustomerResponse> _futureCustomers;
@@ -72,7 +73,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase();
+    final query = _searchController.text.trim().toLowerCase();
     setState(() {
       _filteredCustomers = _allCustomers.where((cust) {
         return cust.UserName.toLowerCase().contains(query) ||
@@ -410,7 +411,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             order.OrderType.toLowerCase() == _selectedOrderType!.toLowerCase();
 
         final searchMatch =
-            _searchOrderController.text.isEmpty ||
+            _searchOrderController.text.trim().isEmpty ||
             order.UserName.toLowerCase().contains(
               _searchOrderController.text.toLowerCase(),
             ) ||
@@ -516,7 +517,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 maxLength: 20,
               ),
 
-              if (_searchOrderController.text.isNotEmpty) ...[
+              if (_searchOrderController.text.trim().isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1090,7 +1091,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       shrinkWrap: true,
       children: [
         ValueListenableBuilder<String?>(
-          valueListenable: avatarNotifier, // 🔔 listens for avatar changes
+          valueListenable: avatarNotifier,
           builder: (context, avatar, _) {
             return ListTile(
               contentPadding: const EdgeInsets.symmetric(
@@ -1140,6 +1141,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           },
         ),
         Divider(thickness: 30, height: 30, color: AppTheme.dividerBg(context)),
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: Icon(HugeIconsStroke.userGroup, size: 24),
+          title: Text("Customers", style: AppTheme.textLabel(context)),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CustomersScreen()),
+            );
+          },
+        ),
+        Divider(height: 1, color: AppTheme.dividerBg(context)),
         ListTile(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
@@ -1296,7 +1312,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
                 maxLength: 20,
               ),
-              if (_searchController.text.isNotEmpty) ...[
+              if (_searchController.text.trim().isNotEmpty) ...[
                 SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1308,7 +1324,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           TextSpan(text: 'Result for "'),
                           TextSpan(
-                            text: _searchController.text,
+                            text: _searchController.text.trim(),
                             style: AppTheme.textSearchInfoLabeled(context),
                           ),
                           TextSpan(text: '"'),
@@ -1357,7 +1373,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 left: 20,
                                 right: 20,
                                 top: index == 0 ? 0 : 2,
-                                bottom: index == _filteredOrders.length - 1
+                                bottom: index == _filteredCustomers.length - 1
                                     ? 0
                                     : 8,
                               ),
@@ -1512,12 +1528,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: _showFilterSheet,
             ),
           ],
-
           if (_currentIndex == 2)
             IconButton(
               icon: const Icon(HugeIconsStroke.refresh, size: 20),
               onPressed: () {
-                _refreshCustomers;
+                _refreshCustomers();
               },
             ),
           IconButton(
@@ -1564,7 +1579,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           BottomNavigationBarItem(
             icon: Icon(HugeIconsStroke.userMultiple02),
             activeIcon: Icon(HugeIconsSolid.userMultiple02),
-            label: "Customers",
+            label: "Ledgers",
           ),
           BottomNavigationBarItem(
             icon: Icon(HugeIconsStroke.user03),
