@@ -28,6 +28,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
   final TextEditingController _searchController = TextEditingController();
   bool _isRefreshing = false;
+  bool _isAscending = true;
 
   @override
   void initState() {
@@ -51,6 +52,25 @@ class _CustomersScreenState extends State<CustomersScreen> {
             cust.CityName.toLowerCase().contains(query);
       }).toList();
     });
+    _applySorting();
+  }
+
+  void _applySorting() {
+    setState(() {
+      _filteredCustomers.sort((a, b) {
+        final comp = a.UserName.toLowerCase().compareTo(
+          b.UserName.toLowerCase(),
+        );
+        return _isAscending ? comp : -comp;
+      });
+    });
+  }
+
+  void _toggleSorting() {
+    setState(() {
+      _isAscending = !_isAscending;
+    });
+    _applySorting();
   }
 
   Future<void> _loadSessionAndCustomers() async {
@@ -108,17 +128,30 @@ class _CustomersScreenState extends State<CustomersScreen> {
                     padding: const EdgeInsets.only(left: 16.0, right: 8.0),
                     child: Icon(HugeIconsSolid.search01),
                   ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: IconButton(
-                            icon: Icon(HugeIconsStroke.cancel02),
-                            onPressed: () {
-                              _searchController.clear();
-                            },
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_searchController.text.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(HugeIconsStroke.cancel02),
+                          onPressed: () {
+                            _searchController.clear();
+                          },
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: IconButton(
+                          icon: Icon(
+                            _isAscending
+                                ? HugeIconsSolid.sortByDown01
+                                : HugeIconsSolid.sortByUp01,
                           ),
-                        )
-                      : null,
+                          tooltip: _isAscending ? "Sort Z → A" : "Sort A → Z",
+                          onPressed: _toggleSorting,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 style: AppInputDecoration.inputTextStyle(context),
                 keyboardType: TextInputType.name,
@@ -309,6 +342,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         titleSpacing: 0,
+        centerTitle: true,
         title: Text(
           "Customers",
           style: AppTheme.textTitle(

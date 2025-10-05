@@ -144,6 +144,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             titleSpacing: 0,
+            centerTitle: true,
             title: Text(
               "Order Detail",
               style: AppTheme.textTitle(
@@ -257,7 +258,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
-                                        "ID# ${order.RefNo}",
+                                        "ID# ${order.Id}",
                                         style: AppTheme.textLabel(
                                           context,
                                         ).copyWith(fontSize: 14),

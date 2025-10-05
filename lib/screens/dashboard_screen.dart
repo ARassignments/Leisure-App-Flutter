@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
-import 'package:yetoexplore/screens/customers_screen.dart';
+import 'package:yetoexplore/components/customer_search_field.dart';
+import '/Models/ledger_model.dart';
+import '/screens/customers_screen.dart';
 import '/screens/customer_detail_screen.dart';
 import '/notifiers/avatar_notifier.dart';
 import '/screens/profile_screen.dart';
@@ -31,7 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
   List<String> menus = ["Home", "Orders", "Ledgers", "Accounts"];
 
-  //Customers Screen
+  //Customers BottomSheet
   late Future<CustomerResponse> _futureCustomers;
   List<Customer> _allCustomers = [];
   List<Customer> _filteredCustomers = [];
@@ -53,6 +55,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? _selectedTransactionType;
   String? _selectedOrderType;
 
+  //Ledgers Screen
+  List<Ledger> _allLedgers = [];
+  bool _isLoadingLedgers = true;
+  DateTime _fromDateLedger = DateTime.now();
+  DateTime _toDateLedger = DateTime.now();
+  Customer? _selectedCustomerId;
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +69,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _searchOrderController.addListener(_onOrderSearchChanged);
     _loadSessionAndCustomers();
     _loadOrders();
+    _loadLedgers();
     _initAvatar();
   }
 
@@ -432,8 +442,78 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _filteredOrders = List.from(_allOrders);
   }
 
+  Future<void> _loadLedgers() async {
+    setState(() => _isLoadingLedgers = true);
+
+    try {
+      final int userId = _selectedCustomerId?.UserId ?? 0;
+      if (userId == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Showing ledgers for all customers")),
+        );
+      }
+
+      final response = await ApiService.getAllLedgers(
+        fromDate: DateFormat('yyyy-MM-dd').format(_fromDateLedger),
+        toDate: DateFormat('yyyy-MM-dd').format(_toDateLedger),
+        userId: userId,
+      );
+
+      debugPrint(
+        "Ledger fetched for userId: $userId → ${response.ledger.length} records",
+      );
+
+      if (response.ledger.isNotEmpty) {
+        final List<Ledger> skippedLedgers = response.ledger.length > 1
+            ? response.ledger.sublist(1)
+            : [];
+
+        setState(() {
+          _allLedgers = skippedLedgers;
+        });
+      } else {
+        debugPrint("No ledger records found for userId: $userId");
+        setState(() {
+          _allLedgers = [];
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching ledgers: $e");
+    } finally {
+      setState(() => _isLoadingLedgers = false);
+    }
+  }
+
+  Future<void> _refreshLedgers() async {
+    setState(() {
+      _isLoadingLedgers = true;
+    });
+    await _loadOrders();
+    setState(() => _isLoadingLedgers = false);
+  }
+
+  Future<void> _selectDateRangeLedger(BuildContext context) async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: DateTimeRange(
+        start: _fromDateLedger,
+        end: _toDateLedger,
+      ),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _fromDateLedger = picked.start;
+        _toDateLedger = picked.end;
+      });
+      await _loadLedgers();
+    }
+  }
+
   List<Widget> _pages() {
-    return [_homePage(), _ordersPage(), _customersPage(), _accountsPage()];
+    return [_homePage(), _ordersPage(), _ledgersPage(), _accountsPage()];
   }
 
   Widget _homePage() {
@@ -1265,117 +1345,90 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _customersPage() {
-    double grandTotal = _filteredCustomers.fold(
+  Widget _ledgersPage() {
+    double grandCreditTotal = _allLedgers.fold(
       0.0,
-      (previousValue, customer) => previousValue + customer.OpeningBalance,
+      (previousValue, ledger) => previousValue + ledger.Credit,
     );
-    final formattedGrandTotal = NumberFormat('#,###.00').format(grandTotal);
+    final formattedCreditGrandTotal = NumberFormat(
+      '#,###.00',
+    ).format(grandCreditTotal);
+    double grandDebitTotal = _allLedgers.fold(
+      0.0,
+      (previousValue, ledger) => previousValue + ledger.Debit,
+    );
+    final formattedDebitGrandTotal = NumberFormat(
+      '#,###.00',
+    ).format(grandDebitTotal);
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
-                controller: _searchController,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: InputDecoration(
-                  labelText: 'Search Here',
-                  hintText: 'Search by name or city',
-                  counter: const SizedBox.shrink(),
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-                    child: Icon(HugeIconsSolid.search01),
-                  ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: IconButton(
-                            icon: Icon(HugeIconsStroke.cancel02),
-                            onPressed: () {
-                              _searchController.clear();
-                            },
-                          ),
-                        )
-                      : null,
-                ),
-                style: AppInputDecoration.inputTextStyle(context),
-                keyboardType: TextInputType.name,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return null;
-                  } else if (!RegExp(r'^[a-zA-Z ]+$').hasMatch(value)) {
-                    return 'Must contain only letters';
-                  }
-                  return null;
+              CustomerSearchField(
+                customers: _allCustomers,
+                onSelected: (customer) {
+                  setState(() {
+                    _selectedCustomerId = customer;
+                  });
+                  _loadLedgers();
                 },
-                maxLength: 20,
+                onDateRangeTap: () => _selectDateRangeLedger(context),
+                ledgerLength: _allLedgers.length,
               ),
-              if (_searchController.text.trim().isNotEmpty) ...[
-                SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    RichText(
-                      textAlign: TextAlign.start,
-                      text: TextSpan(
-                        style: AppTheme.textSearchInfo(context),
-                        children: [
-                          TextSpan(text: 'Result for "'),
-                          TextSpan(
-                            text: _searchController.text.trim(),
-                            style: AppTheme.textSearchInfoLabeled(context),
-                          ),
-                          TextSpan(text: '"'),
-                        ],
-                      ),
-                    ),
-                    RichText(
-                      textAlign: TextAlign.end,
-                      text: TextSpan(
-                        style: AppTheme.textSearchInfoLabeled(context),
-                        children: [
-                          TextSpan(text: _filteredCustomers.length.toString()),
-                          TextSpan(text: ' found'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(
+                    HugeIconsSolid.calendar02,
+                    size: 18,
+                    color: AppTheme.iconColor(context),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    "From: ${DateFormat('yyyy-MM-dd').format(_fromDateLedger)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDateLedger)}",
+                    style: AppTheme.textLabel(context).copyWith(fontSize: 12),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
         Expanded(
-          child: _isRefreshing
+          child: _isLoadingLedgers
               ? const Center(child: LoadingLogo())
               : RefreshIndicator(
-                  onRefresh: _refreshCustomers,
-                  backgroundColor: Colors.transparent,
-                  child: _filteredCustomers.isEmpty
+                  onRefresh: _refreshLedgers,
+                  child: _allLedgers.isEmpty
                       ? NotFoundWidget(
-                          title: "No Customers Found",
+                          title: "No Ledgers Found",
                           message:
-                              "Sorry, the keyword you entered cannot be found, please check again or search wit another keyword.",
+                              "No ledgers found for the selected date range & user",
                         )
                       : ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: _filteredCustomers.length,
+                          itemCount: _allLedgers.length,
                           itemBuilder: (context, index) {
-                            final customer = _filteredCustomers[index];
-                            final formattedBalance = NumberFormat(
-                              '#,###.00',
-                            ).format(customer.OpeningBalance);
+                            final ledger = _allLedgers[index];
+                            final formattedDate = DateFormat(
+                              'MMMM dd, yyyy',
+                            ).format(DateTime.parse(ledger.Date));
+                            final formattedCreditAmount = NumberFormat(
+                              '#,##0.00',
+                            ).format(ledger.Credit.toInt());
+                            final formattedDebitAmount = NumberFormat(
+                              '#,##0.00',
+                            ).format(ledger.Debit.toInt());
+                            final checkLedgerType = ledger.Credit.toInt() == 0;
 
                             return Card(
                               margin: EdgeInsets.only(
                                 left: 20,
                                 right: 20,
                                 top: index == 0 ? 0 : 2,
-                                bottom: index == _filteredCustomers.length - 1
-                                    ? 0
-                                    : 8,
+                                bottom: index == _allLedgers.length - 1 ? 0 : 8,
                               ),
                               color: AppTheme.customListBg(context),
                               elevation: 0,
@@ -1387,10 +1440,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) =>
-                                          CustomerDetailScreen(
-                                            customer: customer,
-                                          ),
+                                      builder: (_) =>
+                                          OrderDetailScreen(orderId: ledger.Id),
                                     ),
                                   );
                                 },
@@ -1400,39 +1451,149 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     fontFamily: AppFontFamily.poppinsMedium,
                                   ),
                                 ),
-                                title: Text(
-                                  customer.UserName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTheme.textLabel(context).copyWith(
-                                    fontFamily: AppFontFamily.poppinsSemiBold,
-                                  ),
-                                ),
-                                subtitle: Row(
+                                title: Row(
                                   children: [
-                                    Icon(
-                                      HugeIconsStroke.mapsLocation02,
-                                      size: 14,
-                                    ),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      customer.CityName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontFamily:
-                                            AppFontFamily.poppinsRegular,
-                                        fontSize: 10,
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                "Id# ",
+                                                style:
+                                                    AppTheme.textLabel(
+                                                      context,
+                                                    ).copyWith(
+                                                      fontFamily: AppFontFamily
+                                                          .poppinsSemiBold,
+                                                      fontSize: 12,
+                                                    ),
+                                              ),
+                                              Text(
+                                                ledger.Id.toString(),
+                                                style:
+                                                    AppTheme.textLabel(
+                                                      context,
+                                                    ).copyWith(
+                                                      fontFamily: AppFontFamily
+                                                          .poppinsSemiBold,
+                                                      fontSize: 16,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                HugeIconsStroke.calendar03,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                formattedDate,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  fontFamily: AppFontFamily
+                                                      .poppinsMedium,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                checkLedgerType
+                                                    ? HugeIconsStroke
+                                                          .moneySend01
+                                                    : HugeIconsStroke
+                                                          .moneyReceive01,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                "${checkLedgerType ? 'Credit' : 'Debit'} Amount",
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  fontFamily: AppFontFamily
+                                                      .poppinsMedium,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: checkLedgerType
+                                                ? Colors.green.withOpacity(0.15)
+                                                : Colors.red.withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                checkLedgerType
+                                                    ? HugeIconsStroke
+                                                          .chartIncrease
+                                                    : HugeIconsStroke
+                                                          .chartDecrease,
+                                                size: 10,
+                                                color: checkLedgerType
+                                                    ? Colors.green
+                                                    : Colors.red,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                ledger.SourceType,
+                                                style:
+                                                    AppTheme.textLink(
+                                                      context,
+                                                    ).copyWith(
+                                                      fontSize: 8,
+                                                      color: checkLedgerType
+                                                          ? Colors.green
+                                                          : Colors.red,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          "Rs ${checkLedgerType ? formattedDebitAmount : formattedCreditAmount}",
+                                          style:
+                                              AppTheme.textSearchInfoLabeled(
+                                                context,
+                                              ).copyWith(
+                                                fontFamily:
+                                                    AppFontFamily.poppinsBold,
+                                              ),
+                                        ),
+                                      ],
                                     ),
                                   ],
-                                ),
-                                trailing: Text(
-                                  "Rs $formattedBalance",
-                                  style: AppTheme.textSearchInfoLabeled(context)
-                                      .copyWith(
-                                        fontFamily: AppFontFamily.poppinsBold,
-                                      ),
                                 ),
                               ),
                             );
@@ -1440,7 +1601,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                 ),
         ),
-        if (_filteredCustomers.isNotEmpty)
+        if (_allLedgers.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
@@ -1456,17 +1617,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         style: AppTheme.textSearchInfo(
                           context,
                         ).copyWith(fontSize: 14),
-                        text: 'Total Balance:',
+                        text: 'Total Credit:',
                       ),
                     ),
+                    Row(
+                      children: [
+                        Icon(
+                          HugeIconsStroke.moneySend01,
+                          size: 14,
+                          color: AppTheme.iconColor(context),
+                        ),
+                        const SizedBox(width: 6),
+                        RichText(
+                          textAlign: TextAlign.end,
+                          text: TextSpan(
+                            style: AppTheme.textSearchInfoLabeled(
+                              context,
+                            ).copyWith(fontSize: 14),
+                            text: "Rs $formattedCreditGrandTotal",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                     RichText(
-                      textAlign: TextAlign.end,
+                      textAlign: TextAlign.start,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       text: TextSpan(
-                        style: AppTheme.textSearchInfoLabeled(
+                        style: AppTheme.textSearchInfo(
                           context,
                         ).copyWith(fontSize: 14),
-                        text: "Rs $formattedGrandTotal",
+                        text: 'Total Debit:',
                       ),
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          HugeIconsStroke.moneyReceive01,
+                          size: 14,
+                          color: AppTheme.iconColor(context),
+                        ),
+                        const SizedBox(width: 6),
+                        RichText(
+                          textAlign: TextAlign.end,
+                          text: TextSpan(
+                            style: AppTheme.textSearchInfoLabeled(
+                              context,
+                            ).copyWith(fontSize: 14),
+                            text: "Rs $formattedDebitGrandTotal",
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -1532,7 +1739,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             IconButton(
               icon: const Icon(HugeIconsStroke.refresh, size: 20),
               onPressed: () {
-                _refreshCustomers();
+                _refreshLedgers();
               },
             ),
           IconButton(

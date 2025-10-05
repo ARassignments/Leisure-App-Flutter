@@ -83,6 +83,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         titleSpacing: 0,
+        centerTitle: true,
         title: Text(
           "Customer Detail",
           style: AppTheme.textTitle(
