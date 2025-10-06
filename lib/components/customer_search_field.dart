@@ -8,6 +8,7 @@ class CustomerSearchField extends StatefulWidget {
   final Function(Customer) onSelected;
   final VoidCallback onDateRangeTap;
   final int ledgerLength;
+  final VoidCallback onWhatsappTap;
 
   const CustomerSearchField({
     super.key,
@@ -15,6 +16,7 @@ class CustomerSearchField extends StatefulWidget {
     required this.onSelected,
     required this.onDateRangeTap,
     required this.ledgerLength,
+    required this.onWhatsappTap,
   });
 
   @override
@@ -224,11 +226,15 @@ class _CustomerSearchFieldState extends State<CustomerSearchField>
                       _updateOverlay();
                     },
                   ),
+                  IconButton(
+                    icon: const Icon(HugeIconsSolid.calendar03),
+                    onPressed: widget.onDateRangeTap,
+                  ),
                   Padding(
                     padding: const EdgeInsets.only(right: 8.0),
                     child: IconButton(
-                      icon: const Icon(HugeIconsSolid.calendar03),
-                      onPressed: widget.onDateRangeTap,
+                      icon: const Icon(HugeIconsSolid.whatsapp),
+                      onPressed: widget.onWhatsappTap,
                     ),
                   ),
                 ],

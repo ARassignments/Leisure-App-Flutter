@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:yetoexplore/responses/ledger_response.dart';
+import '/responses/ledger_response.dart';
+import '/responses/payment_response.dart';
 import '/responses/order_detail_response.dart';
 import '/responses/order_response.dart';
 import '/responses/customer_response.dart';
@@ -105,6 +106,29 @@ class ApiService {
       return LedgerResponse.fromJson(jsonData);
     } else {
       throw Exception("Failed to fetch ledgers: ${response.body}");
+    }
+  }
+
+  static Future<PaymentsResponse> getAllPayments({
+    required String fromDate,
+    required String toDate,
+  }) async {
+    final orgId = await SessionManager.getOrganizationId();
+    if (orgId == null) {
+      throw Exception("OrganizationId not found in session");
+    }
+
+    final url = Uri.parse(
+      "$baseUrl/AllPayments?OrganizationId=$orgId&FromDate=$fromDate&ToDate=$toDate",
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return PaymentsResponse.fromJson(jsonData);
+    } else {
+      throw Exception("Failed to fetch payments: ${response.body}");
     }
   }
 }

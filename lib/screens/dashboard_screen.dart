@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
-import 'package:yetoexplore/components/customer_search_field.dart';
+import '/components/appsnackbar.dart';
+import '/components/customer_search_field.dart';
+import '/components/dialog_orderdetail_pdf.dart';
+import '/screens/payments_screen.dart';
 import '/Models/ledger_model.dart';
 import '/screens/customers_screen.dart';
 import '/screens/customer_detail_screen.dart';
@@ -58,7 +61,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   //Ledgers Screen
   List<Ledger> _allLedgers = [];
   bool _isLoadingLedgers = true;
-  DateTime _fromDateLedger = DateTime.now();
+  DateTime _fromDateLedger = DateTime(2025, 1, 1);
   DateTime _toDateLedger = DateTime.now();
   Customer? _selectedCustomerId;
 
@@ -469,7 +472,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             : [];
 
         setState(() {
-          _allLedgers = skippedLedgers;
+          // _allLedgers = skippedLedgers;
+          _allLedgers = response.ledger;
         });
       } else {
         debugPrint("No ledger records found for userId: $userId");
@@ -1241,6 +1245,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             horizontal: 16,
             vertical: 8,
           ),
+          leading: Icon(HugeIconsStroke.userGroup, size: 24),
+          title: Text("Payments", style: AppTheme.textLabel(context)),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PaymentsScreen()),
+            );
+          },
+        ),
+        Divider(height: 1, color: AppTheme.dividerBg(context)),
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
           leading: Icon(HugeIconsStroke.userGroup03, size: 24),
           title: Text("Users", style: AppTheme.textLabel(context)),
           onTap: () {},
@@ -1346,20 +1365,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _ledgersPage() {
+    final Map<String, List<dynamic>> groupedLedgers = {};
+
+    for (var ledger in _allLedgers) {
+      final formattedDate = DateFormat(
+        'MMMM dd, yyyy',
+      ).format(DateTime.parse(ledger.Date));
+      groupedLedgers.putIfAbsent(formattedDate, () => []);
+      groupedLedgers[formattedDate]!.add(ledger);
+    }
     double grandCreditTotal = _allLedgers.fold(
       0.0,
-      (previousValue, ledger) => previousValue + ledger.Credit,
+      (prev, l) => prev + l.Credit,
     );
+    double grandDebitTotal = _allLedgers.fold(0.0, (prev, l) => prev + l.Debit);
+
     final formattedCreditGrandTotal = NumberFormat(
       '#,###.00',
     ).format(grandCreditTotal);
-    double grandDebitTotal = _allLedgers.fold(
-      0.0,
-      (previousValue, ledger) => previousValue + ledger.Debit,
-    );
     final formattedDebitGrandTotal = NumberFormat(
       '#,###.00',
     ).format(grandDebitTotal);
+
     return Column(
       children: [
         Padding(
@@ -1370,13 +1397,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               CustomerSearchField(
                 customers: _allCustomers,
                 onSelected: (customer) {
-                  setState(() {
-                    _selectedCustomerId = customer;
-                  });
+                  setState(() => _selectedCustomerId = customer);
                   _loadLedgers();
                 },
                 onDateRangeTap: () => _selectDateRangeLedger(context),
                 ledgerLength: _allLedgers.length,
+                onWhatsappTap: () {
+                  PdfBottomSheet.showPdfPreview(
+                    context,
+                    "https://y2ksolutions.com/Logbook/LedgerPrint?UserId=${_selectedCustomerId?.UserId}&OrganizationId=${user?["OrganizationId"]}&FromDate=${DateFormat('yyyy-MM-dd').format(_fromDateLedger)}&ToDate=${DateFormat('yyyy-MM-dd').format(_toDateLedger)}", // API URL
+                    "${_selectedCustomerId?.UserName}-Ledger Reciept-${DateFormat('yyyy-MM-dd').format(_fromDateLedger)}-${DateFormat('yyyy-MM-dd').format(_toDateLedger)}",
+                    "${_selectedCustomerId?.PhoneNo}",
+                  );
+                },
               ),
               const SizedBox(height: 10),
               Row(
@@ -1396,6 +1429,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
+
+        // 🧾 Ledger List
         Expanded(
           child: _isLoadingLedgers
               ? const Center(child: LoadingLogo())
@@ -1409,190 +1444,270 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         )
                       : ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: _allLedgers.length,
+                          itemCount: groupedLedgers.keys.length,
                           itemBuilder: (context, index) {
-                            final ledger = _allLedgers[index];
-                            final formattedDate = DateFormat(
-                              'MMMM dd, yyyy',
-                            ).format(DateTime.parse(ledger.Date));
-                            final formattedCreditAmount = NumberFormat(
-                              '#,##0.00',
-                            ).format(ledger.Credit.toInt());
-                            final formattedDebitAmount = NumberFormat(
-                              '#,##0.00',
-                            ).format(ledger.Debit.toInt());
-                            final checkLedgerType = ledger.Credit.toInt() == 0;
+                            final dateKey = groupedLedgers.keys.elementAt(
+                              index,
+                            );
+                            final ledgersForDate = groupedLedgers[dateKey]!;
 
                             return Card(
                               margin: EdgeInsets.only(
                                 left: 20,
                                 right: 20,
                                 top: index == 0 ? 0 : 2,
-                                bottom: index == _allLedgers.length - 1 ? 0 : 8,
+                                bottom: index == groupedLedgers.keys.length - 1
+                                    ? 0
+                                    : 8,
                               ),
                               color: AppTheme.customListBg(context),
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: ListTile(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          OrderDetailScreen(orderId: ledger.Id),
-                                    ),
-                                  );
-                                },
-                                leading: Text(
-                                  (index + 1).toString().padLeft(2, '0'),
-                                  style: const TextStyle(
-                                    fontFamily: AppFontFamily.poppinsMedium,
-                                  ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 15,
+                                  right: 15,
+                                  top: 15,
+                                  bottom: 5,
                                 ),
-                                title: Row(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.stretch,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
-                                            children: [
-                                              Text(
-                                                "Id# ",
-                                                style:
-                                                    AppTheme.textLabel(
-                                                      context,
-                                                    ).copyWith(
-                                                      fontFamily: AppFontFamily
-                                                          .poppinsSemiBold,
-                                                      fontSize: 12,
-                                                    ),
-                                              ),
-                                              Text(
-                                                ledger.Id.toString(),
-                                                style:
-                                                    AppTheme.textLabel(
-                                                      context,
-                                                    ).copyWith(
-                                                      fontFamily: AppFontFamily
-                                                          .poppinsSemiBold,
-                                                      fontSize: 16,
-                                                    ),
-                                              ),
-                                            ],
+                                    Text(
+                                      dateKey,
+                                      style: AppTheme.textLabel(context)
+                                          .copyWith(
+                                            fontFamily:
+                                                AppFontFamily.poppinsSemiBold,
+                                            fontSize: 16,
                                           ),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                HugeIconsStroke.calendar03,
-                                                size: 16,
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                formattedDate,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  fontFamily: AppFontFamily
-                                                      .poppinsMedium,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                checkLedgerType
-                                                    ? HugeIconsStroke
-                                                          .moneySend01
-                                                    : HugeIconsStroke
-                                                          .moneyReceive01,
-                                                size: 16,
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                "${checkLedgerType ? 'Credit' : 'Debit'} Amount",
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  fontFamily: AppFontFamily
-                                                      .poppinsMedium,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
                                     ),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 3,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: checkLedgerType
-                                                ? Colors.green.withOpacity(0.15)
-                                                : Colors.red.withOpacity(0.15),
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                checkLedgerType
-                                                    ? HugeIconsStroke
-                                                          .chartIncrease
-                                                    : HugeIconsStroke
-                                                          .chartDecrease,
-                                                size: 10,
-                                                color: checkLedgerType
-                                                    ? Colors.green
-                                                    : Colors.red,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                ledger.SourceType,
-                                                style:
-                                                    AppTheme.textLink(
-                                                      context,
-                                                    ).copyWith(
-                                                      fontSize: 8,
-                                                      color: checkLedgerType
-                                                          ? Colors.green
-                                                          : Colors.red,
-                                                    ),
-                                              ),
-                                            ],
+                                    const SizedBox(height: 8),
+
+                                    // 🔁 Nested list of ledgers for this date
+                                    ...ledgersForDate.asMap().entries.map((
+                                      entry,
+                                    ) {
+                                      final index = entry.key;
+                                      final ledger = entry.value;
+                                      final formattedCreditAmount =
+                                          NumberFormat(
+                                            '#,##0.00',
+                                          ).format(ledger.Credit.toInt());
+                                      final formattedDebitAmount = NumberFormat(
+                                        '#,##0.00',
+                                      ).format(ledger.Debit.toInt());
+                                      final checkLedgerType =
+                                          ledger.Credit.toInt() == 0;
+
+                                      return Container(
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            bottom:
+                                                index ==
+                                                    ledgersForDate.length - 1
+                                                ? BorderSide
+                                                      .none
+                                                : BorderSide(
+                                                    color: AppTheme
+                                                          .dividerBg(context),
+                                                  ),
                                           ),
                                         ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          "Rs ${checkLedgerType ? formattedDebitAmount : formattedCreditAmount}",
-                                          style:
-                                              AppTheme.textSearchInfoLabeled(
+                                        child: ListTile(
+                                          contentPadding: EdgeInsets.zero,
+                                          onTap: () {
+                                            if (ledger.SourceType.contains(
+                                                  'Sale',
+                                                ) ||
+                                                ledger.SourceType.contains(
+                                                  'Purchase',
+                                                )) {
+                                              Navigator.push(
                                                 context,
-                                              ).copyWith(
-                                                fontFamily:
-                                                    AppFontFamily.poppinsBold,
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      OrderDetailScreen(
+                                                        orderId: ledger.Id,
+                                                      ),
+                                                ),
+                                              );
+                                            } else {
+                                              AppSnackBar.show(
+                                                context,
+                                                message:
+                                                    'No details available for this ledger',
+                                                type: AppSnackBarType.warning,
+                                              );
+                                            }
+                                          },
+
+                                          title: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    "Source",
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                      fontFamily: AppFontFamily
+                                                          .poppinsMedium,
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 3,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: checkLedgerType
+                                                          ? Colors.blue
+                                                                .withOpacity(
+                                                                  0.15,
+                                                                )
+                                                          : Colors.green
+                                                                .withOpacity(
+                                                                  0.15,
+                                                                ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
+                                                          ),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Icon(
+                                                          checkLedgerType
+                                                              ? HugeIconsStroke
+                                                                    .chartIncrease
+                                                              : HugeIconsStroke
+                                                                    .chartDecrease,
+                                                          size: 10,
+                                                          color: checkLedgerType
+                                                              ? Colors.blue
+                                                              : Colors.green,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Text(
+                                                          ledger.SourceType,
+                                                          style:
+                                                              AppTheme.textLink(
+                                                                context,
+                                                              ).copyWith(
+                                                                fontSize: 8,
+                                                                color:
+                                                                    checkLedgerType
+                                                                    ? Colors
+                                                                          .blue
+                                                                    : Colors
+                                                                          .green,
+                                                              ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    "Type",
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                      fontFamily: AppFontFamily
+                                                          .poppinsMedium,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "${(ledger.SourceType.contains('Sale') || ledger.SourceType.contains('Purchase')) ? 'Id#${ledger.Id} - Ref#' : ''}${ledger.RefOrPaymentType}",
+                                                    style:
+                                                        AppTheme.textSearchInfoLabeled(
+                                                          context,
+                                                        ).copyWith(
+                                                          fontSize: 13,
+                                                          fontFamily:
+                                                              AppFontFamily
+                                                                  .poppinsBold,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    checkLedgerType
+                                                        ? "Debit"
+                                                        : "Credit",
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                      fontFamily: AppFontFamily
+                                                          .poppinsMedium,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "Rs ${checkLedgerType ? formattedDebitAmount : formattedCreditAmount}",
+                                                    style:
+                                                        AppTheme.textSearchInfoLabeled(
+                                                          context,
+                                                        ).copyWith(
+                                                          fontSize: 13,
+                                                          fontFamily:
+                                                              AppFontFamily
+                                                                  .poppinsBold,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  const Text(
+                                                    "Balance",
+                                                    style: TextStyle(
+                                                      fontSize: 13,
+                                                      fontFamily: AppFontFamily
+                                                          .poppinsMedium,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "Rs ${ledger.Balance}",
+                                                    style:
+                                                        AppTheme.textSearchInfoLabeled(
+                                                          context,
+                                                        ).copyWith(
+                                                          fontSize: 13,
+                                                          fontFamily:
+                                                              AppFontFamily
+                                                                  .poppinsBold,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ],
-                                    ),
+                                      );
+                                    }).toList(),
                                   ],
                                 ),
                               ),
@@ -1601,85 +1716,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                 ),
         ),
+
+        // 💰 Totals
         if (_allLedgers.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    RichText(
-                      textAlign: TextAlign.start,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      text: TextSpan(
-                        style: AppTheme.textSearchInfo(
-                          context,
-                        ).copyWith(fontSize: 14),
-                        text: 'Total Credit:',
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Icon(
-                          HugeIconsStroke.moneySend01,
-                          size: 14,
-                          color: AppTheme.iconColor(context),
-                        ),
-                        const SizedBox(width: 6),
-                        RichText(
-                          textAlign: TextAlign.end,
-                          text: TextSpan(
-                            style: AppTheme.textSearchInfoLabeled(
-                              context,
-                            ).copyWith(fontSize: 14),
-                            text: "Rs $formattedCreditGrandTotal",
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                _buildTotalRow(
+                  context,
+                  'Total Credit:',
+                  formattedCreditGrandTotal,
+                  HugeIconsStroke.moneySend01,
                 ),
-                SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    RichText(
-                      textAlign: TextAlign.start,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      text: TextSpan(
-                        style: AppTheme.textSearchInfo(
-                          context,
-                        ).copyWith(fontSize: 14),
-                        text: 'Total Debit:',
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Icon(
-                          HugeIconsStroke.moneyReceive01,
-                          size: 14,
-                          color: AppTheme.iconColor(context),
-                        ),
-                        const SizedBox(width: 6),
-                        RichText(
-                          textAlign: TextAlign.end,
-                          text: TextSpan(
-                            style: AppTheme.textSearchInfoLabeled(
-                              context,
-                            ).copyWith(fontSize: 14),
-                            text: "Rs $formattedDebitGrandTotal",
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                const SizedBox(height: 6),
+                _buildTotalRow(
+                  context,
+                  'Total Debit:',
+                  formattedDebitGrandTotal,
+                  HugeIconsStroke.moneyReceive01,
                 ),
               ],
             ),
           ),
+      ],
+    );
+  }
+
+  Widget _buildTotalRow(
+    BuildContext context,
+    String label,
+    String amount,
+    IconData icon,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTheme.textSearchInfo(context).copyWith(fontSize: 14),
+        ),
+        Row(
+          children: [
+            Icon(icon, size: 14, color: AppTheme.iconColor(context)),
+            const SizedBox(width: 6),
+            Text(
+              "Rs $amount",
+              style: AppTheme.textSearchInfoLabeled(
+                context,
+              ).copyWith(fontSize: 14),
+            ),
+          ],
+        ),
       ],
     );
   }

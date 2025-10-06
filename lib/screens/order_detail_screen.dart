@@ -138,6 +138,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         final items = detail.orderItems;
         final numberCheck =
             order.Contact.toString() == "00" || order.Contact.toString() == "0";
+        final checkOrderType = items.first.OrderType.contains("Credit");
 
         return Scaffold(
           appBar: AppBar(
@@ -502,17 +503,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                 HugeIconsStroke.moneyAdd02,
                                 isBold: true,
                               ),
-                              _buildSummaryRow(
-                                "Paid",
-                                order.Paid,
-                                HugeIconsStroke.notebook01,
-                              ),
-                              _buildSummaryRow(
-                                "Balance",
-                                order.Balance,
-                                HugeIconsStroke.invoice03,
-                                isBold: true,
-                              ),
+                              if(!checkOrderType)...[
+                                _buildSummaryRow(
+                                  "Paid",
+                                  order.Paid,
+                                  HugeIconsStroke.notebook01,
+                                ),
+                                _buildSummaryRow(
+                                  "Balance",
+                                  order.Balance,
+                                  HugeIconsStroke.invoice03,
+                                  isBold: true,
+                                ),
+                              ],
                               SizedBox(height: 20),
                             ],
                           ),
