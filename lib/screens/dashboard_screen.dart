@@ -450,11 +450,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     try {
       final int userId = _selectedCustomerId?.UserId ?? 0;
-      if (userId == 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Showing ledgers for all customers")),
-        );
-      }
+      // if (userId == 0) {
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(content: Text("Showing ledgers for all customers")),
+      //   );
+      // }
 
       final response = await ApiService.getAllLedgers(
         fromDate: DateFormat('yyyy-MM-dd').format(_fromDateLedger),
