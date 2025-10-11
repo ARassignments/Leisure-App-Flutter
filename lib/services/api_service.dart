@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '/responses/scrap_response.dart';
 import '/responses/ledger_response.dart';
 import '/responses/payment_response.dart';
 import '/responses/order_detail_response.dart';
@@ -31,7 +32,6 @@ class ApiService {
 
   static Future<CustomerResponse> getAllCustomers() async {
     final orgId = await SessionManager.getOrganizationId();
-    final token = await SessionManager.getUserToken();
 
     if (orgId == null) {
       throw Exception("OrganizationId not found in session");
@@ -88,7 +88,7 @@ class ApiService {
   static Future<LedgerResponse> getAllLedgers({
     required String fromDate,
     required String toDate,
-    required int userId
+    required int userId,
   }) async {
     final orgId = await SessionManager.getOrganizationId();
     if (orgId == null) {
@@ -129,6 +129,29 @@ class ApiService {
       return PaymentsResponse.fromJson(jsonData);
     } else {
       throw Exception("Failed to fetch payments: ${response.body}");
+    }
+  }
+
+  static Future<ScrapsResponse> getAllScraps({
+    required String fromDate,
+    required String toDate,
+  }) async {
+    final orgId = await SessionManager.getOrganizationId();
+    if (orgId == null) {
+      throw Exception("OrganizationId not found in session");
+    }
+
+    final url = Uri.parse(
+      "$baseUrl/AllScraps?OrganizationId=$orgId&FromDate=$fromDate&ToDate=$toDate",
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return ScrapsResponse.fromJson(jsonData);
+    } else {
+      throw Exception("Failed to fetch scraps: ${response.body}");
     }
   }
 }

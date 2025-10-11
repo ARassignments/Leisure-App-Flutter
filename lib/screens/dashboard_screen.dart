@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import '/screens/scraps_screen.dart';
 import '/components/appsnackbar.dart';
 import '/components/customer_search_field.dart';
 import '/components/dialog_orderdetail_pdf.dart';
@@ -1259,6 +1260,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             horizontal: 16,
             vertical: 8,
           ),
+          leading: Icon(HugeIconsStroke.userGroup, size: 24),
+          title: Text("Scraps", style: AppTheme.textLabel(context)),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ScrapsScreen()),
+            );
+          },
+        ),
+        Divider(height: 1, color: AppTheme.dividerBg(context)),
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
           leading: Icon(HugeIconsStroke.userGroup03, size: 24),
           title: Text("Users", style: AppTheme.textLabel(context)),
           onTap: () {},
@@ -1507,11 +1523,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             bottom:
                                                 index ==
                                                     ledgersForDate.length - 1
-                                                ? BorderSide
-                                                      .none
+                                                ? BorderSide.none
                                                 : BorderSide(
-                                                    color: AppTheme
-                                                          .dividerBg(context),
+                                                    color: AppTheme.dividerBg(
+                                                      context,
+                                                    ),
                                                   ),
                                           ),
                                         ),

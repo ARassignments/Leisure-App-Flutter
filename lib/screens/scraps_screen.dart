@@ -1,29 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
-import '/Models/payment_model.dart';
+import '/Models/scrap_model.dart';
 import '/components/loading_screen.dart';
 import '/components/not_found.dart';
 import '/services/api_service.dart';
 import '/theme/theme.dart';
 import '/utils/session_manager.dart';
 
-class PaymentsScreen extends StatefulWidget {
-  const PaymentsScreen({super.key});
+class ScrapsScreen extends StatefulWidget {
+  const ScrapsScreen({super.key});
 
   @override
-  State<PaymentsScreen> createState() => _PaymentsScreenState();
+  State<ScrapsScreen> createState() => _ScrapsScreenState();
 }
 
-class _PaymentsScreenState extends State<PaymentsScreen> {
+class _ScrapsScreenState extends State<ScrapsScreen> {
   String? token;
   Map<String, dynamic>? user;
 
   //Customers Screen
-  late List<PaymentModel> _allPayments = [];
-  List<PaymentModel> _filteredPayments = [];
-  bool _isLoadingPayments = true;
-  bool _isRefreshingPayments = false;
+  late List<ScrapModel> _allScraps = [];
+  List<ScrapModel> _filteredScraps = [];
+  bool _isLoadingScraps = true;
+  bool _isRefreshingScraps = false;
 
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now();
@@ -34,7 +34,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     _loadSession();
-    _loadPayments();
+    _loadScraps();
   }
 
   @override
@@ -49,24 +49,24 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     user = await SessionManager.getUser();
   }
 
-  Future<void> _loadPayments() async {
-    setState(() => _isLoadingPayments = true);
+  Future<void> _loadScraps() async {
+    setState(() => _isLoadingScraps = true);
     try {
       final fromDateFormatted = DateFormat('yyyy-MM-dd').format(_fromDate);
       final toDateFormatted = DateFormat('yyyy-MM-dd').format(_toDate);
-      final response = await ApiService.getAllPayments(
+      final response = await ApiService.getAllScraps(
         fromDate: fromDateFormatted,
         toDate: toDateFormatted,
       );
 
       setState(() {
-        _allPayments = response.payments;
-        _filteredPayments = List.from(_allPayments);
+        _allScraps = response.scraps;
+        _filteredScraps = List.from(_allScraps);
       });
     } catch (e) {
-      debugPrint("❌ Error fetching payments: $e");
+      debugPrint("❌ Error fetching scraps: $e");
     } finally {
-      setState(() => _isLoadingPayments = false);
+      setState(() => _isLoadingScraps = false);
     }
   }
 
@@ -74,13 +74,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     _applyFilters();
   }
 
-  Future<void> _refreshPayments() async {
+  Future<void> _refreshScraps() async {
     setState(() {
-      _isRefreshingPayments = true;
+      _isRefreshingScraps = true;
       _resetFilters(); // ✅ reset filters & search before reload
     });
-    await _loadPayments();
-    setState(() => _isRefreshingPayments = false);
+    await _loadScraps();
+    setState(() => _isRefreshingScraps = false);
   }
 
   Future<void> _selectDateRange(BuildContext context) async {
@@ -101,21 +101,19 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         _toDate = DateTime(picked.end.year, picked.end.month, picked.end.day);
       });
 
-      await _loadPayments();
+      await _loadScraps();
     }
   }
 
   void _applyFilters() {
     setState(() {
-      _filteredPayments = _allPayments.where((payment) {
+      _filteredScraps = _allScraps.where((scrap) {
         final searchMatch =
             _searchController.text.trim().isEmpty ||
-            payment.UserName.toLowerCase().contains(
+            scrap.UserName.toLowerCase().contains(
               _searchController.text.toLowerCase(),
             ) ||
-            payment.Id.toString().contains(
-              _searchController.text.toLowerCase(),
-            );
+            scrap.Id.toString().contains(_searchController.text.toLowerCase());
 
         return searchMatch;
       }).toList();
@@ -124,21 +122,19 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
 
   void _resetFilters() {
     _searchController.clear();
-    _filteredPayments = List.from(_allPayments);
+    _filteredScraps = List.from(_allScraps);
   }
 
   Widget _paymentPage() {
-    double paidTotal = _filteredPayments
-        .where(
-          (p) => p.PaymentMode.toString().toLowerCase().contains("recived"),
-        )
-        .fold(0.0, (sum, p) => sum + p.Payment);
+    double paidTotal = _filteredScraps
+        .where((p) => p.OrderType.toString().toLowerCase().contains("Purchase"))
+        .fold(0.0, (sum, p) => sum + p.TotalPrice);
 
-    double unpaidTotal = _filteredPayments
+    double unpaidTotal = _filteredScraps
         .where(
-          (p) => !p.PaymentMode.toString().toLowerCase().contains("recived"),
+          (p) => !p.OrderType.toString().toLowerCase().contains("Purchase"),
         )
-        .fold(0.0, (sum, p) => sum + p.Payment);
+        .fold(0.0, (sum, p) => sum + p.TotalPrice);
     final formattedPaidTotal = NumberFormat('#,###.00').format(paidTotal);
     final formattedUnPaidTotal = NumberFormat('#,###.00').format(unpaidTotal);
     return Column(
@@ -217,7 +213,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                       text: TextSpan(
                         style: AppTheme.textSearchInfoLabeled(context),
                         children: [
-                          TextSpan(text: _filteredPayments.length.toString()),
+                          TextSpan(text: _filteredScraps.length.toString()),
                           const TextSpan(text: ' found'),
                         ],
                       ),
@@ -245,34 +241,34 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           ),
         ),
         Expanded(
-          child: _isLoadingPayments
+          child: _isLoadingScraps
               ? const Center(child: LoadingLogo())
               : RefreshIndicator(
-                  onRefresh: _refreshPayments,
-                  child: _filteredPayments.isEmpty
+                  onRefresh: () => _refreshScraps(),
+                  child: _filteredScraps.isEmpty
                       ? NotFoundWidget(
-                          title: "No Payments Found",
+                          title: "No Scraps Found",
                           message:
-                              "No payments found for the selected date range.",
+                              "No scraps found for the selected date range.",
                         )
                       : ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: _filteredPayments.length,
+                          itemCount: _filteredScraps.length,
                           itemBuilder: (context, index) {
-                            final payment = _filteredPayments[index];
+                            final scrap = _filteredScraps[index];
                             final formattedDate = DateFormat(
                               'MMMM dd, yyyy',
-                            ).format(payment.PaymentDate);
+                            ).format(scrap.CreatedAt);
                             final formattedAmount = NumberFormat(
                               '#,###.00',
-                            ).format(payment.Payment);
+                            ).format(scrap.TotalPrice);
 
                             return Card(
                               margin: EdgeInsets.only(
                                 left: 20,
                                 right: 20,
                                 top: index == 0 ? 0 : 2,
-                                bottom: index == _filteredPayments.length - 1
+                                bottom: index == _filteredScraps.length - 1
                                     ? 0
                                     : 8,
                               ),
@@ -312,7 +308,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                     ),
                                               ),
                                               Text(
-                                                payment.Id.toString(),
+                                                scrap.Id.toString(),
                                                 style:
                                                     AppTheme.textLabel(
                                                       context,
@@ -333,7 +329,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                               ),
                                               const SizedBox(width: 6),
                                               Text(
-                                                payment.UserName,
+                                                scrap.UserName,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 softWrap: true,
@@ -375,7 +371,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                   ),
                                                   const SizedBox(width: 6),
                                                   Text(
-                                                    "Payment Type: ${payment.PaymentType}",
+                                                    "Quantity: ${scrap.Quantity}",
                                                     maxLines: 1,
                                                     overflow:
                                                         TextOverflow.ellipsis,
@@ -404,8 +400,8 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                           ),
                                           decoration: BoxDecoration(
                                             color:
-                                                payment.PaymentMode.toString()
-                                                    .contains("Recived")
+                                                scrap.OrderType.toString()
+                                                    .contains("Purchase")
                                                 ? Colors.green.withOpacity(0.15)
                                                 : Colors.blue.withOpacity(0.15),
                                             borderRadius: BorderRadius.circular(
@@ -416,31 +412,31 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(
-                                                payment.PaymentMode.toString()
-                                                        .contains("Recived")
+                                                scrap.OrderType.toString()
+                                                        .contains("Purchase")
                                                     ? HugeIconsStroke
                                                           .chartIncrease
                                                     : HugeIconsStroke
                                                           .chartDecrease,
                                                 size: 10,
                                                 color:
-                                                    payment.PaymentMode.toString()
-                                                        .contains("Recived")
+                                                    scrap.OrderType.toString()
+                                                        .contains("Purchase")
                                                     ? Colors.green
                                                     : Colors.blue,
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
-                                                payment.PaymentMode,
+                                                scrap.OrderType,
                                                 style:
                                                     AppTheme.textLink(
                                                       context,
                                                     ).copyWith(
                                                       fontSize: 8,
                                                       color:
-                                                          payment.PaymentMode.toString()
+                                                          scrap.OrderType.toString()
                                                               .contains(
-                                                                "Recived",
+                                                                "Purchase",
                                                               )
                                                           ? Colors.green
                                                           : Colors.blue,
@@ -470,7 +466,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                         ),
                 ),
         ),
-        if (_filteredPayments.isNotEmpty)
+        if (_filteredScraps.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
@@ -486,7 +482,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                         style: AppTheme.textSearchInfo(
                           context,
                         ).copyWith(fontSize: 14),
-                        text: 'Total Paid:',
+                        text: 'Total Sale:',
                       ),
                     ),
                     Row(
@@ -503,7 +499,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                             style: AppTheme.textSearchInfoLabeled(
                               context,
                             ).copyWith(fontSize: 14),
-                            text: "Rs $formattedUnPaidTotal",
+                            text: "Rs $formattedPaidTotal",
                           ),
                         ),
                       ],
@@ -521,7 +517,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                         style: AppTheme.textSearchInfo(
                           context,
                         ).copyWith(fontSize: 14),
-                        text: 'Total Recieved:',
+                        text: 'Total Purchase:',
                       ),
                     ),
                     Row(
@@ -538,7 +534,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                             style: AppTheme.textSearchInfoLabeled(
                               context,
                             ).copyWith(fontSize: 14),
-                            text: "Rs $formattedPaidTotal",
+                            text: "Rs $formattedUnPaidTotal",
                           ),
                         ),
                       ],
@@ -561,7 +557,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         titleSpacing: 0,
         centerTitle: true,
         title: Text(
-          "Payments",
+          "Scraps",
           style: AppTheme.textTitle(
             context,
           ).copyWith(fontSize: 20, fontFamily: AppFontFamily.poppinsLight),
@@ -576,7 +572,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           IconButton(
             icon: const Icon(HugeIconsStroke.refresh, size: 20),
             onPressed: () {
-              _refreshPayments();
+              _refreshScraps();
             },
           ),
         ],
