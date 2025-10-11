@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import 'package:yetoexplore/components/dialog_payment_reciept.dart';
+import '/components/appsnackbar.dart';
 import '/Models/payment_model.dart';
 import '/components/loading_screen.dart';
 import '/components/not_found.dart';
@@ -255,218 +258,284 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                           message:
                               "No payments found for the selected date range.",
                         )
-                      : ListView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: _filteredPayments.length,
-                          itemBuilder: (context, index) {
-                            final payment = _filteredPayments[index];
-                            final formattedDate = DateFormat(
-                              'MMMM dd, yyyy',
-                            ).format(payment.PaymentDate);
-                            final formattedAmount = NumberFormat(
-                              '#,###.00',
-                            ).format(payment.Payment);
+                      : SlidableAutoCloseBehavior(
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: _filteredPayments.length,
+                            itemBuilder: (context, index) {
+                              final payment = _filteredPayments[index];
+                              final formattedDate = DateFormat(
+                                'MMMM dd, yyyy',
+                              ).format(payment.PaymentDate);
+                              final formattedAmount = NumberFormat(
+                                '#,###.00',
+                              ).format(payment.Payment);
 
-                            return Card(
-                              margin: EdgeInsets.only(
-                                left: 20,
-                                right: 20,
-                                top: index == 0 ? 0 : 2,
-                                bottom: index == _filteredPayments.length - 1
-                                    ? 0
-                                    : 8,
-                              ),
-                              color: AppTheme.customListBg(context),
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: ListTile(
-                                leading: Text(
-                                  (index + 1).toString().padLeft(2, '0'),
-                                  style: const TextStyle(
-                                    fontFamily: AppFontFamily.poppinsMedium,
-                                  ),
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  left: 20,
+                                  right: 20,
+                                  top: index == 0 ? 0 : 2,
+                                  bottom: index == _filteredPayments.length - 1
+                                      ? 0
+                                      : 2,
                                 ),
-                                title: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.stretch,
-                                        mainAxisSize: MainAxisSize.min,
+                                child: Slidable(
+                                  key: ValueKey(payment.Id),
+                                  endActionPane: ActionPane(
+                                    motion: const ScrollMotion(),
+                                    extentRatio: 0.14,
+                                    children: [
+                                      InkWell(
+                                        onTap: () {
+                                          Slidable.of(context)?.close();
+                                          showModalBottomSheet(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            backgroundColor: Colors.white,
+                                            shape: const RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.vertical(
+                                                    top: Radius.circular(20),
+                                                  ),
+                                            ),
+                                            builder: (context) {
+                                              return PaymentReceiptSheet(
+                                                payment: payment,
+                                              );
+                                            },
+                                          );
+                                        },
+                                        child: Container(
+                                          margin: const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                            vertical: 5,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.cardBg(context),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          width: 55,
+                                          height: double.infinity,
+                                          child: Icon(
+                                            HugeIconsSolid.navigation03,
+                                            color: Color(0xFF4facfe),
+                                            size: 24,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Card(
+                                    color: AppTheme.customListBg(context),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: ListTile(
+                                      onLongPress: () {
+                                        AppSnackBar.show(
+                                          context,
+                                          message: "Hola Bola",
+                                          type: AppSnackBarType.error,
+                                        );
+                                      },
+                                      leading: Text(
+                                        (index + 1).toString().padLeft(2, '0'),
+                                        style: const TextStyle(
+                                          fontFamily:
+                                              AppFontFamily.poppinsMedium,
+                                        ),
+                                      ),
+                                      title: Row(
                                         children: [
-                                          Row(
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.stretch,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.end,
+                                                  children: [
+                                                    Text(
+                                                      "Id# ",
+                                                      style:
+                                                          AppTheme.textLabel(
+                                                            context,
+                                                          ).copyWith(
+                                                            fontFamily:
+                                                                AppFontFamily
+                                                                    .poppinsSemiBold,
+                                                            fontSize: 12,
+                                                          ),
+                                                    ),
+                                                    Text(
+                                                      payment.Id.toString(),
+                                                      style:
+                                                          AppTheme.textLabel(
+                                                            context,
+                                                          ).copyWith(
+                                                            fontFamily:
+                                                                AppFontFamily
+                                                                    .poppinsSemiBold,
+                                                            fontSize: 16,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      HugeIconsStroke
+                                                          .userAccount,
+                                                      size: 16,
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      payment.UserName,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                        fontSize: 11,
+                                                        fontFamily:
+                                                            AppFontFamily
+                                                                .poppinsMedium,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      HugeIconsStroke
+                                                          .calendar03,
+                                                      size: 16,
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      formattedDate,
+                                                      style: const TextStyle(
+                                                        fontSize: 11,
+                                                        fontFamily:
+                                                            AppFontFamily
+                                                                .poppinsMedium,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      HugeIconsStroke.package,
+                                                      size: 16,
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      "Payment Type: ${payment.PaymentType}",
+                                                      style: const TextStyle(
+                                                        fontSize: 11,
+                                                        fontFamily:
+                                                            AppFontFamily
+                                                                .poppinsMedium,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.end,
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 3,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      payment
+                                                          .PaymentMode.contains(
+                                                        "Recived",
+                                                      )
+                                                      ? Colors.green
+                                                            .withOpacity(0.15)
+                                                      : Colors.blue.withOpacity(
+                                                          0.15,
+                                                        ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      payment.PaymentMode.contains(
+                                                            "Recived",
+                                                          )
+                                                          ? HugeIconsStroke
+                                                                .chartIncrease
+                                                          : HugeIconsStroke
+                                                                .chartDecrease,
+                                                      size: 10,
+                                                      color:
+                                                          payment
+                                                              .PaymentMode.contains(
+                                                            "Recived",
+                                                          )
+                                                          ? Colors.green
+                                                          : Colors.blue,
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      payment.PaymentMode,
+                                                      style:
+                                                          AppTheme.textLink(
+                                                            context,
+                                                          ).copyWith(
+                                                            fontSize: 8,
+                                                            color:
+                                                                payment
+                                                                    .PaymentMode.contains(
+                                                                  "Recived",
+                                                                )
+                                                                ? Colors.green
+                                                                : Colors.blue,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
                                               Text(
-                                                "Id# ",
+                                                "Rs $formattedAmount",
                                                 style:
-                                                    AppTheme.textLabel(
+                                                    AppTheme.textSearchInfoLabeled(
                                                       context,
                                                     ).copyWith(
                                                       fontFamily: AppFontFamily
-                                                          .poppinsSemiBold,
-                                                      fontSize: 12,
+                                                          .poppinsBold,
                                                     ),
-                                              ),
-                                              Text(
-                                                payment.Id.toString(),
-                                                style:
-                                                    AppTheme.textLabel(
-                                                      context,
-                                                    ).copyWith(
-                                                      fontFamily: AppFontFamily
-                                                          .poppinsSemiBold,
-                                                      fontSize: 16,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                HugeIconsStroke.userAccount,
-                                                size: 16,
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                payment.UserName,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                softWrap: true,
-
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  fontFamily: AppFontFamily
-                                                      .poppinsMedium,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                HugeIconsStroke.calendar03,
-                                                size: 16,
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                formattedDate,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  fontFamily: AppFontFamily
-                                                      .poppinsMedium,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    HugeIconsStroke.package,
-                                                    size: 16,
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    "Payment Type: ${payment.PaymentType}",
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontSize: 11,
-                                                      fontFamily: AppFontFamily
-                                                          .poppinsMedium,
-                                                    ),
-                                                  ),
-                                                ],
                                               ),
                                             ],
                                           ),
                                         ],
                                       ),
                                     ),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 3,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                payment.PaymentMode.toString()
-                                                    .contains("Recived")
-                                                ? Colors.green.withOpacity(0.15)
-                                                : Colors.blue.withOpacity(0.15),
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                payment.PaymentMode.toString()
-                                                        .contains("Recived")
-                                                    ? HugeIconsStroke
-                                                          .chartIncrease
-                                                    : HugeIconsStroke
-                                                          .chartDecrease,
-                                                size: 10,
-                                                color:
-                                                    payment.PaymentMode.toString()
-                                                        .contains("Recived")
-                                                    ? Colors.green
-                                                    : Colors.blue,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                payment.PaymentMode,
-                                                style:
-                                                    AppTheme.textLink(
-                                                      context,
-                                                    ).copyWith(
-                                                      fontSize: 8,
-                                                      color:
-                                                          payment.PaymentMode.toString()
-                                                              .contains(
-                                                                "Recived",
-                                                              )
-                                                          ? Colors.green
-                                                          : Colors.blue,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          "Rs $formattedAmount",
-                                          style:
-                                              AppTheme.textSearchInfoLabeled(
-                                                context,
-                                              ).copyWith(
-                                                fontFamily:
-                                                    AppFontFamily.poppinsBold,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
                 ),
         ),

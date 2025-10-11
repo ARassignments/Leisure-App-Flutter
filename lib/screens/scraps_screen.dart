@@ -125,15 +125,13 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
     _filteredScraps = List.from(_allScraps);
   }
 
-  Widget _paymentPage() {
+  Widget _scrapPage() {
     double paidTotal = _filteredScraps
-        .where((p) => p.OrderType.toString().toLowerCase().contains("Purchase"))
+        .where((p) => p.OrderType.toString().toLowerCase().contains("Sale"))
         .fold(0.0, (sum, p) => sum + p.TotalPrice);
 
     double unpaidTotal = _filteredScraps
-        .where(
-          (p) => !p.OrderType.toString().toLowerCase().contains("Purchase"),
-        )
+        .where((p) => !p.OrderType.toString().toLowerCase().contains("Sale"))
         .fold(0.0, (sum, p) => sum + p.TotalPrice);
     final formattedPaidTotal = NumberFormat('#,###.00').format(paidTotal);
     final formattedUnPaidTotal = NumberFormat('#,###.00').format(unpaidTotal);
@@ -345,12 +343,12 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
                                           Row(
                                             children: [
                                               Icon(
-                                                HugeIconsStroke.calendar03,
+                                                HugeIconsStroke.package,
                                                 size: 16,
                                               ),
                                               const SizedBox(width: 6),
                                               Text(
-                                                formattedDate,
+                                                "Qty: ${scrap.Items}",
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: const TextStyle(
@@ -366,12 +364,12 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
                                               Row(
                                                 children: [
                                                   Icon(
-                                                    HugeIconsStroke.package,
+                                                    HugeIconsStroke.moneyBag02,
                                                     size: 16,
                                                   ),
                                                   const SizedBox(width: 6),
                                                   Text(
-                                                    "Quantity: ${scrap.Quantity}",
+                                                    "${NumberFormat('#,###.00').format(scrap.Price)} X ${scrap.Quantity}Kg",
                                                     maxLines: 1,
                                                     overflow:
                                                         TextOverflow.ellipsis,
@@ -393,6 +391,26 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
                                           CrossAxisAlignment.end,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              HugeIconsStroke.calendar03,
+                                              size: 16,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              formattedDate,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontFamily:
+                                                    AppFontFamily.poppinsMedium,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 5),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 6,
@@ -466,84 +484,85 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
                         ),
                 ),
         ),
-        if (_filteredScraps.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    RichText(
-                      textAlign: TextAlign.start,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      text: TextSpan(
-                        style: AppTheme.textSearchInfo(
-                          context,
-                        ).copyWith(fontSize: 14),
-                        text: 'Total Sale:',
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Icon(
-                          HugeIconsStroke.moneySend01,
-                          size: 14,
-                          color: AppTheme.iconColor(context),
-                        ),
-                        const SizedBox(width: 6),
-                        RichText(
-                          textAlign: TextAlign.end,
-                          text: TextSpan(
-                            style: AppTheme.textSearchInfoLabeled(
-                              context,
-                            ).copyWith(fontSize: 14),
-                            text: "Rs $formattedPaidTotal",
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    RichText(
-                      textAlign: TextAlign.start,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      text: TextSpan(
-                        style: AppTheme.textSearchInfo(
-                          context,
-                        ).copyWith(fontSize: 14),
-                        text: 'Total Purchase:',
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Icon(
-                          HugeIconsStroke.moneyReceive01,
-                          size: 14,
-                          color: AppTheme.iconColor(context),
-                        ),
-                        const SizedBox(width: 6),
-                        RichText(
-                          textAlign: TextAlign.end,
-                          text: TextSpan(
-                            style: AppTheme.textSearchInfoLabeled(
-                              context,
-                            ).copyWith(fontSize: 14),
-                            text: "Rs $formattedUnPaidTotal",
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+
+        // if (_filteredScraps.isNotEmpty)
+        // Padding(
+        //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        //   child: Column(
+        //     children: [
+        //       Row(
+        //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //         children: [
+        //           RichText(
+        //             textAlign: TextAlign.start,
+        //             maxLines: 1,
+        //             overflow: TextOverflow.ellipsis,
+        //             text: TextSpan(
+        //               style: AppTheme.textSearchInfo(
+        //                 context,
+        //               ).copyWith(fontSize: 14),
+        //               text: 'Total Sale:',
+        //             ),
+        //           ),
+        //           Row(
+        //             children: [
+        //               Icon(
+        //                 HugeIconsStroke.moneySend01,
+        //                 size: 14,
+        //                 color: AppTheme.iconColor(context),
+        //               ),
+        //               const SizedBox(width: 6),
+        //               RichText(
+        //                 textAlign: TextAlign.end,
+        //                 text: TextSpan(
+        //                   style: AppTheme.textSearchInfoLabeled(
+        //                     context,
+        //                   ).copyWith(fontSize: 14),
+        //                   text: "Rs $formattedPaidTotal",
+        //                 ),
+        //               ),
+        //             ],
+        //           ),
+        //         ],
+        //       ),
+        //       Row(
+        //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //         children: [
+        //           RichText(
+        //             textAlign: TextAlign.start,
+        //             maxLines: 1,
+        //             overflow: TextOverflow.ellipsis,
+        //             text: TextSpan(
+        //               style: AppTheme.textSearchInfo(
+        //                 context,
+        //               ).copyWith(fontSize: 14),
+        //               text: 'Total Purchase:',
+        //             ),
+        //           ),
+        //           Row(
+        //             children: [
+        //               Icon(
+        //                 HugeIconsStroke.moneyReceive01,
+        //                 size: 14,
+        //                 color: AppTheme.iconColor(context),
+        //               ),
+        //               const SizedBox(width: 6),
+        //               RichText(
+        //                 textAlign: TextAlign.end,
+        //                 text: TextSpan(
+        //                   style: AppTheme.textSearchInfoLabeled(
+        //                     context,
+        //                   ).copyWith(fontSize: 14),
+        //                   text: "Rs $formattedUnPaidTotal",
+        //                 ),
+        //               ),
+        //             ],
+        //           ),
+        //         ],
+        //       ),
+        //     ],
+        //   ),
+        // ),
       ],
     );
   }
@@ -577,7 +596,7 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
           ),
         ],
       ),
-      body: user == null ? const Center(child: LoadingLogo()) : _paymentPage(),
+      body: user == null ? const Center(child: LoadingLogo()) : _scrapPage(),
     );
   }
 }

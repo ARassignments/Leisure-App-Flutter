@@ -449,13 +449,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _isLoadingLedgers = true);
 
     try {
-      final int userId = _selectedCustomerId?.UserId ?? 0;
-      // if (userId == 0) {
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(content: Text("Showing ledgers for all customers")),
-      //   );
-      // }
+      final int? userId = _selectedCustomerId?.UserId;
 
+      // ✅ Check if customer is selected
+      if (userId == null || userId == 0) {
+        setState(() => _isLoadingLedgers = false);
+        AppSnackBar.show(
+          context,
+          message: "Please select a customer first.",
+          type: AppSnackBarType.error,
+        );
+        return;
+      }
+
+      // ✅ Proceed with API call only if valid
       final response = await ApiService.getAllLedgers(
         fromDate: DateFormat('yyyy-MM-dd').format(_fromDateLedger),
         toDate: DateFormat('yyyy-MM-dd').format(_toDateLedger),
@@ -466,21 +473,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         "Ledger fetched for userId: $userId → ${response.ledger.length} records",
       );
 
-      if (response.ledger.isNotEmpty) {
-        final List<Ledger> skippedLedgers = response.ledger.length > 1
-            ? response.ledger.sublist(1)
-            : [];
-
-        setState(() {
-          // _allLedgers = skippedLedgers;
-          _allLedgers = response.ledger;
-        });
-      } else {
-        debugPrint("No ledger records found for userId: $userId");
-        setState(() {
-          _allLedgers = [];
-        });
-      }
+      setState(() {
+        _allLedgers = response.ledger;
+      });
     } catch (e) {
       debugPrint("Error fetching ledgers: $e");
     } finally {
@@ -1245,7 +1240,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             horizontal: 16,
             vertical: 8,
           ),
-          leading: Icon(HugeIconsStroke.userGroup, size: 24),
+          leading: Icon(HugeIconsStroke.moneyReceiveFlow01, size: 24),
           title: Text("Payments", style: AppTheme.textLabel(context)),
           onTap: () {
             Navigator.push(
@@ -1260,7 +1255,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             horizontal: 16,
             vertical: 8,
           ),
-          leading: Icon(HugeIconsStroke.userGroup, size: 24),
+          leading: Icon(HugeIconsStroke.recycle02, size: 24),
           title: Text("Scraps", style: AppTheme.textLabel(context)),
           onTap: () {
             Navigator.push(
@@ -1445,7 +1440,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
 
-        // 🧾 Ledger List
         Expanded(
           child: _isLoadingLedgers
               ? const Center(child: LoadingLogo())
