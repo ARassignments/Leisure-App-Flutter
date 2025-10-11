@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
-import 'package:yetoexplore/Models/customer_model.dart';
-import 'package:yetoexplore/Models/payment_model.dart';
-import 'package:yetoexplore/components/loading_screen.dart';
-import 'package:yetoexplore/components/not_found.dart';
-import 'package:yetoexplore/responses/customer_response.dart';
-import 'package:yetoexplore/responses/payment_response.dart';
-import 'package:yetoexplore/screens/customer_detail_screen.dart';
-import 'package:yetoexplore/services/api_service.dart';
-import 'package:yetoexplore/theme/theme.dart';
-import 'package:yetoexplore/utils/session_manager.dart';
+import '/Models/payment_model.dart';
+import '/components/loading_screen.dart';
+import '/components/not_found.dart';
+import '/services/api_service.dart';
+import '/theme/theme.dart';
+import '/utils/session_manager.dart';
 
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({super.key});
@@ -56,17 +52,23 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   Future<void> _loadPayments() async {
     setState(() => _isLoadingPayments = true);
     try {
+      // Format dates for API as yyyy-MM-dd
+      final fromDateFormatted = DateFormat('yyyy-MM-dd').format(_fromDate);
+      final toDateFormatted = DateFormat('yyyy-MM-dd').format(_toDate);
+
+      debugPrint("📅 Fetching from $fromDateFormatted to $toDateFormatted");
+
       final response = await ApiService.getAllPayments(
-        fromDate: DateFormat('yyyy-MM-dd').format(_fromDate),
-        toDate: DateFormat('yyyy-MM-dd').format(_toDate),
+        fromDate: fromDateFormatted,
+        toDate: toDateFormatted,
       );
-      debugPrint("Payments fetched: ${response.payments.length}");
+
       setState(() {
         _allPayments = response.payments;
-        _filteredPayments = List.from(_allPayments); // show all initially
+        _filteredPayments = List.from(_allPayments);
       });
     } catch (e) {
-      debugPrint("Error fetching payments: $e");
+      debugPrint("❌ Error fetching payments: $e");
     } finally {
       setState(() => _isLoadingPayments = false);
     }
@@ -95,9 +97,14 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
 
     if (picked != null) {
       setState(() {
-        _fromDate = picked.start;
-        _toDate = picked.end;
+        _fromDate = DateTime(
+          picked.start.year,
+          picked.start.month,
+          picked.start.day,
+        );
+        _toDate = DateTime(picked.end.year, picked.end.month, picked.end.day);
       });
+
       await _loadPayments();
     }
   }
@@ -126,9 +133,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       0.0,
       (previousValue, payment) => previousValue + payment.Payment,
     );
-    final formattedGrandTotal = NumberFormat(
-      '#,###.00',
-    ).format(grandTotal);
+    final formattedGrandTotal = NumberFormat('#,###.00').format(grandTotal);
     return Column(
       children: [
         Padding(
@@ -270,8 +275,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: ListTile(
-                                onTap: () {
-                                },
+                                onTap: () {},
                                 leading: Text(
                                   (index + 1).toString().padLeft(2, '0'),
                                   style: const TextStyle(
@@ -410,7 +414,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                 size: 10,
                                                 color:
                                                     payment.PaymentMode.toString()
-                                                    .contains("Recived")
+                                                        .contains("Recived")
                                                     ? Colors.green
                                                     : Colors.blue,
                                               ),
@@ -424,7 +428,9 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                       fontSize: 8,
                                                       color:
                                                           payment.PaymentMode.toString()
-                                                    .contains("Recived")
+                                                              .contains(
+                                                                "Recived",
+                                                              )
                                                           ? Colors.green
                                                           : Colors.blue,
                                                     ),
@@ -529,9 +535,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           ),
         ],
       ),
-      body: user == null
-          ? const Center(child: LoadingLogo())
-          : _paymentPage(),
+      body: user == null ? const Center(child: LoadingLogo()) : _paymentPage(),
     );
   }
 }

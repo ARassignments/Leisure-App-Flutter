@@ -1,8 +1,10 @@
+import 'package:intl/intl.dart';
+
 class PaymentModel {
   final int Id;
   final int UserId;
   final String UserName;
-  final int Payment;
+  final double Payment;
   final DateTime PaymentDate;
   final String PaymentType;
   final String PaymentMode;
@@ -16,19 +18,20 @@ class PaymentModel {
     required this.PaymentDate,
     required this.PaymentType,
     required this.PaymentMode,
-    required this.Remarks
+    required this.Remarks,
   });
 
   factory PaymentModel.fromJson(Map<String, dynamic> json) {
     return PaymentModel(
-      Id: json['Id'],
-      UserId: json['UserId'],
-      UserName: json['UserName'],
-      Payment: json['Payment'],
-      PaymentDate: DateTime.parse(json['PaymentDate']),
-      PaymentType: json['PaymentType'],
-      PaymentMode: json['PaymentMode'],
-      Remarks: json['Remarks'],
+      Id: json['Id'] ?? 0,
+      UserId: json['UserId'] ?? 0,
+      UserName: json['UserName'] ?? '',
+      Payment: (json['Payment'] ?? 0).toDouble(),
+      // Parse "10-10-2025" safely
+      PaymentDate: DateFormat('yyyy-MM-dd').parse(json['PaymentDate']),
+      PaymentType: json['PaymentType'] ?? '',
+      PaymentMode: json['PaymentMode'] ?? '',
+      Remarks: json['Remarks'] ?? '',
     );
   }
 }

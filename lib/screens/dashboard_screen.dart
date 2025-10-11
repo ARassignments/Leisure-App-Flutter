@@ -7,7 +7,6 @@ import '/components/dialog_orderdetail_pdf.dart';
 import '/screens/payments_screen.dart';
 import '/Models/ledger_model.dart';
 import '/screens/customers_screen.dart';
-import '/screens/customer_detail_screen.dart';
 import '/notifiers/avatar_notifier.dart';
 import '/screens/profile_screen.dart';
 import '/screens/order_detail_screen.dart';
