@@ -86,6 +86,12 @@ flutter:
     - assets/images/avatars/girl_18.png
     - assets/images/avatars/girl_19.png
     - assets/images/avatars/girl_20.png
+    - assets/images/reciepts/paid.png
+    - assets/images/reciepts/paid-dark.png
+    - assets/images/reciepts/received.png
+    - assets/images/reciepts/received-dark.png
+    - assets/images/reciepts/bill_bg.svg
+    - assets/images/reciepts/bill_bg_dark.svg
   fonts:
     - family: PoppinsLight
       fonts:

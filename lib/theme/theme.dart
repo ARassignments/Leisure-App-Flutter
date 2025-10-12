@@ -264,6 +264,24 @@ class AppTheme {
         : 'assets/images/not_found_frame.svg';
   }
 
+  static String paidRecieptImage(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? 'assets/images/reciepts/paid-dark.png'
+        : 'assets/images/reciepts/paid.png';
+  }
+
+  static String receivedRecieptImage(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? 'assets/images/reciepts/received-dark.png'
+        : 'assets/images/reciepts/received.png';
+  }
+
+  static String recieptBgImage(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? 'assets/images/reciepts/bill_bg_dark.svg'
+        : 'assets/images/reciepts/bill_bg.svg';
+  }
+
   static Color checkBox(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
       ? AppColor.white
@@ -339,6 +357,26 @@ class AppTheme {
       color: Theme.of(context).brightness == Brightness.dark
           ? AppColor.white
           : AppColor.neutral_80,
+    );
+  }
+
+  static TextStyle textTitleActive(BuildContext context) {
+    return TextStyle(
+      fontFamily: AppFontFamily.poppinsSemiBold,
+      fontSize: 16,
+      color: Theme.of(context).brightness == Brightness.dark
+          ? AppColor.white
+          : AppColor.accent_50,
+    );
+  }
+
+  static TextStyle textTitleActiveTwo(BuildContext context) {
+    return TextStyle(
+      fontFamily: AppFontFamily.poppinsSemiBold,
+      fontSize: 16,
+      color: Theme.of(context).brightness == Brightness.dark
+          ? AppColor.white
+          : AppColor.primary_50,
     );
   }
 

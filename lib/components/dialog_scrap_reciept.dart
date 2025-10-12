@@ -11,26 +11,28 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pdfx/pdfx.dart';
+import '/Models/scrap_model.dart';
+import '/Models/customer_single_model.dart';
 import '/components/appsnackbar.dart';
 import '/theme/theme.dart';
 import '/components/loading_screen.dart';
 import '/utils/whatsapp_helper.dart';
 
-class PdfBottomSheet {
+class ScrapReceiptBottomSheet {
   static Future<bool> _requestPermission() async {
     if (await Permission.storage.isGranted) return true;
     final result = await Permission.storage.request();
     return result.isGranted;
   }
 
-  static Future<void> showPdfPreview(
+  static Future<void> showRecieptPreview(
     BuildContext context,
+    ScrapModel scrap,
     String apiUrl,
     String fileName,
-    String contactNumber,
+    CustomerSingleModel? customer,
   ) async {
     if (kIsWeb) {
-      // ✅ WEB fallback
       try {
         showModalBottomSheet(
           context: context,
@@ -79,12 +81,14 @@ class PdfBottomSheet {
                         icon: HugeIconsSolid.whatsapp,
                         color: Colors.green.shade500,
                         onPressed: () {
-                          String formatted = contactNumber.replaceAll(" ", "");
+                          String formatted = customer!.PhoneNo
+                              .toString()
+                              .replaceAll(" ", "");
                           if (formatted.startsWith("0")) {
                             formatted = formatted.substring(1);
                           }
                           final whatsappUrl =
-                              "https://wa.me/92$formatted?text=Here%20is%20your%20order%20receipt:%20$apiUrl";
+                              "https://wa.me/92$formatted?text=Here%20is%20your%20payment%20receipt:%20$apiUrl";
                           html.window.open(whatsappUrl, "_blank");
                         },
                       ),
@@ -227,10 +231,9 @@ class PdfBottomSheet {
                             icon: HugeIconsSolid.whatsapp,
                             color: Colors.green.shade500,
                             onPressed: () async {
-                              String formatted = contactNumber.replaceAll(
-                                " ",
-                                "",
-                              );
+                              String formatted = customer!.PhoneNo
+                                  .toString()
+                                  .replaceAll(" ", "");
                               if (formatted.startsWith("0")) {
                                 formatted = formatted.substring(1);
                               }
@@ -278,10 +281,9 @@ class PdfBottomSheet {
                                 );
                                 await imageFile.writeAsBytes(pageImage.bytes);
 
-                                String formatted = contactNumber.replaceAll(
-                                  " ",
-                                  "",
-                                );
+                                String formatted = customer!.PhoneNo
+                                    .toString()
+                                    .replaceAll(" ", "");
                                 if (formatted.startsWith("0")) {
                                   formatted = formatted.substring(1);
                                 }

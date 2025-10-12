@@ -28,7 +28,7 @@ class PaymentModel {
       UserName: json['UserName'] ?? '',
       Payment: (json['Payment'] ?? 0).toDouble(),
       // Parse "10-10-2025" safely
-      PaymentDate: DateFormat('yyyy-MM-dd').parse(json['PaymentDate']),
+      PaymentDate: DateFormat('dd-MM-yyyy').parse(json['PaymentDate']),
       PaymentType: json['PaymentType'] ?? '',
       PaymentMode: json['PaymentMode'] ?? '',
       Remarks: json['Remarks'] ?? '',

@@ -1815,7 +1815,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 Text(
                   ".",
-                  style: AppTheme.textTitle(context).copyWith(fontSize: 30),
+                  style: AppTheme.textTitleActive(
+                    context,
+                  ).copyWith(fontSize: 30),
                 ),
               ],
             ),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
-import '/Models/customer_single_model.dart';
 import '/components/dialog_payment_reciept.dart';
+import '/Models/customer_single_model.dart';
 import '/components/appsnackbar.dart';
 import '/Models/payment_model.dart';
 import '/components/loading_screen.dart';
@@ -75,10 +75,21 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     }
   }
 
-  Future<void> fetchCustomer(PaymentModel payment) async {
+  Future<void> fetchCustomer(PaymentModel payment, bool reciptPreview) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Container(
+        color: AppTheme.screenBg(context),
+        child: const Center(child: LoadingLogo()),
+      ),
+    );
     try {
       final id = payment.UserId;
       final customer = await ApiService.getSingleCustomer(id);
+      if (!mounted) return;
+
+      Navigator.pop(context);
       setState(() {
         _customer = customer;
         PaymentReceiptBottomSheet.showRecieptPreview(
@@ -87,6 +98,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           "https://www.y2ksolutions.com/Payment/PaymentPrint/${payment.Id}",
           "${payment.UserName}-${user!["FullName"]}-Payment Reciept-${payment.PaymentDate}-ID_${payment.Id}",
           customer,
+          reciptPreview
         );
       });
     } catch (e) {
@@ -305,30 +317,74 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                   key: ValueKey(payment.Id),
                                   endActionPane: ActionPane(
                                     motion: const ScrollMotion(),
-                                    extentRatio: 0.14,
+                                    extentRatio: 0.3,
                                     children: [
-                                      InkWell(
-                                        onTap: () {
-                                          Slidable.of(context)?.close();
-                                          fetchCustomer(payment);
-                                        },
-                                        child: Container(
-                                          margin: const EdgeInsets.symmetric(
-                                            horizontal: 4,
-                                            vertical: 5,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.cardBg(context),
-                                            borderRadius: BorderRadius.circular(
-                                              10,
+                                      Expanded(
+                                        child: InkWell(
+                                          onTap: () {
+                                            Slidable.of(context)?.close();
+                                            fetchCustomer(payment, false);
+                                          },
+                                          child: Container(
+                                            margin: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 5,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.customListBg(
+                                                context,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            height: double.infinity,
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  HugeIconsSolid.pdf02,
+                                                  color: Color(0xFFC41F1F),
+                                                  size: 24,
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          width: 55,
-                                          height: double.infinity,
-                                          child: Icon(
-                                            HugeIconsSolid.navigation03,
-                                            color: Color(0xFF4facfe),
-                                            size: 24,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: InkWell(
+                                          onTap: () {
+                                            Slidable.of(context)?.close();
+                                            fetchCustomer(payment, true);
+                                          },
+                                          child: Container(
+                                            margin: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 5,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.customListBg(
+                                                context,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            height: double.infinity,
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  HugeIconsSolid.invoice02,
+                                                  color:
+                                                      AppTheme.iconColorThree(
+                                                        context,
+                                                      ),
+                                                  size: 24,
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -620,6 +676,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                     ),
                   ],
                 ),
+                SizedBox(height: 20),
               ],
             ),
           ),
