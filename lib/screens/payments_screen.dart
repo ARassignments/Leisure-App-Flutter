@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
-import 'package:yetoexplore/components/dialog_payment_reciept.dart';
+import '/Models/customer_single_model.dart';
+import '/components/dialog_payment_reciept.dart';
 import '/components/appsnackbar.dart';
 import '/Models/payment_model.dart';
 import '/components/loading_screen.dart';
@@ -21,8 +22,9 @@ class PaymentsScreen extends StatefulWidget {
 class _PaymentsScreenState extends State<PaymentsScreen> {
   String? token;
   Map<String, dynamic>? user;
+  CustomerSingleModel? _customer;
 
-  //Customers Screen
+  //Payment Screen
   late List<PaymentModel> _allPayments = [];
   List<PaymentModel> _filteredPayments = [];
   bool _isLoadingPayments = true;
@@ -70,6 +72,25 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       debugPrint("❌ Error fetching payments: $e");
     } finally {
       setState(() => _isLoadingPayments = false);
+    }
+  }
+
+  Future<void> fetchCustomer(PaymentModel payment) async {
+    try {
+      final id = payment.UserId;
+      final customer = await ApiService.getSingleCustomer(id);
+      setState(() {
+        _customer = customer;
+        PaymentReceiptBottomSheet.showRecieptPreview(
+          context,
+          payment,
+          "https://www.y2ksolutions.com/Payment/PaymentPrint/${payment.Id}",
+          "${payment.UserName}-${user!["FullName"]}-Payment Reciept-${payment.PaymentDate}-ID_${payment.Id}",
+          customer,
+        );
+      });
+    } catch (e) {
+      debugPrint("❌ Error fetching customer: $e");
     }
   }
 
@@ -289,22 +310,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                       InkWell(
                                         onTap: () {
                                           Slidable.of(context)?.close();
-                                          showModalBottomSheet(
-                                            context: context,
-                                            isScrollControlled: true,
-                                            backgroundColor: Colors.white,
-                                            shape: const RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.vertical(
-                                                    top: Radius.circular(20),
-                                                  ),
-                                            ),
-                                            builder: (context) {
-                                              return PaymentReceiptSheet(
-                                                payment: payment,
-                                              );
-                                            },
-                                          );
+                                          fetchCustomer(payment);
                                         },
                                         child: Container(
                                           margin: const EdgeInsets.symmetric(

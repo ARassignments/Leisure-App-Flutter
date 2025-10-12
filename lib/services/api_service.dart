@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '/Models/customer_single_model.dart';
 import '/responses/scrap_response.dart';
 import '/responses/ledger_response.dart';
 import '/responses/payment_response.dart';
@@ -152,6 +153,23 @@ class ApiService {
       return ScrapsResponse.fromJson(jsonData);
     } else {
       throw Exception("Failed to fetch scraps: ${response.body}");
+    }
+  }
+
+  static Future<CustomerSingleModel?> getSingleCustomer(int id) async {
+    final url = Uri.parse('$baseUrl/GetSingleCustomer?Id=$id');
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      if (jsonData['Success'] == true) {
+        return CustomerSingleModel.fromJson(jsonData);
+      } else {
+        return null;
+      }
+    } else {
+      throw Exception('Failed to fetch customer');
     }
   }
 }
