@@ -98,7 +98,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           "https://www.y2ksolutions.com/Payment/PaymentPrint/${payment.Id}",
           "${payment.UserName}-${user!["FullName"]}-Payment Reciept-${payment.PaymentDate}-ID_${payment.Id}",
           customer,
-          reciptPreview
+          reciptPreview,
         );
       });
     } catch (e) {
@@ -317,7 +317,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                   key: ValueKey(payment.Id),
                                   endActionPane: ActionPane(
                                     motion: const ScrollMotion(),
-                                    extentRatio: 0.3,
+                                    extentRatio: 0.4,
                                     children: [
                                       Expanded(
                                         child: InkWell(
