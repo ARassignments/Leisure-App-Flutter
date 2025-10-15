@@ -278,8 +278,8 @@ class AppTheme {
 
   static String recieptBgImage(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? 'assets/images/reciepts/bill_bg_dark.svg'
-        : 'assets/images/reciepts/bill_bg.svg';
+        ? 'assets/images/reciepts/bill_bg_dark.png'
+        : 'assets/images/reciepts/bill_bg.png';
   }
 
   static Color checkBox(BuildContext context) =>

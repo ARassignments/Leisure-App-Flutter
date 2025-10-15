@@ -90,8 +90,8 @@ flutter:
     - assets/images/reciepts/paid-dark.png
     - assets/images/reciepts/received.png
     - assets/images/reciepts/received-dark.png
-    - assets/images/reciepts/bill_bg.svg
-    - assets/images/reciepts/bill_bg_dark.svg
+    - assets/images/reciepts/bill_bg.png
+    - assets/images/reciepts/bill_bg_dark.png
   fonts:
     - family: PoppinsLight
       fonts:
