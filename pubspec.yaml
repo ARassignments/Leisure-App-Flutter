@@ -32,6 +32,7 @@ dependencies:
   permission_handler: ^11.3.1
   external_path: ^2.2.0
   flutter_slidable: ^3.1.0
+  widgets_to_image: ^2.0.1
 
 
 dev_dependencies:

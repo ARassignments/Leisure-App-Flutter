@@ -96,7 +96,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           context,
           payment,
           "https://www.y2ksolutions.com/Payment/PaymentPrint/${payment.Id}",
-          "${payment.UserName}-${user!["FullName"]}-Payment Reciept-${payment.PaymentDate}-ID_${payment.Id}",
+          "${payment.UserName}-${user!["FullName"]}-Payment_Reciept-${DateFormat('dd-MMM-yyyy').format(payment.PaymentDate)}_#${payment.Id}",
           customer,
           reciptPreview,
         );
