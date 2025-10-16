@@ -252,7 +252,7 @@ class PaymentReceiptBottomSheet {
                                     "💰 *Amount:* Rs $amount\n"
                                     "📓 *Remarks:* ${payment.Remarks.isEmpty ? 'N/A' : payment.Remarks}\n"
                                     "🗓 *Date:* $date\n"
-                                    "----------------------------------"
+                                    "----------------------------------\n"
                                     "Thank you for your payment!\n\n"
                                     "👇 *Here is your payment reciept* 👇\n"
                                     "$apiUrl",
