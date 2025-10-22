@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import '/components/dashboard_charts.dart';
+import '/components/dashboard_slider.dart';
 import '/screens/scraps_screen.dart';
 import '/components/appsnackbar.dart';
 import '/components/customer_search_field.dart';
@@ -516,16 +518,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _homePage() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("Welcome, ${user?["FullName"] ?? "Guest"}"),
-          Text("Email: ${user?["Email"] ?? "N/A"}"),
-          Text("Organization Id: ${user?["OrganizationId"] ?? "Unknown"}"),
-          Text("Token: ${token ?? "Not available"}"),
-        ],
-      ),
+    return ListView(
+      shrinkWrap: true,
+      children: [
+        DashboardSlider(),
+        DashboardCharts(),
+        Column(
+          children: [
+            Text("Welcome, ${user?["FullName"] ?? "Guest"}"),
+            Text("Email: ${user?["Email"] ?? "N/A"}"),
+            Text("Organization Id: ${user?["OrganizationId"] ?? "Unknown"}"),
+            Text("Token: ${token ?? "Not available"}"),
+          ],
+        ),
+      ],
     );
   }
 
@@ -629,7 +635,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 5),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -1852,7 +1858,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: user == null
           ? const Center(child: LoadingLogo())
-          : pages[_currentIndex],
+          : IndexedStack(index: _currentIndex, children: _pages()),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {

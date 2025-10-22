@@ -54,8 +54,8 @@ class _LoadingLogoState extends State<LoadingLogo>
           },
           child: Image.asset(
             AppTheme.appLogo(context),
-            width: 100,
-            height: 100,
+            width: widget.size,
+            height: widget.size,
           ),
         ),
       ),

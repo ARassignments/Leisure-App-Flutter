@@ -25,6 +25,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
+            useMaterial3: true,
             splashFactory: NoSplash.splashFactory, // removes ripple globally
             highlightColor: Colors.transparent, // removes highlight globally
             splashColor: Colors.transparent, // removes splash globally
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
             primaryColor: AppColor.black,
           ),
           darkTheme: ThemeData(
+            useMaterial3: true,
             splashFactory: NoSplash.splashFactory, // removes ripple globally
             highlightColor: Colors.transparent, // removes highlight globally
             splashColor: Colors.transparent, // removes splash globally

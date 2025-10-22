@@ -316,6 +316,11 @@ class AppTheme {
       Theme.of(context).brightness == Brightness.dark
       ? AppColor.neutral_100
       : AppColor.white;
+  
+  static Color sliderHighlightBg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+      ? AppColor.neutral_80
+      : AppColor.white;
 
   static Color iconColor(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
