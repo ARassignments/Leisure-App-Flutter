@@ -96,6 +96,8 @@ flutter:
     - assets/images/reciepts/received-dark.png
     - assets/images/reciepts/bill_bg.png
     - assets/images/reciepts/bill_bg_dark.png
+    - assets/images/dashboard/chat_image.png
+    - assets/images/dashboard/faqs_image.png
   fonts:
     - family: PoppinsLight
       fonts:

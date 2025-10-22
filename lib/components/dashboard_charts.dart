@@ -143,11 +143,13 @@ class _DashboardChartsState extends State<DashboardCharts>
 
   /// 🟦 Tabs (Sales, Users, Expenses, Revenue, Share)
   Widget _buildTabSwitcher(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
       children: List.generate(_tabs.length, (index) {
         bool isActive = _selectedTab == index;
         return InkWell(
+          borderRadius: BorderRadius.circular(8),
           onTap: () {
             setState(() {
               _selectedTab = index;
@@ -156,10 +158,10 @@ class _DashboardChartsState extends State<DashboardCharts>
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               color: isActive
-                  ? AppTheme.cardDarkBg(context).withOpacity(0.5)
+                  ? AppTheme.cardDarkBg(context).withOpacity(0.7)
                   : AppTheme.customListBg(context),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -174,8 +176,10 @@ class _DashboardChartsState extends State<DashboardCharts>
           ),
         );
       }),
-    );
-  }
+    ),
+  );
+}
+
 
   /// 📊 Select Chart by Tab
   Widget _buildSelectedChart() {
