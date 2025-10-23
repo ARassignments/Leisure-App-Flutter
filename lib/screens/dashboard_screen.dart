@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import '/components/menu_drawer.dart';
 import '/components/dashboard_charts.dart';
 import '/components/dashboard_slider.dart';
 import '/screens/scraps_screen.dart';
@@ -36,6 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? user;
 
   int _currentIndex = 0;
+  final ZoomDrawerController _drawerController = ZoomDrawerController();
   List<String> menus = ["Home", "Orders", "Ledgers", "Accounts"];
 
   //Customers BottomSheet
@@ -1884,114 +1887,149 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final pages = _pages();
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        titleSpacing: 0,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
+      body: ZoomDrawer(
+        controller: _drawerController,
+        menuScreen: MenuDrawer(
+          currentIndex: _currentIndex,
+          onItemSelected: (index) {
+            setState(() => _currentIndex = index);
+            _drawerController.toggle!();
+          },
+        ),
+        mainScreen: Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            titleSpacing: 0,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const SizedBox(width: 16),
-                Image.asset(AppTheme.appLogo(context), height: 120, width: 60),
-                const SizedBox(width: 10),
-                Text(
-                  "My",
-                  style: AppTheme.textTitle(context).copyWith(
-                    fontSize: 20,
-                    fontFamily: AppFontFamily.poppinsBold,
-                  ),
-                ),
-                Text(
-                  menus[_currentIndex],
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.textTitle(context).copyWith(
-                    fontSize: 20,
-                    fontFamily: AppFontFamily.poppinsLight,
-                  ),
-                ),
-                Text(
-                  ".",
-                  style: AppTheme.textTitleActive(
-                    context,
-                  ).copyWith(fontSize: 30),
+                Row(
+                  children: [
+                    const SizedBox(width: 16),
+                    IconButton(
+                      icon: const Icon(HugeIconsStroke.menu02, size: 22),
+                      onPressed: () => _drawerController.toggle!(),
+                    ),
+                    const SizedBox(width: 8),
+                    Image.asset(
+                      AppTheme.appLogo(context),
+                      height: 120,
+                      width: 60,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      "My",
+                      style: AppTheme.textTitle(context).copyWith(
+                        fontSize: 20,
+                        fontFamily: AppFontFamily.poppinsBold,
+                      ),
+                    ),
+                    Text(
+                      menus[_currentIndex],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.textTitle(context).copyWith(
+                        fontSize: 20,
+                        fontFamily: AppFontFamily.poppinsLight,
+                      ),
+                    ),
+                    Text(
+                      ".",
+                      style: AppTheme.textTitleActive(
+                        context,
+                      ).copyWith(fontSize: 30),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-        actions: [
-          if (_currentIndex == 1) ...[
-            IconButton(
-              icon: const Icon(HugeIconsStroke.refresh, size: 20),
-              onPressed: _refreshOrders,
-            ),
-            IconButton(
-              icon: const Icon(HugeIconsStroke.filterHorizontal, size: 20),
-              onPressed: _showFilterSheet,
-            ),
-          ],
-          if (_currentIndex == 2)
-            IconButton(
-              icon: const Icon(HugeIconsStroke.refresh, size: 20),
-              onPressed: () {
-                _refreshLedgers();
-              },
-            ),
-          IconButton(
-            onPressed: () {
-              DialogLogout().showDialog(context, _logout);
+            actions: [
+              if (_currentIndex == 1) ...[
+                IconButton(
+                  icon: const Icon(HugeIconsStroke.refresh, size: 20),
+                  onPressed: _refreshOrders,
+                ),
+                IconButton(
+                  icon: const Icon(HugeIconsStroke.filterHorizontal, size: 20),
+                  onPressed: _showFilterSheet,
+                ),
+              ],
+              if (_currentIndex == 2)
+                IconButton(
+                  icon: const Icon(HugeIconsStroke.refresh, size: 20),
+                  onPressed: () {
+                    _refreshLedgers();
+                  },
+                ),
+              IconButton(
+                onPressed: () {
+                  DialogLogout().showDialog(context, _logout);
+                },
+                icon: const Icon(HugeIconsStroke.logout02, size: 20),
+              ),
+              const SizedBox(width: 16),
+            ],
+          ),
+          body: user == null
+              ? const Center(child: LoadingLogo())
+              : IndexedStack(index: _currentIndex, children: _pages()),
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
             },
-            icon: const Icon(HugeIconsStroke.logout02, size: 20),
+            elevation: 0,
+            iconSize: 24,
+            landscapeLayout: BottomNavigationBarLandscapeLayout.centered,
+            selectedLabelStyle: AppTheme.textLabel(
+              context,
+            ).copyWith(fontSize: 12),
+            unselectedLabelStyle: AppTheme.textLabel(
+              context,
+            ).copyWith(fontSize: 11),
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            selectedItemColor: AppTheme.onBoardingDotActive(context),
+            unselectedItemColor: AppTheme.onBoardingDot(context),
+            type: BottomNavigationBarType.fixed,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(HugeIconsStroke.home11),
+                activeIcon: Icon(HugeIconsSolid.home11),
+                label: "Home",
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(HugeIconsStroke.shoppingBasket01),
+                activeIcon: Icon(HugeIconsSolid.shoppingBasket01),
+                label: "Orders",
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(HugeIconsStroke.userMultiple02),
+                activeIcon: Icon(HugeIconsSolid.userMultiple02),
+                label: "Ledgers",
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(HugeIconsStroke.user03),
+                activeIcon: Icon(HugeIconsSolid.user03),
+                label: "Accounts",
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-        ],
-      ),
-      body: user == null
-          ? const Center(child: LoadingLogo())
-          : IndexedStack(index: _currentIndex, children: _pages()),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        elevation: 0,
-        iconSize: 24,
-        landscapeLayout: BottomNavigationBarLandscapeLayout.centered,
-        selectedLabelStyle: AppTheme.textLabel(context).copyWith(fontSize: 12),
-        unselectedLabelStyle: AppTheme.textLabel(
-          context,
-        ).copyWith(fontSize: 11),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        selectedItemColor: AppTheme.onBoardingDotActive(context),
-        unselectedItemColor: AppTheme.onBoardingDot(context),
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(HugeIconsStroke.home11),
-            activeIcon: Icon(HugeIconsSolid.home11),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(HugeIconsStroke.shoppingBasket01),
-            activeIcon: Icon(HugeIconsSolid.shoppingBasket01),
-            label: "Orders",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(HugeIconsStroke.userMultiple02),
-            activeIcon: Icon(HugeIconsSolid.userMultiple02),
-            label: "Ledgers",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(HugeIconsStroke.user03),
-            activeIcon: Icon(HugeIconsSolid.user03),
-            label: "Accounts",
-          ),
-        ],
+        ),
+        borderRadius: 24.0,
+        showShadow: true,
+        angle: -8.0,
+        mainScreenScale: 0.05, // slightly more zoom-in effect
+        shadowLayer1Color: AppTheme.customListBg(context).withOpacity(0.5),
+        shadowLayer2Color: AppTheme.customListBg(context).withOpacity(1.0),
+        mainScreenTapClose: true,
+        // overlayBlur: 0.8,
+        slideWidth: MediaQuery.of(context).size.width * 0.80,
+        menuBackgroundColor: Colors.transparent,
+        openCurve: Curves.fastOutSlowIn,
+        closeCurve: Curves.easeInBack,
       ),
     );
   }
