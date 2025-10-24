@@ -49,7 +49,7 @@ class _DashboardChartsState extends State<DashboardCharts>
       const FlSpot(0, 1.0),
       const FlSpot(1, 1.5),
       const FlSpot(2, 1.8),
-      const FlSpot(3, 2.5),
+      const FlSpot(3, 1.5),
       const FlSpot(4, 3.2),
       const FlSpot(5, 3.9),
     ];
@@ -103,7 +103,7 @@ class _DashboardChartsState extends State<DashboardCharts>
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
       decoration: BoxDecoration(
         color: AppTheme.customListBg(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
@@ -143,43 +143,42 @@ class _DashboardChartsState extends State<DashboardCharts>
 
   /// 🟦 Tabs (Sales, Users, Expenses, Revenue, Share)
   Widget _buildTabSwitcher(BuildContext context) {
-  return SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: Row(
-      children: List.generate(_tabs.length, (index) {
-        bool isActive = _selectedTab == index;
-        return InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: () {
-            setState(() {
-              _selectedTab = index;
-              _fadeController.forward(from: 0);
-            });
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? AppTheme.cardDarkBg(context).withOpacity(0.7)
-                  : AppTheme.customListBg(context),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              _tabs[index],
-              style: AppTheme.textLabel(context).copyWith(
-                fontFamily: isActive
-                    ? AppFontFamily.poppinsMedium
-                    : AppFontFamily.poppinsLight,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(_tabs.length, (index) {
+          bool isActive = _selectedTab == index;
+          return InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () {
+              setState(() {
+                _selectedTab = index;
+                _fadeController.forward(from: 0);
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: isActive
+                    ? AppTheme.cardDarkBg(context).withOpacity(0.7)
+                    : AppTheme.customListBg(context),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _tabs[index],
+                style: AppTheme.textLabel(context).copyWith(
+                  fontFamily: isActive
+                      ? AppFontFamily.poppinsMedium
+                      : AppFontFamily.poppinsLight,
+                ),
               ),
             ),
-          ),
-        );
-      }),
-    ),
-  );
-}
-
+          );
+        }),
+      ),
+    );
+  }
 
   /// 📊 Select Chart by Tab
   Widget _buildSelectedChart() {

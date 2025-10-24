@@ -15,7 +15,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:widgets_to_image/widgets_to_image.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import '/components/dashed_divider.dart';
 import '/utils/session_manager.dart';
 import '/Models/customer_single_model.dart';
@@ -48,7 +47,6 @@ class PaymentReceiptBottomSheet {
         try {
           showModalBottomSheet(
             context: context,
-            showDragHandle: true,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
             shape: const RoundedRectangleBorder(

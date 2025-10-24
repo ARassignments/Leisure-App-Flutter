@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import '/components/dashboard_grid.dart';
 import '/components/menu_drawer.dart';
 import '/components/dashboard_charts.dart';
 import '/components/dashboard_slider.dart';
@@ -525,6 +526,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       shrinkWrap: true,
       children: [
         DashboardSlider(),
+        DashboardGrid(),
         DashboardCharts(),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -627,6 +629,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         //     Text("Token: ${token ?? "Not available"}"),
         //   ],
         // ),
+        SizedBox(height: 20),
       ],
     );
   }
@@ -1911,7 +1914,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       icon: const Icon(HugeIconsStroke.menu02, size: 22),
                       onPressed: () => _drawerController.toggle!(),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 5),
                     Image.asset(
                       AppTheme.appLogo(context),
                       height: 120,
@@ -2026,7 +2029,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         shadowLayer2Color: AppTheme.customListBg(context).withOpacity(1.0),
         mainScreenTapClose: true,
         // overlayBlur: 0.8,
-        slideWidth: MediaQuery.of(context).size.width * 0.80,
+        slideWidth: MediaQuery.of(context).size.width * 0.85,
         menuBackgroundColor: Colors.transparent,
         openCurve: Curves.fastOutSlowIn,
         closeCurve: Curves.easeInBack,

@@ -2,6 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:shimmer/shimmer.dart';
+import '/screens/customers_screen.dart';
+import '/screens/payments_screen.dart';
+import '/screens/scraps_screen.dart';
 import '/components/dialog_logout.dart';
 import '/screens/auth/contact_no_screen.dart';
 import '/utils/session_manager.dart';
@@ -27,12 +30,23 @@ class _MenuDrawerState extends State<MenuDrawer>
   late List<Animation<Offset>> _slideAnimations;
   late List<Animation<double>> _fadeAnimations;
 
-  final menus = ["Home", "Orders", "Ledgers", "Accounts"];
+  final menus = [
+    "Home",
+    "Orders",
+    "Ledgers",
+    "Accounts",
+    "Customers",
+    "Payments",
+    "Scraps",
+  ];
   final icons = [
-    HugeIconsStroke.home11,
-    HugeIconsStroke.shoppingBasket01,
-    HugeIconsStroke.userMultiple02,
-    HugeIconsStroke.user03,
+    [HugeIconsStroke.home11, HugeIconsSolid.home11],
+    [HugeIconsStroke.shoppingBasket01, HugeIconsSolid.shoppingBasket01],
+    [HugeIconsStroke.userMultiple02, HugeIconsSolid.userMultiple02],
+    [HugeIconsStroke.user03, HugeIconsSolid.user03],
+    [HugeIconsStroke.userGroup, HugeIconsSolid.userGroup],
+    [HugeIconsStroke.moneyReceiveFlow01, HugeIconsSolid.moneyReceiveFlow01],
+    [HugeIconsStroke.recycle02, HugeIconsSolid.recycle02],
   ];
 
   @override
@@ -114,6 +128,7 @@ class _MenuDrawerState extends State<MenuDrawer>
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Row(
                 children: [
@@ -147,46 +162,85 @@ class _MenuDrawerState extends State<MenuDrawer>
                   ),
                 ],
               ),
-              const SizedBox(height: 40),
-              // ...List.generate(menus.length, (index) {
-              //   bool isActive = index == widget.currentIndex;
-              //   return SlideTransition(
-              //     position: _slideAnimations[index],
-              //     child: FadeTransition(
-              //       opacity: _fadeAnimations[index],
-              //       child: AnimatedContainer(
-              //         duration: const Duration(milliseconds: 300),
-              //         margin: const EdgeInsets.only(bottom: 10),
-              //         decoration: BoxDecoration(
-              //           color: isActive
-              //               ? Colors.white.withOpacity(0.15)
-              //               : Colors.transparent,
-              //           borderRadius: BorderRadius.circular(12),
-              //         ),
-              //         child: ListTile(
-              //           leading: Icon(
-              //             icons[index],
-              //             color: isActive
-              //                 ? AppTheme.onBoardingDotActive(context)
-              //                 : Colors.white70,
-              //           ),
-              //           title: Text(
-              //             menus[index],
-              //             style: AppTheme.textLabel(context).copyWith(
-              //               color: Colors.white,
-              //               fontFamily: isActive
-              //                   ? AppFontFamily.poppinsMedium
-              //                   : AppFontFamily.poppinsLight,
-              //             ),
-              //           ),
-              //           onTap: () => widget.onItemSelected(index),
-              //         ),
-              //       ),
-              //     ),
-              //   );
-              // }),
+              // const SizedBox(height: 10),
+              ...List.generate(menus.length, (index) {
+                bool isActive = index == widget.currentIndex;
+                return SlideTransition(
+                  position: _slideAnimations[index],
+                  child: FadeTransition(
+                    opacity: _fadeAnimations[index],
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 600),
+                      // margin: const EdgeInsets.only(bottom: 5),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 15,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? AppTheme.customListBg(context)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: InkWell(
+                        onTap: () {
+                          if (index <= 3) {
+                            widget.onItemSelected(index);
+                          } else {
+                            switch (index) {
+                              case 4:
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const CustomersScreen(),
+                                  ),
+                                );
+                                break;
+                              case 5:
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const PaymentsScreen(),
+                                  ),
+                                );
+                                break;
+                              case 6:
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ScrapsScreen(),
+                                  ),
+                                );
+                                break;
+                            }
+                          }
+                        },
+                        child: Row(
+                          spacing: 16,
+                          children: [
+                            Icon(
+                              isActive ? icons[index][1] : icons[index][0],
+                              color: isActive
+                                  ? AppTheme.iconColor(context)
+                                  : AppTheme.iconColorThree(context),
+                            ),
+                            Text(
+                              menus[index],
+                              style: AppTheme.textLabel(context).copyWith(
+                                fontFamily: isActive
+                                    ? AppFontFamily.poppinsMedium
+                                    : AppFontFamily.poppinsLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
               const Spacer(),
-              Divider(color: AppTheme.dividerBg(context)),
+              // Divider(color: AppTheme.dividerBg(context)),
               OutlineErrorButton(
                 text: 'Log Out',
                 onPressed: () {
