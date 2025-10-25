@@ -1408,8 +1408,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             style: AppTheme.textLabel(context),
           ),
           trailing: Switch(
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            value: Theme.of(context).brightness == Brightness.dark,
+            value: ThemeController.themeNotifier.value == ThemeMode.dark,
             onChanged: (value) {
               ThemeController.setTheme(
                 value ? ThemeMode.dark : ThemeMode.light,
@@ -1417,7 +1416,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             },
           ),
           onTap: () {
-            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final isDark =
+                ThemeController.themeNotifier.value == ThemeMode.dark;
             ThemeController.setTheme(isDark ? ThemeMode.light : ThemeMode.dark);
           },
         ),

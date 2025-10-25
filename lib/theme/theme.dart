@@ -3,16 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeController {
-  static final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(
-    ThemeMode.system,
-  );
-
+  static final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
   static const String _key = "theme_mode";
 
   static Future<void> loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    final themeIndex = prefs.getInt(_key) ?? ThemeMode.system.index;
-    themeNotifier.value = ThemeMode.values[themeIndex];
+    final themeIndex = prefs.getInt(_key);
+    if (themeIndex != null && themeIndex < ThemeMode.values.length) {
+      themeNotifier.value = ThemeMode.values[themeIndex];
+    } else {
+      themeNotifier.value = ThemeMode.system;
+    }
   }
 
   static Future<void> setTheme(ThemeMode mode) async {

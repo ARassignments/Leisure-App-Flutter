@@ -4,13 +4,14 @@ import '../screens/login_screen.dart';
 import '../screens/splash_screen.dart';
 import '../theme/theme.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  await ThemeController.loadTheme();
   runApp(const MyApp());
 }
 
