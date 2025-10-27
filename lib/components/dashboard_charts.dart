@@ -556,7 +556,11 @@ class _DashboardChartsState extends State<DashboardCharts>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(color: AppTheme.inputProgress(context)),
+          CircularProgressIndicator(
+            strokeCap: StrokeCap.round,
+            strokeWidth: 4,
+            color: AppTheme.inputProgress(context),
+          ),
           const SizedBox(height: 16),
           Text("Loading chart data...", style: AppTheme.textLabel(context)),
         ],
