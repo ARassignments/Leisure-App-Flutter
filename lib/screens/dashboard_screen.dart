@@ -1561,8 +1561,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {
+                  InkWell(
+                    onTap: () {
                       setState(() {
                         _isSortAscending = !_isSortAscending;
                         _allLedgers.sort((a, b) {
@@ -1577,19 +1577,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _scrollControllerLedger.jumpTo(0);
                       });
                     },
-                    icon: Icon(
+                    child: Icon(
                       _isSortAscending
                           ? HugeIconsSolid.sortByUp01
                           : HugeIconsSolid.sortByDown01,
                       size: 18,
                       color: AppTheme.iconColor(context),
                     ),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    splashRadius: 18,
-                    tooltip: _isSortAscending
-                        ? 'Sort Descending'
-                        : 'Sort Ascending',
                   ),
                 ],
               ),
@@ -1624,9 +1618,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 left: 20,
                                 right: 20,
                                 top: index == 0 ? 0 : 2,
-                                bottom: index == sortedKeys.length - 1
-                                    ? 0
-                                    : 8,
+                                bottom: index == sortedKeys.length - 1 ? 0 : 8,
                               ),
                               color: AppTheme.customListBg(context),
                               elevation: 0,
