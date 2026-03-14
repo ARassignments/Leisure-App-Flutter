@@ -69,12 +69,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? _selectedOrderType;
 
   //Ledgers Screen
-  bool _hasAttemptedLedgerLoad = false;
   List<Ledger> _allLedgers = [];
   bool _isLoadingLedgers = true;
   bool _isSortAscendingLedger = false;
   DateTime _fromDateLedger = DateTime(2025, 1, 1);
-  DateTime _toDateLedger = DateTime.now();
+  DateTime _toDateLedger = DateTime.now().add(const Duration(days: 1));
   Customer? _selectedCustomerId;
   final ScrollController _scrollControllerLedger = ScrollController();
 
