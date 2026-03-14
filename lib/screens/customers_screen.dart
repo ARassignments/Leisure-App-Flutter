@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
-import 'package:yetoexplore/Models/customer_model.dart';
-import 'package:yetoexplore/components/loading_screen.dart';
-import 'package:yetoexplore/components/not_found.dart';
-import 'package:yetoexplore/responses/customer_response.dart';
-import 'package:yetoexplore/screens/customer_detail_screen.dart';
-import 'package:yetoexplore/services/api_service.dart';
-import 'package:yetoexplore/theme/theme.dart';
-import 'package:yetoexplore/utils/session_manager.dart';
+import '/Models/customer_model.dart';
+import '/components/loading_screen.dart';
+import '/components/not_found.dart';
+import '/responses/customer_response.dart';
+import '/screens/customer_detail_screen.dart';
+import '/services/api_service.dart';
+import '/theme/theme.dart';
+import '/utils/session_manager.dart';
 
 class CustomersScreen extends StatefulWidget {
   const CustomersScreen({super.key});
