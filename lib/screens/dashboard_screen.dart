@@ -39,6 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? user;
 
   int _currentIndex = 0;
+  bool _showSearchBar = false;
   final ZoomDrawerController _drawerController = ZoomDrawerController();
   List<String> menus = ["Home", "Orders", "Ledgers", "Accounts"];
 
@@ -54,11 +55,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Order> _allOrders = [];
   List<Order> _filteredOrders = [];
   bool _isLoadingOrders = true;
+  bool _isSortAscendingOrder = true;
   bool _isRefreshingOrders = false;
 
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now();
   final TextEditingController _searchOrderController = TextEditingController();
+  final ScrollController _scrollControllerOrder = ScrollController();
 
   String? _selectedOrderStatus;
   String? _selectedTransactionType;
@@ -67,7 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   //Ledgers Screen
   List<Ledger> _allLedgers = [];
   bool _isLoadingLedgers = true;
-  bool _isSortAscending = false;
+  bool _isSortAscendingLedger = false;
   DateTime _fromDateLedger = DateTime(2025, 1, 1);
   DateTime _toDateLedger = DateTime.now();
   Customer? _selectedCustomerId;
@@ -90,6 +93,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _searchController.dispose();
     _searchOrderController.removeListener(_onOrderSearchChanged);
     _searchOrderController.dispose();
+    _scrollControllerOrder.dispose();
     _scrollControllerLedger.dispose();
     super.dispose();
   }
@@ -117,7 +121,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadSessionAndCustomers() async {
     token = await SessionManager.getUserToken();
-    user = await SessionManager.getUser();
+    final userData = await SessionManager.getUser();
+    setState(() {
+      user = userData;
+    });
 
     _futureCustomers = ApiService.getAllCustomers();
     try {
@@ -173,6 +180,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _allOrders = response.orders;
         _filteredOrders = List.from(_allOrders); // show all initially
       });
+      _applyFilters();
     } catch (e) {
       debugPrint("Error fetching orders: $e");
     } finally {
@@ -417,32 +425,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _applyFilters() {
     setState(() {
-      _filteredOrders = _allOrders.where((order) {
-        final statusMatch =
-            _selectedOrderStatus == null ||
-            order.OrderStatus.toLowerCase() ==
-                _selectedOrderStatus!.toLowerCase();
+      _filteredOrders =
+          _allOrders.where((order) {
+            final statusMatch =
+                _selectedOrderStatus == null ||
+                order.OrderStatus.toLowerCase() ==
+                    _selectedOrderStatus!.toLowerCase();
 
-        final transactionMatch =
-            _selectedTransactionType == null ||
-            order.TransactionType.toLowerCase() ==
-                _selectedTransactionType!.toLowerCase();
+            final transactionMatch =
+                _selectedTransactionType == null ||
+                order.TransactionType.toLowerCase() ==
+                    _selectedTransactionType!.toLowerCase();
 
-        final typeMatch =
-            _selectedOrderType == null ||
-            order.OrderType.toLowerCase() == _selectedOrderType!.toLowerCase();
+            final typeMatch =
+                _selectedOrderType == null ||
+                order.OrderType.toLowerCase() ==
+                    _selectedOrderType!.toLowerCase();
 
-        final searchMatch =
-            _searchOrderController.text.trim().isEmpty ||
-            order.UserName.toLowerCase().contains(
-              _searchOrderController.text.toLowerCase(),
-            ) ||
-            order.RefNo.toLowerCase().contains(
-              _searchOrderController.text.toLowerCase(),
-            );
+            final searchMatch =
+                _searchOrderController.text.trim().isEmpty ||
+                order.UserName.toLowerCase().contains(
+                  _searchOrderController.text.toLowerCase(),
+                ) ||
+                order.RefNo.toLowerCase().contains(
+                  _searchOrderController.text.toLowerCase(),
+                );
 
-        return statusMatch && transactionMatch && typeMatch && searchMatch;
-      }).toList();
+            return statusMatch && transactionMatch && typeMatch && searchMatch;
+          }).toList()..sort((a, b) {
+            final dateCompare = _isSortAscendingOrder
+                ? a.OrderDate.compareTo(b.OrderDate)
+                : b.OrderDate.compareTo(a.OrderDate);
+
+            // ✅ if dates are same, sort by OrderId
+            if (dateCompare == 0) {
+              return _isSortAscendingOrder
+                  ? a.OrderId.compareTo(b.OrderId)
+                  : b.OrderId.compareTo(a.OrderId);
+            }
+
+            return dateCompare;
+          });
     });
   }
 
@@ -853,17 +876,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               const SizedBox(height: 5),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(
-                    HugeIconsSolid.calendar02,
-                    size: 18,
-                    color: AppTheme.iconColor(context),
+                  Row(
+                    children: [
+                      Icon(
+                        HugeIconsSolid.calendar02,
+                        size: 18,
+                        color: AppTheme.iconColor(context),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDate)}",
+                        style: AppTheme.textLabel(
+                          context,
+                        ).copyWith(fontSize: 12),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDate)}",
-                    style: AppTheme.textLabel(context).copyWith(fontSize: 12),
-                  ),
+                  if (_filteredOrders.isNotEmpty)
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _isSortAscendingOrder = !_isSortAscendingOrder;
+                          _filteredOrders.sort((a, b) {
+                            final dateCompare = _isSortAscendingOrder
+                                ? a.OrderDate.compareTo(b.OrderDate)
+                                : b.OrderDate.compareTo(a.OrderDate);
+
+                            // ✅ if dates are same, sort by OrderId
+                            if (dateCompare == 0) {
+                              return _isSortAscendingOrder
+                                  ? a.OrderId.compareTo(b.OrderId)
+                                  : b.OrderId.compareTo(a.OrderId);
+                            }
+
+                            return dateCompare;
+                          });
+                        });
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _scrollControllerOrder.jumpTo(0);
+                        });
+                      },
+                      child: Icon(
+                        _isSortAscendingOrder
+                            ? HugeIconsSolid.sortByUp01
+                            : HugeIconsSolid.sortByDown01,
+                        size: 18,
+                        color: AppTheme.iconColor(context),
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -881,6 +943,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               "No orders found for the selected date range.",
                         )
                       : ListView.builder(
+                          controller: _scrollControllerOrder,
                           physics: const AlwaysScrollableScrollPhysics(),
                           itemCount: _filteredOrders.length,
                           itemBuilder: (context, index) {
@@ -1274,212 +1337,480 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _accountsPage() {
-    return ListView(
-      shrinkWrap: true,
-      children: [
-        ValueListenableBuilder<String?>(
-          valueListenable: avatarNotifier,
-          builder: (context, avatar, _) {
-            return ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-              title: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: AppTheme.customListBg(context),
-                    foregroundImage: avatar != null
-                        ? AssetImage(avatar)
-                        : const AssetImage("assets/images/avatars/boy_14.png"),
-                  ),
-                  SizedBox(width: 16),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "${user!["FullName"]}",
-                        style: AppTheme.textLabel(context).copyWith(
-                          fontSize: 17,
-                          fontFamily: AppFontFamily.poppinsSemiBold,
+    return SafeArea(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ValueListenableBuilder<String?>(
+              valueListenable: avatarNotifier,
+              builder: (context, avatar, _) {
+                return Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(shape: BoxShape.circle),
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundColor: AppTheme.customListBg(context),
+                        foregroundImage: avatar != null
+                            ? AssetImage(avatar)
+                            : const AssetImage(
+                                "assets/images/avatars/boy_14.png",
+                              ),
+                        child: avatar != null
+                            ? Icon(
+                                HugeIconsSolid.user03,
+                                size: 60,
+                                color: AppTheme.iconColorThree(context),
+                              )
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "Profile Details",
+                      style: AppTheme.textTitle(context).copyWith(fontSize: 20),
+                    ),
+                    const SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardBg(context),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildInfoTile(
+                              HugeIconsStroke.user03,
+                              "Name",
+                              user!["FullName"],
+                            ),
+                            Divider(
+                              height: 1,
+                              color: AppTheme.dividerBg(context),
+                            ),
+                            _buildInfoTile(
+                              HugeIconsStroke.mail01,
+                              "Email",
+                              user!["Email"],
+                            ),
+                            Divider(
+                              height: 1,
+                              color: AppTheme.dividerBg(context),
+                            ),
+                            _buildInfoTile(
+                              HugeIconsStroke.call02,
+                              "Contact",
+                              formatInternationalPhone(
+                                "${user!["PhoneNumber"]}",
+                              ),
+                            ),
+                            Divider(
+                              height: 1,
+                              color: AppTheme.dividerBg(context),
+                            ),
+                            _buildInfoTile(
+                              HugeIconsStroke.mapsLocation01,
+                              "Address",
+                              user!["Address"],
+                            ),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 55,
+                              child: FlatButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    PageRouteBuilder(
+                                      opaque: false,
+                                      pageBuilder:
+                                          (
+                                            context,
+                                            animation,
+                                            secondaryAnimation,
+                                          ) => ProfileScreen(),
+                                      transitionsBuilder:
+                                          (
+                                            context,
+                                            animation,
+                                            secondaryAnimation,
+                                            child,
+                                          ) {
+                                            const begin = Offset(0.0, 1.0);
+                                            const end = Offset.zero;
+                                            const curve = Curves.easeInOut;
+                                            final tween = Tween(
+                                              begin: begin,
+                                              end: end,
+                                            ).chain(CurveTween(curve: curve));
+                                            return SlideTransition(
+                                              position: animation.drive(tween),
+                                              child: child,
+                                            );
+                                          },
+                                    ),
+                                  );
+                                },
+                                icon: HugeIconsSolid.edit01,
+                                radiusCustom: true,
+                                radius: BorderRadius.only(
+                                  bottomLeft: Radius.circular(20),
+                                  bottomRight: Radius.circular(20),
+                                ),
+                                text: "Edit Profile",
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        "View Profile",
-                        style: AppTheme.textLink(context).copyWith(
-                          fontSize: 12,
-                          fontFamily: AppFontFamily.poppinsRegular,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    ),
+                  ],
                 );
               },
-            );
-          },
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 0),
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBg(context),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(HugeIconsStroke.userGroup, size: 24),
+                      title: Text(
+                        "Customers",
+                        style: AppTheme.textLabel(context),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            opaque: false,
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    CustomersScreen(),
+                            transitionsBuilder:
+                                (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  const begin = Offset(0.0, 1.0);
+                                  const end = Offset.zero;
+                                  const curve = Curves.easeInOut;
+                                  final tween = Tween(
+                                    begin: begin,
+                                    end: end,
+                                  ).chain(CurveTween(curve: curve));
+                                  return SlideTransition(
+                                    position: animation.drive(tween),
+                                    child: child,
+                                  );
+                                },
+                          ),
+                        );
+                      },
+                    ),
+                    Divider(height: 1, color: AppTheme.dividerBg(context)),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(
+                        HugeIconsStroke.moneyReceiveFlow01,
+                        size: 24,
+                      ),
+                      title: Text(
+                        "Payments",
+                        style: AppTheme.textLabel(context),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            opaque: false,
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    PaymentsScreen(),
+                            transitionsBuilder:
+                                (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  const begin = Offset(0.0, 1.0);
+                                  const end = Offset.zero;
+                                  const curve = Curves.easeInOut;
+                                  final tween = Tween(
+                                    begin: begin,
+                                    end: end,
+                                  ).chain(CurveTween(curve: curve));
+                                  return SlideTransition(
+                                    position: animation.drive(tween),
+                                    child: child,
+                                  );
+                                },
+                          ),
+                        );
+                      },
+                    ),
+                    Divider(height: 1, color: AppTheme.dividerBg(context)),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(HugeIconsStroke.recycle02, size: 24),
+                      title: Text("Scraps", style: AppTheme.textLabel(context)),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            opaque: false,
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    ScrapsScreen(),
+                            transitionsBuilder:
+                                (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  const begin = Offset(0.0, 1.0);
+                                  const end = Offset.zero;
+                                  const curve = Curves.easeInOut;
+                                  final tween = Tween(
+                                    begin: begin,
+                                    end: end,
+                                  ).chain(CurveTween(curve: curve));
+                                  return SlideTransition(
+                                    position: animation.drive(tween),
+                                    child: child,
+                                  );
+                                },
+                          ),
+                        );
+                      },
+                    ),
+                    Divider(height: 1, color: AppTheme.dividerBg(context)),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(HugeIconsStroke.userGroup03, size: 24),
+                      title: Text(
+                        "Manage Users",
+                        style: AppTheme.textLabel(context),
+                      ),
+                      onTap: () {},
+                    ),
+                    Divider(height: 1, color: AppTheme.dividerBg(context)),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(
+                        HugeIconsStroke.messageMultiple02,
+                        size: 24,
+                      ),
+                      title: Text(
+                        "Messages",
+                        style: AppTheme.textLabel(context),
+                      ),
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 0),
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBg(context),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(HugeIconsStroke.shoppingBag01, size: 24),
+                      title: Text(
+                        "View Orders",
+                        style: AppTheme.textLabel(context),
+                      ),
+                      trailing: AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardDarkBg(context),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          _filteredOrders.length.toString().padLeft(2, '0'),
+                          style: AppTheme.textSearchInfoLabeled(
+                            context,
+                          ).copyWith(fontSize: 10),
+                        ),
+                      ),
+                      onTap: () {
+                        setState(() => _currentIndex = 1);
+                      },
+                    ),
+                    Divider(height: 1, color: AppTheme.dividerBg(context)),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(
+                        Theme.of(context).brightness == Brightness.dark
+                            ? HugeIconsStroke.moon02
+                            : HugeIconsStroke.sun02,
+                        size: 24,
+                      ),
+                      title: Text(
+                        Theme.of(context).brightness == Brightness.dark
+                            ? "Dark Mode"
+                            : "Light Mode",
+                        style: AppTheme.textLabel(context),
+                      ),
+                      trailing: Switch(
+                        value: Theme.of(context).brightness == Brightness.dark,
+                        activeColor: AppTheme.iconColor(context),
+                        onChanged: (value) {
+                          ThemeController.setTheme(
+                            value ? ThemeMode.dark : ThemeMode.light,
+                          );
+                        },
+                      ),
+                      onTap: () {
+                        final isDark =
+                            ThemeController.themeNotifier.value ==
+                            ThemeMode.dark;
+                        ThemeController.setTheme(
+                          isDark ? ThemeMode.light : ThemeMode.dark,
+                        );
+                      },
+                    ),
+                    Divider(height: 1, color: AppTheme.dividerBg(context)),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(HugeIconsStroke.crown03, size: 24),
+                      title: Text(
+                        "Subscription",
+                        style: AppTheme.textLabel(context),
+                      ),
+                      onTap: () {},
+                    ),
+                    Divider(height: 1, color: AppTheme.dividerBg(context)),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(HugeIconsStroke.note, size: 24),
+                      title: Text(
+                        "Privacy Policy",
+                        style: AppTheme.textLabel(context),
+                      ),
+                      onTap: () {},
+                    ),
+                    Divider(height: 1, color: AppTheme.dividerBg(context)),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(HugeIconsStroke.headset, size: 24),
+                      title: Text(
+                        "Help Center",
+                        style: AppTheme.textLabel(context),
+                      ),
+                      onTap: () {},
+                    ),
+                    Divider(height: 1, color: AppTheme.dividerBg(context)),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(
+                        HugeIconsStroke.chartBreakoutCircle,
+                        size: 24,
+                      ),
+                      title: Text(
+                        "About Y2K Solutions",
+                        style: AppTheme.textLabel(context),
+                      ),
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlineErrorButton(
+                  text: 'Log Out',
+                  onPressed: () {
+                    DialogLogout().showDialog(context, _logout);
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
+          ],
         ),
-        Divider(thickness: 30, height: 30, color: AppTheme.dividerBg(context)),
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Icon(HugeIconsStroke.userGroup, size: 24),
-          title: Text("Customers", style: AppTheme.textLabel(context)),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CustomersScreen()),
-            );
-          },
-        ),
-        Divider(height: 1, color: AppTheme.dividerBg(context)),
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Icon(HugeIconsStroke.moneyReceiveFlow01, size: 24),
-          title: Text("Payments", style: AppTheme.textLabel(context)),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PaymentsScreen()),
-            );
-          },
-        ),
-        Divider(height: 1, color: AppTheme.dividerBg(context)),
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Icon(HugeIconsStroke.recycle02, size: 24),
-          title: Text("Scraps", style: AppTheme.textLabel(context)),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ScrapsScreen()),
-            );
-          },
-        ),
-        Divider(height: 1, color: AppTheme.dividerBg(context)),
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Icon(HugeIconsStroke.userGroup03, size: 24),
-          title: Text("Users", style: AppTheme.textLabel(context)),
-          onTap: () {},
-        ),
-        Divider(height: 1, color: AppTheme.dividerBg(context)),
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Icon(HugeIconsStroke.messageMultiple02, size: 24),
-          title: Text("Messages", style: AppTheme.textLabel(context)),
-          onTap: () {},
-        ),
-        Divider(thickness: 30, height: 30, color: AppTheme.dividerBg(context)),
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Icon(
-            Theme.of(context).brightness == Brightness.dark
-                ? HugeIconsStroke.moon02
-                : HugeIconsStroke.sun02,
-            size: 24,
-          ),
-          title: Text(
-            Theme.of(context).brightness == Brightness.dark
-                ? "Dark Mode"
-                : "Light Mode",
-            style: AppTheme.textLabel(context),
-          ),
-          trailing: Switch(
-            value: ThemeController.themeNotifier.value == ThemeMode.dark,
-            onChanged: (value) {
-              ThemeController.setTheme(
-                value ? ThemeMode.dark : ThemeMode.light,
-              );
-            },
-          ),
-          onTap: () {
-            final isDark =
-                ThemeController.themeNotifier.value == ThemeMode.dark;
-            ThemeController.setTheme(isDark ? ThemeMode.light : ThemeMode.dark);
-          },
-        ),
-        Divider(height: 1, color: AppTheme.dividerBg(context)),
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Icon(HugeIconsStroke.crown03, size: 24),
-          title: Text("Subscription", style: AppTheme.textLabel(context)),
-          onTap: () {},
-        ),
-        Divider(height: 1, color: AppTheme.dividerBg(context)),
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Icon(HugeIconsStroke.note, size: 24),
-          title: Text("Privacy Policy", style: AppTheme.textLabel(context)),
-          onTap: () {},
-        ),
-        Divider(height: 1, color: AppTheme.dividerBg(context)),
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Icon(HugeIconsStroke.headset, size: 24),
-          title: Text("Help Center", style: AppTheme.textLabel(context)),
-          onTap: () {},
-        ),
-        Divider(height: 1, color: AppTheme.dividerBg(context)),
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Icon(HugeIconsStroke.chartBreakoutCircle, size: 24),
-          title: Text(
-            "About Y2K Solutions",
-            style: AppTheme.textLabel(context),
-          ),
-          onTap: () {},
-        ),
-        Divider(height: 1, color: AppTheme.dividerBg(context)),
-        const SizedBox(height: 50),
-        ListTile(
-          title: OutlineErrorButton(
-            text: 'Log Out',
-            onPressed: () {
-              DialogLogout().showDialog(context, _logout);
-            },
-          ),
-        ),
-        const SizedBox(height: 30),
-      ],
+      ),
     );
+  }
+
+  Widget _buildInfoTile(IconData icon, String label, String value) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      leading: Icon(icon, size: 24),
+      title: Text(label, style: AppTheme.textLabel(context)),
+      subtitle: Text(
+        value.isNotEmpty ? value : "Not provided",
+        style: AppTheme.textSearchInfoLabeled(context).copyWith(fontSize: 12),
+      ),
+    );
+  }
+
+  String formatInternationalPhone(String number) {
+    if (number.startsWith("0")) {
+      return "+92 ${number.substring(1, 4)} ${number.substring(4, 7)} ${number.substring(7)}";
+    }
+    return number;
   }
 
   Widget _ledgersPage() {
@@ -1498,7 +1829,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ..sort((a, b) {
         final dateA = DateFormat('MMMM dd, yyyy').parse(a);
         final dateB = DateFormat('MMMM dd, yyyy').parse(b);
-        return _isSortAscending
+        return _isSortAscendingLedger
             ? dateA.compareTo(dateB)
             : dateB.compareTo(dateA);
       });
@@ -1561,30 +1892,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                   ),
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        _isSortAscending = !_isSortAscending;
-                        _allLedgers.sort((a, b) {
-                          final dateA = DateTime.parse(a.Date);
-                          final dateB = DateTime.parse(b.Date);
-                          return _isSortAscending
-                              ? dateA.compareTo(dateB)
-                              : dateB.compareTo(dateA);
+                  if (_allLedgers.isNotEmpty)
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _isSortAscendingLedger = !_isSortAscendingLedger;
+                          _allLedgers.sort((a, b) {
+                            final dateA = DateTime.parse(a.Date);
+                            final dateB = DateTime.parse(b.Date);
+                            return _isSortAscendingLedger
+                                ? dateA.compareTo(dateB)
+                                : dateB.compareTo(dateA);
+                          });
                         });
-                      });
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        _scrollControllerLedger.jumpTo(0);
-                      });
-                    },
-                    child: Icon(
-                      _isSortAscending
-                          ? HugeIconsSolid.sortByUp01
-                          : HugeIconsSolid.sortByDown01,
-                      size: 18,
-                      color: AppTheme.iconColor(context),
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _scrollControllerLedger.jumpTo(0);
+                        });
+                      },
+                      child: Icon(
+                        _isSortAscendingLedger
+                            ? HugeIconsSolid.sortByUp01
+                            : HugeIconsSolid.sortByDown01,
+                        size: 18,
+                        color: AppTheme.iconColor(context),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],
@@ -1604,7 +1936,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         )
                       : ListView.builder(
                           controller: _scrollControllerLedger,
-                          reverse: _isSortAscending,
                           physics: const AlwaysScrollableScrollPhysics(),
                           itemCount: sortedKeys.length,
                           itemBuilder: (context, index) {
@@ -1950,46 +2281,121 @@ class _DashboardScreenState extends State<DashboardScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             titleSpacing: 0,
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            toolbarHeight: 70,
+            title: Column(
               children: [
-                Row(
-                  children: [
-                    const SizedBox(width: 16),
-                    IconButton(
-                      icon: const Icon(HugeIconsStroke.menu02, size: 22),
-                      onPressed: () => _drawerController.toggle!(),
-                    ),
-                    const SizedBox(width: 5),
-                    Image.asset(
-                      AppTheme.appLogo(context),
-                      height: 120,
-                      width: 60,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      "My",
-                      style: AppTheme.textTitle(context).copyWith(
-                        fontSize: 20,
-                        fontFamily: AppFontFamily.poppinsBold,
-                      ),
-                    ),
-                    Text(
-                      menus[_currentIndex],
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTheme.textTitle(context).copyWith(
-                        fontSize: 20,
-                        fontFamily: AppFontFamily.poppinsLight,
-                      ),
-                    ),
-                    Text(
-                      ".",
-                      style: AppTheme.textTitleActive(
-                        context,
-                      ).copyWith(fontSize: 30),
-                    ),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Row(
+                    children: [
+                      if (!_showSearchBar) ...[
+                        IconButton(
+                          icon: const Icon(HugeIconsStroke.menu02, size: 22),
+                          onPressed: () => _drawerController.toggle!(),
+                        ),
+                        SizedBox(width: 5),
+                        if (_currentIndex < 1) ...[
+                          ValueListenableBuilder<String?>(
+                            valueListenable: avatarNotifier,
+                            builder: (context, avatar, _) {
+                              return Row(
+                                children: [
+                                  ClipOval(
+                                    child: avatar != null
+                                        ? Image.network(
+                                            avatar,
+                                            width: 40,
+                                            height: 40,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : SizedBox(
+                                            width: 40,
+                                            height: 40,
+                                            child: Icon(
+                                              HugeIconsSolid.user03,
+                                              size: 30,
+                                              color: AppTheme.iconColorThree(
+                                                context,
+                                              ),
+                                            ),
+                                          ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        "Hi, ",
+                                        style: AppTheme.textTitle(context)
+                                            .copyWith(
+                                              fontSize: 20,
+                                              fontFamily:
+                                                  AppFontFamily.poppinsBold,
+                                            ),
+                                      ),
+                                      Text(
+                                        _currentIndex > 0
+                                            ? menus[_currentIndex]
+                                            : user!["FullName"] ??
+                                                  'Unknown User',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTheme.textTitle(context)
+                                            .copyWith(
+                                              fontSize: 20,
+                                              fontFamily:
+                                                  AppFontFamily.poppinsLight,
+                                            ),
+                                      ),
+                                      Text(
+                                        ".",
+                                        style: AppTheme.textTitleActive(context)
+                                            .copyWith(
+                                              fontFamily: 'Poppins',
+                                              fontSize: 18,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
+                        if (_currentIndex > 0) ...[
+                          Image.asset(
+                            AppTheme.appLogo(context),
+                            height: 120,
+                            width: 60,
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            "My",
+                            style: AppTheme.textTitle(context).copyWith(
+                              fontSize: 20,
+                              fontFamily: AppFontFamily.poppinsBold,
+                            ),
+                          ),
+                          Text(
+                            menus[_currentIndex],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.textTitle(context).copyWith(
+                              fontSize: 20,
+                              fontFamily: AppFontFamily.poppinsLight,
+                            ),
+                          ),
+                          Text(
+                            ".",
+                            style: AppTheme.textTitleActive(
+                              context,
+                            ).copyWith(fontFamily: 'Poppins', fontSize: 18),
+                          ),
+                        ],
+
+                        const Spacer(),
+                      ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -2043,15 +2449,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
             selectedItemColor: AppTheme.onBoardingDotActive(context),
             unselectedItemColor: AppTheme.onBoardingDot(context),
             type: BottomNavigationBarType.fixed,
-            items: const [
+            items: [
               BottomNavigationBarItem(
                 icon: Icon(HugeIconsStroke.home11),
                 activeIcon: Icon(HugeIconsSolid.home11),
                 label: "Home",
               ),
               BottomNavigationBarItem(
-                icon: Icon(HugeIconsStroke.shoppingBasket01),
-                activeIcon: Icon(HugeIconsSolid.shoppingBasket01),
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(HugeIconsStroke.shoppingBasket01),
+
+                    AnimatedPositioned(
+                      duration: Duration(milliseconds: 500),
+                      right: -6,
+                      top: -3,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.onBoardingDot(context),
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: BoxConstraints(minWidth: 5, minHeight: 5),
+                      ),
+                    ),
+                  ],
+                ),
+
+                activeIcon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(HugeIconsSolid.shoppingBasket01),
+
+                    AnimatedPositioned(
+                      duration: Duration(milliseconds: 500),
+                      right: -9,
+                      top: -6,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.customListBg(context),
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          _filteredOrders.length.toString().padLeft(2, '0'),
+                          style: AppTheme.textSearchInfoLabeled(
+                            context,
+                          ).copyWith(fontSize: 10),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
                 label: "Orders",
               ),
               BottomNavigationBarItem(

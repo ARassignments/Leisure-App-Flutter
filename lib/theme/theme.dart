@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeController {
-  static final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
+  static final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(
+    ThemeMode.system,
+  );
   static const String _key = "theme_mode";
 
   static Future<void> loadTheme() async {
@@ -317,7 +319,7 @@ class AppTheme {
       Theme.of(context).brightness == Brightness.dark
       ? AppColor.neutral_100
       : AppColor.white;
-  
+
   static Color sliderHighlightBg(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
       ? AppColor.neutral_80
@@ -433,6 +435,8 @@ class FlatButton extends StatelessWidget {
   final bool disabled;
   final bool loading;
   final bool iconLeft;
+  final bool radiusCustom;
+  final BorderRadius? radius;
 
   const FlatButton({
     super.key,
@@ -442,6 +446,8 @@ class FlatButton extends StatelessWidget {
     this.disabled = false,
     this.loading = false,
     this.iconLeft = true,
+    this.radiusCustom = false,
+    this.radius,
   });
 
   @override
@@ -460,7 +466,11 @@ class FlatButton extends StatelessWidget {
           backgroundColor: isDark ? AppColor.white : AppColor.black,
           textStyle: AppFontFamily.medium_16,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: radiusCustom
+                ? radius ?? BorderRadius.circular(8)
+                : BorderRadius.circular(8),
+          ),
           overlayColor: isDark
               ? AppColor.black.withOpacity(0.2)
               : AppColor.white.withOpacity(0.2),
