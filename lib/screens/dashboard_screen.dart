@@ -1667,20 +1667,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         "View Orders",
                         style: AppTheme.textLabel(context),
                       ),
-                      trailing: AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppTheme.cardDarkBg(context),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          _filteredOrders.length.toString().padLeft(2, '0'),
-                          style: AppTheme.textSearchInfoLabeled(
-                            context,
-                          ).copyWith(fontSize: 10),
-                        ),
-                      ),
+                      trailing: _filteredOrders.length > 0
+                          ? AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppTheme.cardDarkBg(context),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                _filteredOrders.length.toString().padLeft(
+                                  2,
+                                  '0',
+                                ),
+                                style: AppTheme.textSearchInfoLabeled(
+                                  context,
+                                ).copyWith(fontSize: 10),
+                              ),
+                            )
+                          : null,
                       onTap: () {
                         setState(() => _currentIndex = 1);
                       },
@@ -2477,20 +2482,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   clipBehavior: Clip.none,
                   children: [
                     Icon(HugeIconsStroke.shoppingBasket01),
-
-                    AnimatedPositioned(
-                      duration: Duration(milliseconds: 500),
-                      right: -6,
-                      top: -3,
-                      child: Container(
-                        padding: EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.onBoardingDot(context),
-                          shape: BoxShape.circle,
+                    if (_filteredOrders.length > 0)
+                      AnimatedPositioned(
+                        duration: Duration(milliseconds: 500),
+                        right: -6,
+                        top: -3,
+                        child: Container(
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.onBoardingDot(context),
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: BoxConstraints(
+                            minWidth: 5,
+                            minHeight: 5,
+                          ),
                         ),
-                        constraints: BoxConstraints(minWidth: 5, minHeight: 5),
                       ),
-                    ),
                   ],
                 ),
 
@@ -2498,29 +2506,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   clipBehavior: Clip.none,
                   children: [
                     Icon(HugeIconsSolid.shoppingBasket01),
-
-                    AnimatedPositioned(
-                      duration: Duration(milliseconds: 500),
-                      right: -9,
-                      top: -6,
-                      child: Container(
-                        padding: EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.customListBg(context),
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          _filteredOrders.length.toString().padLeft(2, '0'),
-                          style: AppTheme.textSearchInfoLabeled(
-                            context,
-                          ).copyWith(fontSize: 10),
+                    if (_filteredOrders.length > 0)
+                      AnimatedPositioned(
+                        duration: Duration(milliseconds: 500),
+                        right: -9,
+                        top: -6,
+                        child: Container(
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.customListBg(context),
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            _filteredOrders.length.toString().padLeft(2, '0'),
+                            style: AppTheme.textSearchInfoLabeled(
+                              context,
+                            ).copyWith(fontSize: 10),
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
 
