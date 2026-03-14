@@ -313,34 +313,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Center(
                             child: Stack(
                               children: [
-                                Container(
-                                  width: 140,
-                                  height: 140,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(20),
-                                    color: AppTheme.customListBg(context),
+                                Hero(
+                                  tag: 'profile-avatar',
+                                  child: Container(
+                                    width: 140,
+                                    height: 140,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      color: AppTheme.customListBg(context),
+                                    ),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: localAvatar != null
+                                        ? Image.asset(
+                                            localAvatar!,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : CachedNetworkImage(
+                                            imageUrl:
+                                                "https://firebasestorage.googleapis.com/v0/b/urban-harmony-8fd99.appspot.com/o/ProfileImages%2Fboy_14.png?alt=media&token=7e4a25da-ffca-4374-b9aa-727b28b7bf0c",
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) =>
+                                                const Center(
+                                                  child:
+                                                      CircularProgressIndicator(),
+                                                ),
+                                            errorWidget: (context, url, error) =>
+                                                const Icon(
+                                                  HugeIconsSolid.user03,
+                                                  size: 50,
+                                                ),
+                                          ),
                                   ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: localAvatar != null
-                                      ? Image.asset(
-                                          localAvatar!,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : CachedNetworkImage(
-                                          imageUrl:
-                                              "https://firebasestorage.googleapis.com/v0/b/urban-harmony-8fd99.appspot.com/o/ProfileImages%2Fboy_14.png?alt=media&token=7e4a25da-ffca-4374-b9aa-727b28b7bf0c",
-                                          fit: BoxFit.cover,
-                                          placeholder: (context, url) =>
-                                              const Center(
-                                                child:
-                                                    CircularProgressIndicator(),
-                                              ),
-                                          errorWidget: (context, url, error) =>
-                                              const Icon(
-                                                HugeIconsSolid.user03,
-                                                size: 50,
-                                              ),
-                                        ),
                                 ),
 
                                 Positioned(

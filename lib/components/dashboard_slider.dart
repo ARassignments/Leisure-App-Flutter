@@ -2,6 +2,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import '/Models/slider_image_model.dart';
 import '/theme/theme.dart';
 
 class DashboardSlider extends StatefulWidget {
@@ -13,12 +14,25 @@ class DashboardSlider extends StatefulWidget {
 
 class _DashboardSliderState extends State<DashboardSlider> {
   bool _isLoading = false;
-  final CarouselSliderController _carouselController = CarouselSliderController();
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
 
-  final List<String> sliderImages = [
-    'https://plus.unsplash.com/premium_photo-1663931932651-ea743c9a0144?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1470',
-    'https://images.unsplash.com/photo-1643101681441-0c38d714fa14?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1332',
-    'https://plus.unsplash.com/premium_photo-1663931932688-306b0197d388?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1pbi1zYW1lLXNlcmllc3wxfHx8ZW58MHx8fHx8&auto=format&fit=crop&q=60&w=500',
+  final List<SliderImageModel> sliderImages = [
+    SliderImageModel(
+      url:
+          'https://plus.unsplash.com/premium_photo-1663931932651-ea743c9a0144?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1470',
+      isDartWatermark: true,
+    ),
+    SliderImageModel(
+      url:
+          'https://images.unsplash.com/photo-1643101681441-0c38d714fa14?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1332',
+      isDartWatermark: true,
+    ),
+    SliderImageModel(
+      url:
+          'https://plus.unsplash.com/premium_photo-1663931932688-306b0197d388?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1pbi1zYW1lLXNlcmllc3wxfHx8ZW58MHx8fHx8&auto=format&fit=crop&q=60&w=500',
+      isDartWatermark: false,
+    ),
   ];
 
   int _currentIndex = 0;
@@ -83,7 +97,7 @@ class _DashboardSliderState extends State<DashboardSlider> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             image: DecorationImage(
-              image: NetworkImage(sliderImages[index]),
+              image: NetworkImage(sliderImages[index].url),
               fit: BoxFit.cover,
             ),
           ),
@@ -93,7 +107,12 @@ class _DashboardSliderState extends State<DashboardSlider> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Image.asset("assets/images/logo_dark.png", width: 80),
+                child: Image.asset(
+                  sliderImages[index].isDartWatermark
+                      ? "assets/images/logo_dark.png"
+                      : "assets/images/logo.png",
+                  width: 80,
+                ),
               ),
             ],
           ),

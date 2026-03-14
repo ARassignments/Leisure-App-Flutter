@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '/components/dashboard_grid.dart';
 import '/components/menu_drawer.dart';
 import '/components/dashboard_charts.dart';
@@ -68,6 +69,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? _selectedOrderType;
 
   //Ledgers Screen
+  bool _hasAttemptedLedgerLoad = false;
   List<Ledger> _allLedgers = [];
   bool _isLoadingLedgers = true;
   bool _isSortAscendingLedger = false;
@@ -83,7 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _searchOrderController.addListener(_onOrderSearchChanged);
     _loadSessionAndCustomers();
     _loadOrders();
-    _loadLedgers();
+    _loadLedgers(showError: false);
     _initAvatar();
   }
 
@@ -477,7 +479,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _filteredOrders = List.from(_allOrders);
   }
 
-  Future<void> _loadLedgers() async {
+  Future<void> _loadLedgers({bool showError = false}) async {
     setState(() => _isLoadingLedgers = true);
 
     try {
@@ -486,11 +488,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // ✅ Check if customer is selected
       if (userId == null || userId == 0) {
         setState(() => _isLoadingLedgers = false);
-        AppSnackBar.show(
-          context,
-          message: "Please select a customer first.",
-          type: AppSnackBarType.error,
-        );
+        if (showError) {
+          AppSnackBar.show(
+            context,
+            message: "Please select a customer first.",
+            type: AppSnackBarType.error,
+          );
+        }
         return;
       }
 
@@ -539,7 +543,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _fromDateLedger = picked.start;
         _toDateLedger = picked.end;
       });
-      await _loadLedgers();
+      await _loadLedgers(showError: true);
     }
   }
 
@@ -1348,23 +1352,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
               builder: (context, avatar, _) {
                 return Column(
                   children: [
-                    Container(
-                      decoration: BoxDecoration(shape: BoxShape.circle),
-                      child: CircleAvatar(
-                        radius: 60,
-                        backgroundColor: AppTheme.customListBg(context),
-                        foregroundImage: avatar != null
-                            ? AssetImage(avatar)
-                            : const AssetImage(
-                                "assets/images/avatars/boy_14.png",
-                              ),
-                        child: avatar != null
-                            ? Icon(
-                                HugeIconsSolid.user03,
-                                size: 60,
-                                color: AppTheme.iconColorThree(context),
-                              )
-                            : null,
+                    Hero(
+                      tag: 'profile-avatar',
+                      child: Container(
+                        decoration: BoxDecoration(shape: BoxShape.circle),
+                        child: CircleAvatar(
+                          radius: 60,
+                          backgroundColor: AppTheme.customListBg(context),
+                          foregroundImage: avatar != null
+                              ? AssetImage(avatar)
+                              : const AssetImage(
+                                  "assets/images/avatars/boy_14.png",
+                                ),
+                          child: avatar != null
+                              ? Icon(
+                                  HugeIconsSolid.user03,
+                                  size: 60,
+                                  color: AppTheme.iconColorThree(context),
+                                )
+                              : null,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -1767,7 +1774,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         "About Y2K Solutions",
                         style: AppTheme.textLabel(context),
                       ),
-                      onTap: () {},
+                      onTap: () async {
+                        final Uri url = Uri.parse('https://y2ksolutions.com');
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(
+                            url,
+                            mode: LaunchMode
+                                .externalApplication, // opens in browser
+                          );
+                        } else {
+                          AppSnackBar.show(
+                            context,
+                            message: "Could not open the website.",
+                            type: AppSnackBarType.error,
+                          );
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -1858,7 +1880,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 customers: _allCustomers,
                 onSelected: (customer) {
                   setState(() => _selectedCustomerId = customer);
-                  _loadLedgers();
+                  _loadLedgers(showError: true);
                 },
                 onDateRangeTap: () => _selectDateRangeLedger(context),
                 ledgerLength: _allLedgers.length,
@@ -2308,16 +2330,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             height: 40,
                                             fit: BoxFit.cover,
                                           )
-                                        : SizedBox(
+                                        : Image.network(
+                                            "assets/images/avatars/boy_14.png",
                                             width: 40,
                                             height: 40,
-                                            child: Icon(
-                                              HugeIconsSolid.user03,
-                                              size: 30,
-                                              color: AppTheme.iconColorThree(
-                                                context,
-                                              ),
-                                            ),
+                                            fit: BoxFit.cover,
                                           ),
                                   ),
                                   const SizedBox(width: 10),
