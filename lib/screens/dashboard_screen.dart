@@ -67,9 +67,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   //Ledgers Screen
   List<Ledger> _allLedgers = [];
   bool _isLoadingLedgers = true;
+  bool _isSortAscending = false;
   DateTime _fromDateLedger = DateTime(2025, 1, 1);
   DateTime _toDateLedger = DateTime.now();
   Customer? _selectedCustomerId;
+  final ScrollController _scrollControllerLedger = ScrollController();
 
   @override
   void initState() {
@@ -88,6 +90,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _searchController.dispose();
     _searchOrderController.removeListener(_onOrderSearchChanged);
     _searchOrderController.dispose();
+    _scrollControllerLedger.dispose();
     super.dispose();
   }
 
@@ -1489,6 +1492,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       groupedLedgers.putIfAbsent(formattedDate, () => []);
       groupedLedgers[formattedDate]!.add(ledger);
     }
+
+    // Sort the keys so grouped date headers also follow sort direction
+    final sortedKeys = groupedLedgers.keys.toList()
+      ..sort((a, b) {
+        final dateA = DateFormat('MMMM dd, yyyy').parse(a);
+        final dateB = DateFormat('MMMM dd, yyyy').parse(b);
+        return _isSortAscending
+            ? dateA.compareTo(dateB)
+            : dateB.compareTo(dateA);
+      });
+
     double grandCreditTotal = _allLedgers.fold(
       0.0,
       (prev, l) => prev + l.Credit,
@@ -1529,15 +1543,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Icon(
-                    HugeIconsSolid.calendar02,
-                    size: 18,
-                    color: AppTheme.iconColor(context),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(
+                          HugeIconsSolid.calendar02,
+                          size: 18,
+                          color: AppTheme.iconColor(context),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "From: ${DateFormat('yyyy-MM-dd').format(_fromDateLedger)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDateLedger)}",
+                          style: AppTheme.textLabel(
+                            context,
+                          ).copyWith(fontSize: 12),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    "From: ${DateFormat('yyyy-MM-dd').format(_fromDateLedger)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDateLedger)}",
-                    style: AppTheme.textLabel(context).copyWith(fontSize: 12),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _isSortAscending = !_isSortAscending;
+                        _allLedgers.sort((a, b) {
+                          final dateA = DateTime.parse(a.Date);
+                          final dateB = DateTime.parse(b.Date);
+                          return _isSortAscending
+                              ? dateA.compareTo(dateB)
+                              : dateB.compareTo(dateA);
+                        });
+                      });
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _scrollControllerLedger.jumpTo(0);
+                      });
+                    },
+                    icon: Icon(
+                      _isSortAscending
+                          ? HugeIconsSolid.sortByUp01
+                          : HugeIconsSolid.sortByDown01,
+                      size: 18,
+                      color: AppTheme.iconColor(context),
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    splashRadius: 18,
+                    tooltip: _isSortAscending
+                        ? 'Sort Descending'
+                        : 'Sort Ascending',
                   ),
                 ],
               ),
@@ -1557,12 +1609,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               "No ledgers found for the selected date range & user",
                         )
                       : ListView.builder(
+                          controller: _scrollControllerLedger,
+                          reverse: _isSortAscending,
                           physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: groupedLedgers.keys.length,
+                          itemCount: sortedKeys.length,
                           itemBuilder: (context, index) {
-                            final dateKey = groupedLedgers.keys.elementAt(
+                            final dateKey = sortedKeys.elementAt(
                               index,
-                            );
+                            ); // <-- sortedKeys here
                             final ledgersForDate = groupedLedgers[dateKey]!;
 
                             return Card(
@@ -1570,7 +1624,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 left: 20,
                                 right: 20,
                                 top: index == 0 ? 0 : 2,
-                                bottom: index == groupedLedgers.keys.length - 1
+                                bottom: index == sortedKeys.length - 1
                                     ? 0
                                     : 8,
                               ),
