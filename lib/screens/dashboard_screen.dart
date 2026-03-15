@@ -52,6 +52,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isRefreshing = false;
 
+  // Dashboard Screen
+  bool _isLoadingDashboardReport = true;
+  DateTime _fromDateDashboardReport = DateTime.now();
+  DateTime _toDateDashboardReport = DateTime.now();
+  final TextEditingController _filterDashboardController =
+      TextEditingController();
+  int grandOrderTotalDashboard = 0;
+  double grandRevenueTotalDashboard = 0;
+  double grandCreditTotalDashboard = 0;
+  double grandDebitTotalDashboard = 0;
+
   //Orders Screen
   List<Order> _allOrders = [];
   List<Order> _filteredOrders = [];
@@ -85,6 +96,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadSessionAndCustomers();
     _loadOrders();
     _loadLedgers(showError: false);
+    _loadDashboardReport();
     _initAvatar();
   }
 
@@ -478,6 +490,98 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _filteredOrders = List.from(_allOrders);
   }
 
+  Future<void> _loadDashboardReport() async {
+    setState(() => _isLoadingDashboardReport = true);
+    try {
+      final fromDateFormatted = DateFormat(
+        'yyyy-MM-dd',
+      ).format(_fromDateDashboardReport);
+      final toDateFormatted = DateFormat(
+        'yyyy-MM-dd',
+      ).format(_toDateDashboardReport);
+      final response = await ApiService.getDashboardReport(
+        fromDate: fromDateFormatted,
+        toDate: toDateFormatted,
+        fromMonth: fromDateFormatted,
+        toMonth: toDateFormatted,
+      );
+
+      DateTime fromDate = DateTime.parse(fromDateFormatted);
+      DateTime toDate = DateTime.parse(toDateFormatted);
+
+      grandOrderTotalDashboard = 0;
+      grandRevenueTotalDashboard = 0;
+      grandCreditTotalDashboard = 0;
+      grandDebitTotalDashboard = 0;
+      for (var item in response.dashboard.DailyOrders) {
+        DateTime orderDate = DateTime.parse(item["OrderDate"]);
+        if (orderDate.isAfter(fromDate.subtract(const Duration(days: 1))) &&
+            orderDate.isBefore(toDate.add(const Duration(days: 1)))) {
+          int totalOrders = item["TotalOrders"] ?? 0;
+          grandOrderTotalDashboard += totalOrders;
+        }
+      }
+      for (var item in response.dashboard.DailyRevenue) {
+        DateTime orderDate = DateTime.parse(item["OrderDate"]);
+        if (orderDate.isAfter(fromDate.subtract(const Duration(days: 1))) &&
+            orderDate.isBefore(toDate.add(const Duration(days: 1)))) {
+          double totalRevenue = item["DailyRevenue"] ?? 0;
+          grandRevenueTotalDashboard += totalRevenue;
+        }
+      }
+      for (var item in response.dashboard.DailyCreditProfit) {
+        DateTime orderDate = DateTime.parse(item["OrderDate"]);
+        if (orderDate.isAfter(fromDate.subtract(const Duration(days: 1))) &&
+            orderDate.isBefore(toDate.add(const Duration(days: 1)))) {
+          double totalCredit = item["DailyProfit"] ?? 0;
+          grandCreditTotalDashboard += totalCredit;
+        }
+      }
+      for (var item in response.dashboard.DailyDebitProfit) {
+        DateTime orderDate = DateTime.parse(item["OrderDate"]);
+        if (orderDate.isAfter(fromDate.subtract(const Duration(days: 1))) &&
+            orderDate.isBefore(toDate.add(const Duration(days: 1)))) {
+          double totalDebit = item["DailyProfit"] ?? 0;
+          grandDebitTotalDashboard += totalDebit;
+        }
+      }
+
+      // setState(() {
+      //   for (var item in response.dashboard.DailyOrders) {
+      //     grandOrderTotalDashboard += item["TotalOrders"] as int;
+      //   }
+      //   print(grandOrderTotalDashboard);
+      // });
+    } catch (e) {
+      debugPrint("❌ Error fetching dashboard report: $e");
+    } finally {
+      setState(() => _isLoadingDashboardReport = false);
+    }
+  }
+
+  Future<void> _selectDateRangeForDahboardReport(BuildContext context) async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: DateTimeRange(
+        start: _fromDateDashboardReport,
+        end: _toDateDashboardReport,
+      ),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _fromDateDashboardReport = picked.start;
+        _toDateDashboardReport = picked.end;
+        _filterDashboardController.text =
+            "From: ${DateFormat('yyyy-MM-dd').format(_fromDateDashboardReport)} - "
+            "To: ${DateFormat('yyyy-MM-dd').format(_toDateDashboardReport)}";
+      });
+      await _loadDashboardReport();
+    }
+  }
+
   Future<void> _loadLedgers({bool showError = false}) async {
     setState(() => _isLoadingLedgers = true);
 
@@ -551,11 +655,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _homePage() {
+    _filterDashboardController.text =
+        "From: ${DateFormat('yyyy-MM-dd').format(_fromDateDashboardReport)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDateDashboardReport)}";
     return ListView(
       shrinkWrap: true,
       children: [
         DashboardSlider(),
-        DashboardGrid(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: TextFormField(
+            controller: _filterDashboardController,
+            readOnly: true,
+            selectAllOnFocus: false,
+            textAlign: TextAlign.start,
+            onTap: () {
+              _selectDateRangeForDahboardReport(context);
+            },
+            decoration: InputDecoration(
+              labelText: 'Select Date Range',
+              hintText: 'Select From Date - To Date',
+              prefixIcon: Padding(
+                padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                child: Icon(HugeIconsSolid.calendar03),
+              ),
+            ),
+            style: AppInputDecoration.inputTextStyle(context),
+          ),
+        ),
+        SizedBox(height: 16),
+        Stack(
+          children: [
+            AnimatedScale(
+              duration: const Duration(milliseconds: 500),
+              scale: _isLoadingDashboardReport ? 0.8 : 1.0,
+              child: AnimatedOpacity(
+                opacity: _isLoadingDashboardReport ? 0.0 : 1.0,
+                duration: const Duration(milliseconds: 500),
+                child: DashboardGrid(
+                  ordersValue: grandOrderTotalDashboard,
+                  revenueValue: grandRevenueTotalDashboard,
+                  creditSaleValue: grandCreditTotalDashboard,
+                  debitSaleValue: grandDebitTotalDashboard,
+                ),
+              ),
+            ),
+            if (_isLoadingDashboardReport)
+              AnimatedScale(
+                scale: _isLoadingDashboardReport ? 1.0 : 0.8,
+                duration: const Duration(milliseconds: 500),
+                child: AnimatedOpacity(
+                  opacity: _isLoadingDashboardReport ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 500),
+                  child: Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: AppTheme.inputProgress(context),
+                        strokeWidth: 2,
+                        strokeCap: StrokeCap.round,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
         DashboardCharts(),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -2311,7 +2476,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             title: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: Row(
                     children: [
                       if (!_showSearchBar) ...[
@@ -2421,28 +2586,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             actions: [
-              if (_currentIndex == 1) ...[
-                IconButton(
-                  icon: const Icon(HugeIconsStroke.refresh, size: 20),
-                  onPressed: _refreshOrders,
+              if (_currentIndex == 0)
+                InkWell(
+                  child: const Icon(HugeIconsStroke.calendar03, size: 20),
+                  onTap: () {
+                    _selectDateRangeForDahboardReport(context);
+                  },
                 ),
-                IconButton(
-                  icon: const Icon(HugeIconsStroke.filterHorizontal, size: 20),
-                  onPressed: _showFilterSheet,
+              if (_currentIndex == 1) ...[
+                InkWell(
+                  child: const Icon(HugeIconsStroke.refresh, size: 20),
+                  onTap: _refreshOrders,
+                ),
+                SizedBox(width: 8),
+                InkWell(
+                  child: const Icon(HugeIconsStroke.filterHorizontal, size: 20),
+                  onTap: _showFilterSheet,
                 ),
               ],
               if (_currentIndex == 2)
-                IconButton(
-                  icon: const Icon(HugeIconsStroke.refresh, size: 20),
-                  onPressed: () {
+                InkWell(
+                  child: const Icon(HugeIconsStroke.refresh, size: 20),
+                  onTap: () {
                     _refreshLedgers();
                   },
                 ),
-              IconButton(
-                onPressed: () {
+              SizedBox(width: 8),
+              InkWell(
+                onTap: () {
                   DialogLogout().showDialog(context, _logout);
                 },
-                icon: const Icon(HugeIconsStroke.logout02, size: 20),
+                child: const Icon(HugeIconsStroke.logout02, size: 20),
               ),
               const SizedBox(width: 16),
             ],

@@ -1,40 +1,67 @@
+import 'package:animated_digit/animated_digit.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import '/theme/theme.dart';
 
 class DashboardGrid extends StatelessWidget {
-  const DashboardGrid({super.key});
+  final int ordersValue;
+  final double revenueValue;
+  final double creditSaleValue;
+  final double debitSaleValue;
+  const DashboardGrid({
+    super.key,
+    required this.ordersValue,
+    required this.revenueValue,
+    required this.creditSaleValue,
+    required this.debitSaleValue,
+  });
 
   @override
   Widget build(BuildContext context) {
     final stats = [
       {
         'title': 'Orders',
-        'value': '0',
+        'value':
+            '${ordersValue == 0 ? 0 : ordersValue.toString().padLeft(2, '0')}',
+        'valueInt': ordersValue.toDouble(),
         'color1': Colors.tealAccent.shade400,
         'color2': Colors.teal,
         'icon': HugeIconsStroke.shoppingBasket02,
+        'prefix': "",
+        'suffix': " Qty",
       },
       {
         'title': 'Revenue',
-        'value': 'Rs 0.00',
+        'value':
+            'Rs ${revenueValue == 0 ? 0 : revenueValue.toString().padLeft(2, '0')}',
+        'valueInt': revenueValue.toDouble(),
         'color1': Colors.orangeAccent,
         'color2': Colors.deepOrange,
         'icon': HugeIconsStroke.wallet02,
+        'prefix': "Rs ",
+        'suffix': "",
       },
       {
         'title': 'Credit Sale',
-        'value': 'Rs 0.00',
+        'value':
+            'Rs ${creditSaleValue == 0 ? 0 : creditSaleValue.toString().padLeft(2, '0')}',
+        'valueInt': creditSaleValue.toDouble(),
         'color1': Colors.lightBlueAccent,
         'color2': Colors.blue,
         'icon': HugeIconsStroke.moneySend01,
+        'prefix': "Rs ",
+        'suffix': "",
       },
       {
         'title': 'Debit Sale',
-        'value': 'Rs 0.00',
+        'value':
+            'Rs ${debitSaleValue == 0 ? 0 : debitSaleValue.toString().padLeft(2, '0')}',
+        'valueInt': debitSaleValue.toDouble(),
         'color1': Colors.purpleAccent,
         'color2': Colors.deepPurple,
         'icon': HugeIconsStroke.moneyReceive01,
+        'prefix': "Rs ",
+        'suffix': "",
       },
     ];
 
@@ -61,9 +88,12 @@ class DashboardGrid extends StatelessWidget {
               context,
               item['title'] as String,
               item['value'] as String,
+              item['valueInt'] as double,
               item['color1'] as Color,
               item['color2'] as Color,
               item['icon'] as IconData,
+              item['prefix'] as String,
+              item['suffix'] as String,
             );
           },
         );
@@ -75,9 +105,12 @@ class DashboardGrid extends StatelessWidget {
     BuildContext context,
     String title,
     String value,
+    double valueInt,
     Color color1,
     Color color2,
     IconData icon,
+    String prefix,
+    String suffix,
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -107,9 +140,15 @@ class DashboardGrid extends StatelessWidget {
                     context,
                   ).copyWith(color: Colors.white, fontSize: 18),
                 ),
-                Text(
-                  value,
-                  style: AppTheme.textLabel(context).copyWith(
+                AnimatedDigitWidget(
+                  prefix: prefix,
+                  suffix: suffix,
+                  value: valueInt,
+                  duration: Duration(milliseconds: 1000),
+                  separateSymbol: ',',
+                  fractionDigits: 2,
+                  enableSeparator: true,
+                  textStyle: AppTheme.textLabel(context).copyWith(
                     color: Colors.white,
                     fontSize: 16,
                     fontFamily: AppFontFamily.poppinsMedium,

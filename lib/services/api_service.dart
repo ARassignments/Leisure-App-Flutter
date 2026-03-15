@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '/responses/dashboard_response.dart';
 import '/Models/customer_single_model.dart';
 import '/responses/scrap_response.dart';
 import '/responses/ledger_response.dart';
@@ -170,6 +171,37 @@ class ApiService {
       }
     } else {
       throw Exception('Failed to fetch customer');
+    }
+  }
+
+  static Future<DashboardResponse> getDashboardReport({
+    required String fromDate,
+    required String toDate,
+    required String fromMonth,
+    required String toMonth,
+  }) async {
+    final orgId = await SessionManager.getOrganizationId();
+
+    if (orgId == null) {
+      throw Exception("OrganizationId not found in session");
+    }
+
+    final url = Uri.parse(
+      "$baseUrl/GetDashboardReport"
+      "?OrganizationId=$orgId"
+      "&FromDate=$fromDate"
+      "&ToDate=$toDate"
+      "&FromMonth=$fromMonth"
+      "&ToMonth=$toMonth",
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return DashboardResponse.fromJson(jsonData);
+    } else {
+      throw Exception("Failed to fetch dashboard data: ${response.body}");
     }
   }
 }
