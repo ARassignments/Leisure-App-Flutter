@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '/responses/payment_response_by_id.dart';
 import '/responses/dashboard_response.dart';
 import '/Models/customer_single_model.dart';
 import '/responses/scrap_response.dart';
@@ -224,14 +225,14 @@ class ApiService {
       url,
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
-        "Id": 0, 
-        "OrganizationId": orgId, 
-        "UserId": userId, 
-        "PaymentType": paymentType, 
-        "PaymentMode": paymentMode, 
-        "PaymentDate": paymentDate, 
-        "Payment": paymentAmount, 
-        "Remarks": paymentRemarks
+        "Id": 0,
+        "OrganizationId": orgId,
+        "UserId": userId,
+        "PaymentType": paymentType,
+        "PaymentMode": paymentMode,
+        "PaymentDate": paymentDate,
+        "Payment": paymentAmount,
+        "Remarks": paymentRemarks,
       }),
     );
 
@@ -239,6 +240,70 @@ class ApiService {
       return jsonDecode(response.body);
     } else {
       throw Exception("Failed to add payment: ${response.body}");
+    }
+  }
+
+  static Future<Map<dynamic, dynamic>> editPayment(
+    int paymentId,
+    int userId,
+    String paymentType,
+    String paymentMode,
+    String paymentDate,
+    int paymentAmount,
+    String paymentRemarks,
+  ) async {
+    final url = Uri.parse("$baseUrl/AddPayment");
+    final orgId = await SessionManager.getOrganizationId();
+
+    if (orgId == null) {
+      throw Exception("OrganizationId not found in session");
+    }
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "Id": paymentId,
+        "OrganizationId": orgId,
+        "UserId": userId,
+        "PaymentType": paymentType,
+        "PaymentMode": paymentMode,
+        "PaymentDate": paymentDate,
+        "Payment": paymentAmount,
+        "Remarks": paymentRemarks,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to edit payment: ${response.body}");
+    }
+  }
+
+  static Future<PaymentResponseById> getPaymentById({
+    required int id
+  }) async {
+    final orgId = await SessionManager.getOrganizationId();
+
+    if (orgId == null) {
+      throw Exception("OrganizationId not found in session");
+    }
+
+    final url = Uri.parse(
+      "$baseUrl/GetPaymentById"
+      "?Id=$id"
+      "&OrganizationId=$orgId"
+      "&CurrentUserName",
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return PaymentResponseById.fromJson(jsonData);
+    } else {
+      throw Exception("Failed to fetch payment data: ${response.body}");
     }
   }
 }

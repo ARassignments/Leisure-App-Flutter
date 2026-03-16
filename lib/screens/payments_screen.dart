@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import '/screens/manage_payments/edit_payment.dart';
 import '/screens/manage_payments/add_payment.dart';
 import '/components/dialog_payment_reciept.dart';
 import '/Models/customer_single_model.dart';
@@ -327,13 +328,42 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
                                 ),
                                 child: Slidable(
                                   key: ValueKey(payment.Id),
-                                  startActionPane: ActionPane(motion: const ScrollMotion(), 
-                                  extentRatio: 0.2,
-                                  children: [
-                                    Expanded(
+                                  startActionPane: ActionPane(
+                                    motion: const ScrollMotion(),
+                                    extentRatio: 0.2,
+                                    children: [
+                                      Expanded(
                                         child: InkWell(
-                                          onTap: () {
+                                          onTap: () async {
                                             Slidable.of(context)?.close();
+                                            final result = await showModalBottomSheet(
+                                              context: context,
+                                              isDismissible: false,
+                                              enableDrag: false,
+                                              showDragHandle: true,
+                                              isScrollControlled: true,
+                                              backgroundColor: Theme.of(
+                                                context,
+                                              ).scaffoldBackgroundColor,
+                                              shape:
+                                                  const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.vertical(
+                                                          top: Radius.circular(
+                                                            30,
+                                                          ),
+                                                        ),
+                                                  ),
+                                              builder: (context) =>
+                                                  EditPaymentBottomSheet(
+                                                    paymentId: payment.Id,
+                                                  ),
+                                            );
+
+                                            if (result == true) {
+                                              _searchController.clear();
+                                              _loadPayments(isResetAll: true);
+                                            }
                                           },
                                           child: Container(
                                             margin: const EdgeInsets.symmetric(
@@ -362,7 +392,8 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
                                           ),
                                         ),
                                       ),
-                                  ]),
+                                    ],
+                                  ),
                                   endActionPane: ActionPane(
                                     motion: const ScrollMotion(),
                                     extentRatio: 0.4,

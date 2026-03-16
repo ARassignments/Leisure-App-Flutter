@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../screens/login_screen.dart';
 import '../screens/splash_screen.dart';
 import '../theme/theme.dart';
@@ -12,7 +13,9 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
   await ThemeController.loadTheme();
-  runApp(const MyApp());
+  runApp(const ProviderScope(
+      child: MyApp(),
+    ),);
 }
 
 class MyApp extends StatelessWidget {

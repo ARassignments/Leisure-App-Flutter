@@ -2,6 +2,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '/providers/payment_type_provider.dart';
+import '/Models/payment_single_model.dart';
+import '/responses/payment_response_by_id.dart';
 import '/Models/customer_model.dart';
 import '/components/customer_search_field_global.dart';
 import '/responses/customer_response.dart';
@@ -13,14 +15,17 @@ import '/components/appsnackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 
-class AddPaymentBottomSheet extends ConsumerStatefulWidget {
-  const AddPaymentBottomSheet({super.key});
+class EditPaymentBottomSheet extends ConsumerStatefulWidget {
+  final int paymentId;
+  const EditPaymentBottomSheet({super.key, required this.paymentId});
 
   @override
-  ConsumerState<AddPaymentBottomSheet> createState() => _AddPaymentBottomSheetState();
+  ConsumerState<EditPaymentBottomSheet> createState() =>
+      _EditPaymentBottomSheetState();
 }
 
-class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
+class _EditPaymentBottomSheetState
+    extends ConsumerState<EditPaymentBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _paymentAmountController = TextEditingController();
   final _paymentRemarksController = TextEditingController();
@@ -31,6 +36,11 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
   late Future<CustomerResponse> _futureCustomers;
   List<Customer> _allCustomers = [];
   Customer? _selectedCustomerId;
+
+  //Payment Record
+  late Future<PaymentResponseById> _futurePayment;
+  late PaymentSingleModel _singlePayment;
+  DateTime? _selectedPaymentDate;
 
   final List<PaymentDropdownModel> paymentModes = [
     PaymentDropdownModel(
@@ -55,6 +65,8 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
   void initState() {
     super.initState();
     _loadCustomers();
+    _futurePayment = ApiService.getPaymentById(id: widget.paymentId);
+    _loadPayment();
   }
 
   Future<void> _loadCustomers() async {
@@ -64,17 +76,89 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
       setState(() {
         _allCustomers = response.accounts;
       });
+      _setSelectedCustomer();
     } catch (e) {
       debugPrint("Error loading customers: $e");
     }
   }
 
-  Future<void> addPayment() async {
+  void _loadPayment() async {
+    try {
+      final response = await _futurePayment;
+      if (!mounted) return;
+      if (response.success) {
+        final payment = response.payment;
+
+        setState(() {
+          _singlePayment = payment;
+
+          // Text fields
+          _paymentAmountController.text = payment.Payment.toInt().toString();
+
+          // Convert API date string to DateTime
+          _selectedPaymentDate = DateFormat(
+            'dd MMM yyyy',
+          ).parse(_singlePayment.PaymentDate);
+
+          // Format for TextField
+          _paymentDateController.text = DateFormat(
+            'yyyy-MM-dd',
+          ).format(_selectedPaymentDate!);
+          _paymentRemarksController.text = payment.Remarks ?? "";
+
+          // Payment Mode dropdown
+          selectedPaymentMode = paymentModes.firstWhere(
+            (mode) =>
+                mode.name.toLowerCase() ==
+                (payment.PaymentMode ?? "").toLowerCase(),
+            orElse: () => paymentModes.first,
+          );
+
+          final paymentTypes = ref.read(paymentTypeProvider);
+          final enabledPaymentTypes = paymentTypes
+              .where((type) => type.isVisible)
+              .toList();
+
+          // Payment Type dropdown
+          // Safe assignment
+          if (enabledPaymentTypes.isNotEmpty) {
+            selectedPaymentType = enabledPaymentTypes.firstWhere(
+              (type) =>
+                  type.name.toLowerCase() ==
+                  (_singlePayment.PaymentType ?? "").toLowerCase(),
+              orElse: () => enabledPaymentTypes.first,
+            );
+          } else {
+            selectedPaymentType = null;
+          }
+        });
+        _setSelectedCustomer();
+      }
+    } catch (e) {
+      debugPrint("Payment Load Error: $e");
+    }
+  }
+
+  void _setSelectedCustomer() {
+    if (_singlePayment == null || _allCustomers.isEmpty) return;
+
+    final match = _allCustomers.firstWhere(
+      (customer) => customer.UserId == _singlePayment.UserId,
+      orElse: () => _allCustomers.first,
+    );
+
+    setState(() {
+      _selectedCustomerId = match;
+    });
+  }
+
+  Future<void> EditPayment() async {
     setState(() => _isLoading = true);
 
     try {
       final int? userId = _selectedCustomerId?.UserId;
-      final response = await ApiService.addPayment(
+      final response = await ApiService.editPayment(
+        widget.paymentId,
         userId!,
         selectedPaymentType!.name.toString(),
         selectedPaymentMode!.name.toString(),
@@ -88,7 +172,7 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
         if (mounted) {
           AppSnackBar.show(
             context,
-            message: 'Payment Added Successfully',
+            message: 'Payment Edit Successfully',
             type: AppSnackBarType.success,
           );
           Navigator.pop(context, true);
@@ -105,7 +189,7 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
       print("Add payment error: $e");
       AppSnackBar.show(
         context,
-        message: "Failed to add payment",
+        message: "Failed to edit payment",
         type: AppSnackBarType.error,
       );
     } finally {
@@ -126,6 +210,7 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final paymentTypes = ref.watch(paymentTypeProvider);
+
     final enabledPaymentTypes = paymentTypes
         .where((type) => type.isVisible)
         .toList();
@@ -144,7 +229,7 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "Add Payment",
+                "Edit Payment",
                 textAlign: TextAlign.center,
                 style: AppTheme.textLabel(
                   context,
@@ -155,6 +240,7 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
 
               CustomerSearchFieldGlobal(
                 customers: _allCustomers,
+                selectedCustomer: _selectedCustomerId,
                 onSelected: (customer) {
                   setState(() => _selectedCustomerId = customer);
                 },
@@ -181,8 +267,7 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
                           child: IconButton(
                             icon: Icon(HugeIconsStroke.cancel02),
                             onPressed: () {
-                              _paymentDateController
-                                  .clear();
+                              _paymentDateController.clear();
                             },
                           ),
                         )
@@ -191,15 +276,17 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
                 onTap: () async {
                   DateTime? pickedDate = await showDatePicker(
                     context: context,
-                    initialDate: DateTime.now(),
+                    initialDate: _selectedPaymentDate ?? DateTime.now(),
                     firstDate: DateTime(2000),
                     lastDate: DateTime(2100),
                   );
 
                   if (pickedDate != null) {
-                    String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
                     setState(() {
-                      _paymentDateController.text = formattedDate;
+                      _selectedPaymentDate = pickedDate;
+                      _paymentDateController.text = DateFormat(
+                        'yyyy-MM-dd',
+                      ).format(pickedDate);
                     });
                   }
                 },
@@ -630,7 +717,7 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
                 onPressed: _isLoading
                     ? null
                     : () {
-                        if (_formKey.currentState!.validate()) addPayment();
+                        if (_formKey.currentState!.validate()) EditPayment();
                       },
                 child: _isLoading
                     ? SizedBox(
@@ -642,7 +729,7 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
                           color: Colors.white,
                         ),
                       )
-                    : Text("Add Payment"),
+                    : Text("Edit Payment"),
               ),
 
               OutlinedButton(

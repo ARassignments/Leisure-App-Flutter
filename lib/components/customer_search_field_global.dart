@@ -5,16 +5,19 @@ import '/theme/theme.dart';
 
 class CustomerSearchFieldGlobal extends StatefulWidget {
   final List<Customer> customers;
+  final Customer? selectedCustomer;
   final Function(Customer) onSelected;
 
   const CustomerSearchFieldGlobal({
     super.key,
     required this.customers,
-    required this.onSelected
+    this.selectedCustomer,
+    required this.onSelected,
   });
 
   @override
-  State<CustomerSearchFieldGlobal> createState() => _CustomerSearchFieldGlobalState();
+  State<CustomerSearchFieldGlobal> createState() =>
+      _CustomerSearchFieldGlobalState();
 }
 
 class _CustomerSearchFieldGlobalState extends State<CustomerSearchFieldGlobal>
@@ -34,6 +37,11 @@ class _CustomerSearchFieldGlobalState extends State<CustomerSearchFieldGlobal>
   void initState() {
     super.initState();
     _filtered = widget.customers;
+
+    // Set selected customer if available
+    if (widget.selectedCustomer != null) {
+      _controller.text = widget.selectedCustomer!.UserName;
+    }
 
     _animController = AnimationController(
       vsync: this,
@@ -85,6 +93,18 @@ class _CustomerSearchFieldGlobalState extends State<CustomerSearchFieldGlobal>
 
   void _updateOverlay() {
     _overlayEntry?.markNeedsBuild();
+  }
+
+  @override
+  void didUpdateWidget(covariant CustomerSearchFieldGlobal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.selectedCustomer != null &&
+        widget.selectedCustomer != oldWidget.selectedCustomer) {
+      _controller.text = widget.selectedCustomer!.UserName;
+    }
+
+    _filtered = widget.customers;
   }
 
   OverlayEntry _createOverlayEntry() {

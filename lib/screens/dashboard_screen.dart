@@ -3,6 +3,7 @@ import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '/screens/settings/payment_type_settings.dart';
 import '/components/dashboard_grid.dart';
 import '/components/menu_drawer.dart';
 import '/components/dashboard_charts.dart';
@@ -1858,6 +1859,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           : null,
                       onTap: () {
                         setState(() => _currentIndex = 1);
+                      },
+                    ),
+                    Divider(height: 1, color: AppTheme.dividerBg(context)),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(HugeIconsStroke.payment01, size: 24),
+                      title: Text(
+                        "Payment Types",
+                        style: AppTheme.textLabel(context),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            opaque: false,
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    PaymentTypeSettingsScreen(),
+                            transitionsBuilder:
+                                (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  const begin = Offset(0.0, 1.0);
+                                  const end = Offset.zero;
+                                  const curve = Curves.easeInOut;
+                                  final tween = Tween(
+                                    begin: begin,
+                                    end: end,
+                                  ).chain(CurveTween(curve: curve));
+                                  return SlideTransition(
+                                    position: animation.drive(tween),
+                                    child: child,
+                                  );
+                                },
+                          ),
+                        );
                       },
                     ),
                     Divider(height: 1, color: AppTheme.dividerBg(context)),
