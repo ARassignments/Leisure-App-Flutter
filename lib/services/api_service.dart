@@ -204,4 +204,41 @@ class ApiService {
       throw Exception("Failed to fetch dashboard data: ${response.body}");
     }
   }
+
+  static Future<Map<dynamic, dynamic>> addPayment(
+    int userId,
+    String paymentType,
+    String paymentMode,
+    String paymentDate,
+    int paymentAmount,
+    String paymentRemarks,
+  ) async {
+    final url = Uri.parse("$baseUrl/AddPayment");
+    final orgId = await SessionManager.getOrganizationId();
+
+    if (orgId == null) {
+      throw Exception("OrganizationId not found in session");
+    }
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "Id": 0, 
+        "OrganizationId": orgId, 
+        "UserId": userId, 
+        "PaymentType": paymentType, 
+        "PaymentMode": paymentMode, 
+        "PaymentDate": paymentDate, 
+        "Payment": paymentAmount, 
+        "Remarks": paymentRemarks
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to add payment: ${response.body}");
+    }
+  }
 }

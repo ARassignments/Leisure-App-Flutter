@@ -25,35 +25,8 @@ class MyApp extends StatelessWidget {
       builder: (_, themeMode, __) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            useMaterial3: true,
-            splashFactory: NoSplash.splashFactory, // removes ripple globally
-            highlightColor: Colors.transparent, // removes highlight globally
-            splashColor: Colors.transparent, // removes splash globally
-            hoverColor: Colors.transparent,
-            brightness: Brightness.light,
-            scaffoldBackgroundColor: AppColor.white,
-            inputDecorationTheme: AppInputDecoration.inputDecorationTheme(
-              false,
-            ),
-            iconTheme: IconThemeData(color: AppColor.neutral_10),
-            primaryColor: AppColor.black,
-          ),
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            splashFactory: NoSplash.splashFactory, // removes ripple globally
-            highlightColor: Colors.transparent, // removes highlight globally
-            splashColor: Colors.transparent, // removes splash globally
-            hoverColor: Colors.transparent,
-            // brightness: Brightness.light,
-            // scaffoldBackgroundColor: AppColor.white,
-            // inputDecorationTheme: AppInputDecoration.inputDecorationTheme(false),
-            iconTheme: IconThemeData(color: AppColor.neutral_70),
-            primaryColor: AppColor.black,
-            brightness: Brightness.dark,
-            scaffoldBackgroundColor: AppColor.neutral_100,
-            inputDecorationTheme: AppInputDecoration.inputDecorationTheme(true),
-          ),
+          theme: MyTheme.lightTheme,
+          darkTheme: MyTheme.darkTheme,
           themeMode: themeMode, // 👈 controlled by ThemeController
           builder: (context, child) {
             return ColoredBox(

@@ -1,6 +1,13 @@
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '/theme/custom_themes/appbar_theme.dart';
+import '/theme/custom_themes/bottom_sheet_theme.dart';
+// import '/theme/custom_themes/checkbox_theme.dart';
+import '/theme/custom_themes/chip_theme.dart';
+import '/theme/custom_themes/elevated_button_theme.dart';
+import '/theme/custom_themes/outlined_button_theme.dart';
+import '/theme/custom_themes/text_theme.dart';
 
 class ThemeController {
   static final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(
@@ -481,6 +488,7 @@ class FlatButton extends StatelessWidget {
                 height: 24,
                 child: CircularProgressIndicator(
                   color: Colors.white,
+                  strokeCap: StrokeCap.round,
                   strokeWidth: 2,
                 ),
               )
@@ -926,4 +934,49 @@ class AppInputDecoration {
       ),
     );
   }
+}
+
+class MyTheme {
+  MyTheme._();
+
+  static ThemeData lightTheme = ThemeData(
+    useMaterial3: true,
+    splashFactory: NoSplash.splashFactory,
+    highlightColor: Colors.transparent,
+    splashColor: Colors.transparent,
+    hoverColor: Colors.transparent,
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: AppColor.white,
+    inputDecorationTheme: AppInputDecoration.inputDecorationTheme(false),
+    iconTheme: IconThemeData(color: AppColor.neutral_10),
+    primaryColor: AppColor.black,
+    fontFamily: 'Poppins',
+    textTheme: MyTextTheme.lightTextTheme,
+    elevatedButtonTheme: MyElevatedButtonTheme.lightElevatedButtonTheme,
+    appBarTheme: MyAppBarTheme.lightAppBarTheme,
+    bottomSheetTheme: MyBottomSheetTheme.lightBottomSheetTheme,
+    // checkboxTheme: MyCheckboxTheme.lightCheckboxTheme,
+    chipTheme: MyChipTheme.lightChipTheme,
+    outlinedButtonTheme: MyOutlinedButtonTheme.lightOutlinedButtonTheme,
+  );
+  static ThemeData darkTheme = ThemeData(
+    useMaterial3: true,
+    splashFactory: NoSplash.splashFactory,
+    highlightColor: Colors.transparent,
+    splashColor: Colors.transparent,
+    hoverColor: Colors.transparent,
+    iconTheme: IconThemeData(color: AppColor.neutral_70),
+    primaryColor: AppColor.black,
+    brightness: Brightness.dark,
+    scaffoldBackgroundColor: AppColor.neutral_100,
+    inputDecorationTheme: AppInputDecoration.inputDecorationTheme(true),
+    fontFamily: 'Poppins',
+    textTheme: MyTextTheme.darkTextTheme,
+    elevatedButtonTheme: MyElevatedButtonTheme.darkElevatedButtonTheme,
+    appBarTheme: MyAppBarTheme.darkAppBarTheme,
+    bottomSheetTheme: MyBottomSheetTheme.darkBottomSheetTheme,
+    // checkboxTheme: MyCheckboxTheme.darkCheckboxTheme,
+    chipTheme: MyChipTheme.darkkChipTheme,
+    outlinedButtonTheme: MyOutlinedButtonTheme.darkOutlinedButtonTheme,
+  );
 }

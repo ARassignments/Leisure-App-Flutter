@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import '/screens/manage_payments/add_payment.dart';
 import '/components/dialog_payment_reciept.dart';
 import '/Models/customer_single_model.dart';
 import '/components/appsnackbar.dart';
@@ -12,14 +14,15 @@ import '/services/api_service.dart';
 import '/theme/theme.dart';
 import '/utils/session_manager.dart';
 
-class PaymentsScreen extends StatefulWidget {
+class PaymentsScreen extends ConsumerStatefulWidget {
   const PaymentsScreen({super.key});
 
   @override
-  State<PaymentsScreen> createState() => _PaymentsScreenState();
+  ConsumerState<PaymentsScreen> createState() => _PaymentsScreenState();
 }
 
-class _PaymentsScreenState extends State<PaymentsScreen> {
+class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
+    with AutomaticKeepAliveClientMixin {
   String? token;
   Map<String, dynamic>? user;
   CustomerSingleModel? _customer;
@@ -33,6 +36,9 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now();
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -54,9 +60,15 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     user = await SessionManager.getUser();
   }
 
-  Future<void> _loadPayments() async {
+  Future<void> _loadPayments({bool isResetAll = false}) async {
     setState(() => _isLoadingPayments = true);
     try {
+      if (isResetAll) {
+        setState(() {
+          _fromDate = DateTime.now();
+          _toDate = DateTime.now();
+        });
+      }
       final fromDateFormatted = DateFormat('yyyy-MM-dd').format(_fromDate);
       final toDateFormatted = DateFormat('yyyy-MM-dd').format(_toDate);
       final response = await ApiService.getAllPayments(
@@ -315,6 +327,42 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                 ),
                                 child: Slidable(
                                   key: ValueKey(payment.Id),
+                                  startActionPane: ActionPane(motion: const ScrollMotion(), 
+                                  extentRatio: 0.2,
+                                  children: [
+                                    Expanded(
+                                        child: InkWell(
+                                          onTap: () {
+                                            Slidable.of(context)?.close();
+                                          },
+                                          child: Container(
+                                            margin: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 5,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.customListBg(
+                                                context,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            height: double.infinity,
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  HugeIconsSolid.edit01,
+                                                  color: Colors.blue,
+                                                  size: 24,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ]),
                                   endActionPane: ActionPane(
                                     motion: const ScrollMotion(),
                                     extentRatio: 0.4,
@@ -603,7 +651,12 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         ),
         if (_filteredPayments.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 10,
+              bottom: 10,
+            ),
             child: Column(
               children: [
                 Row(
@@ -686,6 +739,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -714,6 +768,52 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         ],
       ),
       body: user == null ? const Center(child: LoadingLogo()) : _paymentPage(),
+      floatingActionButton: AnimatedPadding(
+        duration: Duration(milliseconds: 300),
+        padding: EdgeInsets.only(
+          bottom: _filteredPayments.isEmpty ? 0 : 75,
+          right: 10,
+        ),
+        child: FloatingActionButton.extended(
+          isExtended: true,
+          foregroundColor: AppTheme.iconColor(context),
+          elevation: 0,
+          focusElevation: 0,
+          hoverElevation: 0,
+          highlightElevation: 0,
+          onPressed: () async {
+            final result = await showModalBottomSheet(
+              context: context,
+              isDismissible: false,
+              enableDrag: false,
+              showDragHandle: true,
+              isScrollControlled: true,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+              ),
+              builder: (context) => const AddPaymentBottomSheet(),
+            );
+
+            if (result == true) {
+              _searchController.clear();
+              _loadPayments(isResetAll: true);
+            }
+          },
+          backgroundColor: AppTheme.customListBg(context),
+          label: Row(
+            spacing: 8,
+            children: [
+              Icon(
+                HugeIconsStroke.add01,
+                color: AppTheme.iconColor(context),
+                size: 20,
+              ),
+              Text("Add Payment", style: AppTheme.textLabel(context)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

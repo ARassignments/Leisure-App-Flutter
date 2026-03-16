@@ -700,20 +700,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             if (_isLoadingDashboardReport)
-              AnimatedScale(
-                scale: _isLoadingDashboardReport ? 1.0 : 0.8,
-                duration: const Duration(milliseconds: 500),
-                child: AnimatedOpacity(
-                  opacity: _isLoadingDashboardReport ? 1.0 : 0.0,
+              Positioned.fill(
+                top: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: AnimatedScale(
+                  scale: _isLoadingDashboardReport ? 1.0 : 0.8,
                   duration: const Duration(milliseconds: 500),
-                  child: Center(
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        color: AppTheme.inputProgress(context),
-                        strokeWidth: 2,
-                        strokeCap: StrokeCap.round,
+                  child: AnimatedOpacity(
+                    opacity: _isLoadingDashboardReport ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 500),
+                    child: Center(
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          color: AppTheme.inputProgress(context),
+                          strokeWidth: 5,
+                          strokeCap: StrokeCap.round,
+                        ),
                       ),
                     ),
                   ),
