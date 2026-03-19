@@ -2540,21 +2540,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             builder: (context, avatar, _) {
                               return Row(
                                 children: [
-                                  ClipOval(
-                                    child: avatar != null
-                                        ? Image.network(
-                                            avatar,
-                                            width: 40,
-                                            height: 40,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : Image.network(
-                                            "assets/images/avatars/boy_14.png",
-                                            width: 40,
-                                            height: 40,
-                                            fit: BoxFit.cover,
-                                          ),
-                                  ),
+                                  // ClipOval(
+                                  //   child: avatar != null
+                                  //       ? Image.network(
+                                  //           avatar,
+                                  //           width: 40,
+                                  //           height: 40,
+                                  //           fit: BoxFit.cover,
+                                  //         )
+                                  //       : Image.network(
+                                  //           "assets/images/avatars/boy_14.png",
+                                  //           width: 40,
+                                  //           height: 40,
+                                  //           fit: BoxFit.cover,
+                                  //         ),
+                                  // ),
                                   const SizedBox(width: 10),
                                   Row(
                                     children: [
@@ -2572,6 +2572,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             ? menus[_currentIndex]
                                             : user!["FullName"] ??
                                                   'Unknown User',
+                                            // : "Unknown User",
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: AppTheme.textTitle(context)

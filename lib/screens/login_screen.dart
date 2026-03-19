@@ -357,7 +357,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final user = result["User"];
 
         // Save session
-        await SessionManager.saveUserSession(token, user, _rememberMe);
+        await SessionManager.saveUserSession(token, user, _rememberMe,_passwordController.text.trim());
 
         // Navigate to home
         if (mounted) {

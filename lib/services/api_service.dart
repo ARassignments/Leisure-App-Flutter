@@ -306,4 +306,30 @@ class ApiService {
       throw Exception("Failed to fetch payment data: ${response.body}");
     }
   }
+
+  static Future<Map<dynamic, dynamic>> deletePaymentById(
+    int paymentId
+  ) async {
+    final url = Uri.parse("$baseUrl/DeletePaymentById");
+    final userPassword = await SessionManager.getUserPassword();
+
+    if (userPassword == null) {
+      throw Exception("UserPassword not found in session");
+    }
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "Id": paymentId,
+        "Password": "1"
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to delete payment: ${response.body}");
+    }
+  }
 }

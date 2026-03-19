@@ -8,12 +8,12 @@ class PaymentTypeNotifier extends StateNotifier<List<PaymentDropdownModel>> {
   static List<PaymentDropdownModel> _defaultPaymentTypes() {
     return [
       PaymentDropdownModel(true, true, "", name: "Cash", icon: HugeIconsSolid.wallet01),
-      PaymentDropdownModel(true, true, "", name: "Bank", icon: HugeIconsSolid.bank),
-      PaymentDropdownModel(false, false, "assets/images/payment_type/jazzcash.png",
+      PaymentDropdownModel(false, true, "", name: "Bank", icon: HugeIconsSolid.bank),
+      PaymentDropdownModel(true, false, "assets/images/payment_type/jazzcash.png",
           name: "JazzCash", icon: HugeIconsSolid.sendToMobile),
-      PaymentDropdownModel(false, false, "assets/images/payment_type/ubl-bank.png",
+      PaymentDropdownModel(true, false, "assets/images/payment_type/ubl-bank.png",
           name: "UBL Bank", icon: HugeIconsSolid.bank),
-      PaymentDropdownModel(false, false, "assets/images/payment_type/meezan-bank.png",
+      PaymentDropdownModel(true, false, "assets/images/payment_type/meezan-bank.png",
           name: "Meezan Bank", icon: HugeIconsSolid.bank),
       PaymentDropdownModel(false, false, "assets/images/payment_type/easypaisa.png",
           name: "EasyPaisa", icon: HugeIconsSolid.bank),

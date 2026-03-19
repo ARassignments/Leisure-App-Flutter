@@ -104,13 +104,13 @@ class _EditPaymentBottomSheetState
           _paymentDateController.text = DateFormat(
             'yyyy-MM-dd',
           ).format(_selectedPaymentDate!);
-          _paymentRemarksController.text = payment.Remarks ?? "";
+          _paymentRemarksController.text = payment.Remarks;
 
           // Payment Mode dropdown
           selectedPaymentMode = paymentModes.firstWhere(
             (mode) =>
                 mode.name.toLowerCase() ==
-                (payment.PaymentMode ?? "").toLowerCase(),
+                (payment.PaymentMode).toLowerCase(),
             orElse: () => paymentModes.first,
           );
 
@@ -125,7 +125,7 @@ class _EditPaymentBottomSheetState
             selectedPaymentType = enabledPaymentTypes.firstWhere(
               (type) =>
                   type.name.toLowerCase() ==
-                  (_singlePayment.PaymentType ?? "").toLowerCase(),
+                  (_singlePayment.PaymentType).toLowerCase(),
               orElse: () => enabledPaymentTypes.first,
             );
           } else {
@@ -140,7 +140,7 @@ class _EditPaymentBottomSheetState
   }
 
   void _setSelectedCustomer() {
-    if (_singlePayment == null || _allCustomers.isEmpty) return;
+    if (_allCustomers.isEmpty) return;
 
     final match = _allCustomers.firstWhere(
       (customer) => customer.UserId == _singlePayment.UserId,
@@ -674,7 +674,7 @@ class _EditPaymentBottomSheetState
                 controller: _paymentRemarksController,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 decoration: InputDecoration(
-                  labelText: "Payment Remarks*",
+                  labelText: "Payment Remarks (Optional)",
                   hintText: 'Enter Payment Remarks',
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 16.0, right: 8.0),

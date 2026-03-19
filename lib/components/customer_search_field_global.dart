@@ -222,7 +222,7 @@ class _CustomerSearchFieldGlobalState extends State<CustomerSearchFieldGlobal>
             focusNode: _focusNode,
             autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: InputDecoration(
-              labelText: 'Select Customer',
+              labelText: 'Select Customer*',
               hintText: 'Search by name or city',
               counter: const SizedBox.shrink(),
               prefixIcon: Padding(

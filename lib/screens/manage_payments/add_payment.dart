@@ -587,7 +587,7 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
                 controller: _paymentRemarksController,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 decoration: InputDecoration(
-                  labelText: "Payment Remarks*",
+                  labelText: "Payment Remarks (Optional)",
                   hintText: 'Enter Payment Remarks',
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 16.0, right: 8.0),

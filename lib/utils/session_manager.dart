@@ -5,6 +5,7 @@ import '../notifiers/avatar_notifier.dart';
 class SessionManager {
   static const String _userTokenKey = "USER_TOKEN";
   static const String _userKey = "USER";
+  static const String _userPasswordKey = "USER_PASSWORD";
   static const String _rememberMeKey = "REMEMBER_ME";
   static const String _organizationIdKey = "ORGANIZATION_ID";
 
@@ -16,11 +17,13 @@ class SessionManager {
     String token,
     Map<String, dynamic> user,
     bool rememberMe,
+    String password
   ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userTokenKey, token);
     await prefs.setString(_userKey, jsonEncode(user));
     await prefs.setBool(_rememberMeKey, rememberMe);
+    await prefs.setString(_userPasswordKey, password);
 
     if (user.containsKey("OrganizationId") && user["OrganizationId"] != null) {
       await prefs.setInt(_organizationIdKey, user["OrganizationId"]);
@@ -66,6 +69,12 @@ class SessionManager {
     return prefs.getBool(_rememberMeKey) ?? false;
   }
 
+   /// Get user password
+  static Future<String?> getUserPassword() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userPasswordKey);
+  }
+
   /// Get organization id
   static Future<int?> getOrganizationId() async {
     final prefs = await SharedPreferences.getInstance();
@@ -78,6 +87,7 @@ class SessionManager {
     await prefs.remove(_userTokenKey);
     await prefs.remove(_userKey);
     await prefs.remove(_rememberMeKey);
+    await prefs.remove(_userPasswordKey);
     await prefs.remove(_organizationIdKey);
     await prefs.remove(_avatarKey);
     await prefs.remove(_genderKey);

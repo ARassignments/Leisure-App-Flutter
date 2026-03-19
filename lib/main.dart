@@ -13,9 +13,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
   await ThemeController.loadTheme();
-  runApp(const ProviderScope(
-      child: MyApp(),
-    ),);
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -32,21 +30,26 @@ class MyApp extends StatelessWidget {
           darkTheme: MyTheme.darkTheme,
           themeMode: themeMode, // 👈 controlled by ThemeController
           builder: (context, child) {
-            return ColoredBox(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth > 500) {
-                    return Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 500),
-                        child: child,
-                      ),
-                    );
-                  } else {
-                    return child!;
-                  }
-                },
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: const TextScaler.linear(0.8), // 🔥 fixed scale
+              ),
+              child: ColoredBox(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxWidth > 500) {
+                      return Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 500),
+                          child: child,
+                        ),
+                      );
+                    } else {
+                      return child!;
+                    }
+                  },
+                ),
               ),
             );
           },

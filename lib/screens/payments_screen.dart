@@ -32,11 +32,13 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
   late List<PaymentModel> _allPayments = [];
   List<PaymentModel> _filteredPayments = [];
   bool _isLoadingPayments = true;
+  bool _isSortAscendingPayments = true;
   bool _isRefreshingPayments = false;
 
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now();
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollControllerPayment = ScrollController();
 
   @override
   bool get wantKeepAlive => true;
@@ -85,6 +87,37 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
       debugPrint("❌ Error fetching payments: $e");
     } finally {
       setState(() => _isLoadingPayments = false);
+    }
+  }
+
+  Future<void> deletePaymentById(int paymentId) async {
+    try {
+      final response = await ApiService.deletePaymentById(paymentId);
+
+      if (response["Success"] == true) {
+        // Navigate to home
+        if (mounted) {
+          AppSnackBar.show(
+            context,
+            message: 'Payment Deleted Successfully',
+            type: AppSnackBarType.success,
+          );
+          _refreshPayments();
+        }
+      } else {
+        AppSnackBar.show(
+          context,
+          message: response["msg"] ?? "Payment failed",
+          type: AppSnackBarType.error,
+        );
+      }
+    } catch (e) {
+      print("Delete payment error: $e");
+      AppSnackBar.show(
+        context,
+        message: "Failed to delete payment",
+        type: AppSnackBarType.error,
+      );
     }
   }
 
@@ -156,24 +189,82 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
 
   void _applyFilters() {
     setState(() {
-      _filteredPayments = _allPayments.where((payment) {
-        final searchMatch =
-            _searchController.text.trim().isEmpty ||
-            payment.UserName.toLowerCase().contains(
-              _searchController.text.toLowerCase(),
-            ) ||
-            payment.Id.toString().contains(
-              _searchController.text.toLowerCase(),
-            );
+      _filteredPayments =
+          _allPayments.where((payment) {
+            final searchMatch =
+                _searchController.text.trim().isEmpty ||
+                payment.UserName.toLowerCase().contains(
+                  _searchController.text.toLowerCase(),
+                ) ||
+                payment.Id.toString().contains(
+                  _searchController.text.toLowerCase(),
+                );
 
-        return searchMatch;
-      }).toList();
+            return searchMatch;
+          }).toList()..sort((a, b) {
+            final dateCompare = _isSortAscendingPayments
+                ? a.PaymentDate.compareTo(b.PaymentDate)
+                : b.PaymentDate.compareTo(a.PaymentDate);
+
+            // ✅ if dates are same, sort by Id
+            if (dateCompare == 0) {
+              return _isSortAscendingPayments
+                  ? a.Id.compareTo(b.Id)
+                  : b.Id.compareTo(a.Id);
+            }
+
+            return dateCompare;
+          });
     });
   }
 
   void _resetFilters() {
     _searchController.clear();
     _filteredPayments = List.from(_allPayments);
+  }
+
+  Widget _confirmDeleteSheet(BuildContext context, String name) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        left: 20,
+        right: 20,
+      ),
+      child: Column(
+        spacing: 16,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            "Confirm Delete",
+            textAlign: TextAlign.center,
+            style: AppTheme.textLabel(
+              context,
+            ).copyWith(fontSize: 17, fontWeight: FontWeight.w600),
+          ),
+          Divider(color: AppTheme.dividerBg(context)),
+          Text(
+            "Are you sure you want to delete '$name' payment?",
+            textAlign: TextAlign.center,
+            style: AppTheme.textLabel(context),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColor.accent_50,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              "Yes, Remove",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+          OutlinedButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _paymentPage() {
@@ -277,17 +368,56 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
 
               const SizedBox(height: 10),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(
-                    HugeIconsSolid.calendar02,
-                    size: 18,
-                    color: AppTheme.iconColor(context),
+                  Row(
+                    children: [
+                      Icon(
+                        HugeIconsSolid.calendar02,
+                        size: 18,
+                        color: AppTheme.iconColor(context),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDate)}",
+                        style: AppTheme.textLabel(
+                          context,
+                        ).copyWith(fontSize: 12),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDate)}",
-                    style: AppTheme.textLabel(context).copyWith(fontSize: 12),
-                  ),
+                  if (_filteredPayments.isNotEmpty)
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _isSortAscendingPayments = !_isSortAscendingPayments;
+                          _filteredPayments.sort((a, b) {
+                            final dateCompare = _isSortAscendingPayments
+                                ? a.PaymentDate.compareTo(b.PaymentDate)
+                                : b.PaymentDate.compareTo(a.PaymentDate);
+
+                            // ✅ if dates are same, sort by OrderId
+                            if (dateCompare == 0) {
+                              return _isSortAscendingPayments
+                                  ? a.Id.compareTo(b.Id)
+                                  : b.Id.compareTo(a.Id);
+                            }
+
+                            return dateCompare;
+                          });
+                        });
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _scrollControllerPayment.jumpTo(0);
+                        });
+                      },
+                      child: Icon(
+                        _isSortAscendingPayments
+                            ? HugeIconsSolid.sortByUp01
+                            : HugeIconsSolid.sortByDown01,
+                        size: 18,
+                        color: AppTheme.iconColor(context),
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -306,6 +436,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
                         )
                       : SlidableAutoCloseBehavior(
                           child: ListView.builder(
+                            controller: _scrollControllerPayment,
                             physics: const AlwaysScrollableScrollPhysics(),
                             itemCount: _filteredPayments.length,
                             itemBuilder: (context, index) {
@@ -330,12 +461,11 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
                                   key: ValueKey(payment.Id),
                                   startActionPane: ActionPane(
                                     motion: const ScrollMotion(),
-                                    extentRatio: 0.2,
+                                    extentRatio: 0.4,
                                     children: [
                                       Expanded(
                                         child: InkWell(
                                           onTap: () async {
-                                            Slidable.of(context)?.close();
                                             final result = await showModalBottomSheet(
                                               context: context,
                                               isDismissible: false,
@@ -361,8 +491,8 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
                                             );
 
                                             if (result == true) {
-                                              _searchController.clear();
-                                              _loadPayments(isResetAll: true);
+                                              Slidable.of(context)?.close();
+                                              _refreshPayments();
                                             }
                                           },
                                           child: Container(
@@ -385,6 +515,68 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
                                                 Icon(
                                                   HugeIconsSolid.edit01,
                                                   color: Colors.blue,
+                                                  size: 24,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: InkWell(
+                                          onTap: () async {
+                                            final bool? confirmDelete =
+                                                await showModalBottomSheet<
+                                                  bool
+                                                >(
+                                                  context: context,
+                                                  isDismissible: false,
+                                                  enableDrag: false,
+                                                  showDragHandle: true,
+                                                  isScrollControlled: true,
+                                                  backgroundColor: Theme.of(
+                                                    context,
+                                                  ).scaffoldBackgroundColor,
+                                                  shape: const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.vertical(
+                                                          top: Radius.circular(
+                                                            30,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                  builder: (context) {
+                                                    return _confirmDeleteSheet(
+                                                      context,
+                                                      "Id#${payment.Id} ${payment.UserName} (${payment.PaymentMode})",
+                                                    );
+                                                  },
+                                                );
+                                            if (confirmDelete == true) {
+                                              Slidable.of(context)?.close();
+                                              deletePaymentById(payment.Id);
+                                            }
+                                          },
+                                          child: Container(
+                                            margin: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 5,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.customListBg(
+                                                context,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            height: double.infinity,
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  HugeIconsSolid.delete01,
+                                                  color: Color(0xFFC41F1F),
                                                   size: 24,
                                                 ),
                                               ],
@@ -476,13 +668,6 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: ListTile(
-                                      onLongPress: () {
-                                        AppSnackBar.show(
-                                          context,
-                                          message: "Hola Bola",
-                                          type: AppSnackBarType.error,
-                                        );
-                                      },
                                       leading: Text(
                                         (index + 1).toString().padLeft(2, '0'),
                                         style: const TextStyle(
