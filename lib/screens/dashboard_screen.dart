@@ -39,6 +39,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   String? token;
   Map<String, dynamic>? user;
+  bool _isLoadingUser = true;
 
   int _currentIndex = 0;
   bool _showSearchBar = false;
@@ -138,6 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final userData = await SessionManager.getUser();
     setState(() {
       user = userData;
+      _isLoadingUser = false;
     });
 
     _futureCustomers = ApiService.getAllCustomers();
@@ -707,7 +709,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 left: 0,
                 right: 0,
                 child: AnimatedScale(
-                  scale: _isLoadingDashboardReport ? 1.0 : 0.8,
+                  scale: _isLoadingDashboardReport ? 1.0 : 1.8,
                   duration: const Duration(milliseconds: 500),
                   child: AnimatedOpacity(
                     opacity: _isLoadingDashboardReport ? 1.0 : 0.0,
@@ -718,7 +720,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         height: 40,
                         child: CircularProgressIndicator(
                           color: AppTheme.inputProgress(context),
-                          strokeWidth: 5,
+                          strokeWidth: 4,
                           strokeCap: StrokeCap.round,
                         ),
                       ),
@@ -2503,6 +2505,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _defaultAvatar() {
+    return Image.asset(
+      "assets/images/avatars/boy_14.png",
+      width: 40,
+      height: 40,
+      fit: BoxFit.cover,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = _pages();
@@ -2535,66 +2546,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         SizedBox(width: 5),
                         if (_currentIndex < 1) ...[
-                          ValueListenableBuilder<String?>(
-                            valueListenable: avatarNotifier,
-                            builder: (context, avatar, _) {
-                              return Row(
+                          Row(
+                            children: [
+                              ClipOval(
+                                child: ValueListenableBuilder(
+                                  valueListenable: avatarNotifier,
+                                  builder: (context, avatar, _) {
+                                    return avatar != null
+                                        ? Image.network(
+                                            avatar,
+                                            width: 40,
+                                            height: 40,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                _defaultAvatar(),
+                                          )
+                                        : _defaultAvatar();
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Row(
                                 children: [
-                                  // ClipOval(
-                                  //   child: avatar != null
-                                  //       ? Image.network(
-                                  //           avatar,
-                                  //           width: 40,
-                                  //           height: 40,
-                                  //           fit: BoxFit.cover,
-                                  //         )
-                                  //       : Image.network(
-                                  //           "assets/images/avatars/boy_14.png",
-                                  //           width: 40,
-                                  //           height: 40,
-                                  //           fit: BoxFit.cover,
-                                  //         ),
-                                  // ),
-                                  const SizedBox(width: 10),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        "Hi, ",
-                                        style: AppTheme.textTitle(context)
-                                            .copyWith(
-                                              fontSize: 20,
-                                              fontFamily:
-                                                  AppFontFamily.poppinsBold,
-                                            ),
-                                      ),
-                                      Text(
-                                        _currentIndex > 0
-                                            ? menus[_currentIndex]
-                                            : user!["FullName"] ??
-                                                  'Unknown User',
-                                            // : "Unknown User",
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTheme.textTitle(context)
-                                            .copyWith(
-                                              fontSize: 20,
-                                              fontFamily:
-                                                  AppFontFamily.poppinsLight,
-                                            ),
-                                      ),
-                                      Text(
-                                        ".",
-                                        style: AppTheme.textTitleActive(context)
-                                            .copyWith(
-                                              fontFamily: 'Poppins',
-                                              fontSize: 18,
-                                            ),
-                                      ),
-                                    ],
+                                  Text(
+                                    "Hi, ",
+                                    style: AppTheme.textTitle(context).copyWith(
+                                      fontSize: 20,
+                                      fontFamily: AppFontFamily.poppinsBold,
+                                    ),
+                                  ),
+                                  Text(
+                                    _currentIndex > 0
+                                        ? menus[_currentIndex]
+                                        : _isLoadingUser
+                                        ? ''
+                                        : user?["FullName"] ?? 'Unknown User',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTheme.textTitle(context).copyWith(
+                                      fontSize: 20,
+                                      fontFamily: AppFontFamily.poppinsLight,
+                                    ),
+                                  ),
+                                  Text(
+                                    ".",
+                                    style: AppTheme.textTitleActive(context)
+                                        .copyWith(
+                                          fontFamily: 'Poppins',
+                                          fontSize: 18,
+                                        ),
                                   ),
                                 ],
-                              );
-                            },
+                              ),
+                            ],
                           ),
                         ],
                         if (_currentIndex > 0) ...[
