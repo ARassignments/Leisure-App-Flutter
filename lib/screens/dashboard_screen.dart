@@ -669,196 +669,202 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _homePage() {
     _filterDashboardController.text =
         "From: ${DateFormat('yyyy-MM-dd').format(_fromDateDashboardReport)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDateDashboardReport)}";
-    return ListView(
-      shrinkWrap: true,
-      children: [
-        DashboardSlider(),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: TextFormField(
-            controller: _filterDashboardController,
-            readOnly: true,
-            selectAllOnFocus: false,
-            textAlign: TextAlign.start,
-            onTap: () {
-              _selectDateRangeForDahboardReport(context);
-            },
-            decoration: InputDecoration(
-              labelText: 'Select Date Range',
-              hintText: 'Select From Date - To Date',
-              prefixIcon: Padding(
-                padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-                child: Icon(HugeIconsSolid.calendar03),
-              ),
-            ),
-            style: AppInputDecoration.inputTextStyle(context),
-          ),
-        ),
-        SizedBox(height: 16),
-        Stack(
+    return SafeArea(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AnimatedScale(
-              duration: const Duration(milliseconds: 500),
-              scale: _isLoadingDashboardReport ? 0.8 : 1.0,
-              child: AnimatedOpacity(
-                opacity: _isLoadingDashboardReport ? 0.0 : 1.0,
-                duration: const Duration(milliseconds: 500),
-                child: DashboardGrid(
-                  ordersValue: grandOrderTotalDashboard,
-                  revenueValue: grandRevenueTotalDashboard,
-                  creditSaleValue: grandCreditTotalDashboard,
-                  debitSaleValue: grandDebitTotalDashboard,
+            DashboardSlider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: TextFormField(
+                controller: _filterDashboardController,
+                readOnly: true,
+                selectAllOnFocus: false,
+                textAlign: TextAlign.start,
+                onTap: () {
+                  _selectDateRangeForDahboardReport(context);
+                },
+                decoration: InputDecoration(
+                  labelText: 'Select Date Range',
+                  hintText: 'Select From Date - To Date',
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                    child: Icon(HugeIconsSolid.calendar03),
+                  ),
                 ),
+                style: AppInputDecoration.inputTextStyle(context),
               ),
             ),
-            if (_isLoadingDashboardReport)
-              Positioned.fill(
-                top: 0,
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: AnimatedScale(
-                  scale: _isLoadingDashboardReport ? 1.0 : 1.8,
+            SizedBox(height: 16),
+            Stack(
+              children: [
+                AnimatedScale(
                   duration: const Duration(milliseconds: 500),
+                  scale: _isLoadingDashboardReport ? 0.8 : 1.0,
                   child: AnimatedOpacity(
-                    opacity: _isLoadingDashboardReport ? 1.0 : 0.0,
+                    opacity: _isLoadingDashboardReport ? 0.0 : 1.0,
                     duration: const Duration(milliseconds: 500),
-                    child: Center(
-                      child: SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: CircularProgressIndicator(
-                          color: AppTheme.inputProgress(context),
-                          strokeWidth: 4,
-                          strokeCap: StrokeCap.round,
+                    child: DashboardGrid(
+                      ordersValue: grandOrderTotalDashboard,
+                      revenueValue: grandRevenueTotalDashboard,
+                      creditSaleValue: grandCreditTotalDashboard,
+                      debitSaleValue: grandDebitTotalDashboard,
+                    ),
+                  ),
+                ),
+                if (_isLoadingDashboardReport)
+                  Positioned.fill(
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: AnimatedScale(
+                      scale: _isLoadingDashboardReport ? 1.0 : 1.8,
+                      duration: const Duration(milliseconds: 500),
+                      child: AnimatedOpacity(
+                        opacity: _isLoadingDashboardReport ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 500),
+                        child: Center(
+                          child: SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: CircularProgressIndicator(
+                              color: AppTheme.inputProgress(context),
+                              strokeWidth: 4,
+                              strokeCap: StrokeCap.round,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
+              ],
+            ),
+            DashboardTopCustomers(
+              customers: topCustomers
+                  .map((e) => TopCustomer.fromJson(e as Map<String, dynamic>))
+                  .toList(),
+              isChartView: _isChartView,
+              isLoading: _isLoadingDashboardReport,
+              onToggle: (val) => setState(() => _isChartView = val),
+            ),
+            DashboardTopProducts(
+              products: topProducts
+                  .map((e) => TopProduct.fromJson(e as Map<String, dynamic>))
+                  .toList(),
+              isChartView: _isChartView,
+              isLoading: _isLoadingDashboardReport,
+              onToggle: (val) => setState(() => _isChartView = val),
+            ),
+            // DashboardCharts(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Text(
+                "Need Help?",
+                style: AppTheme.textLabel(context).copyWith(
+                  fontSize: 14,
+                  fontFamily: AppFontFamily.poppinsSemiBold,
                 ),
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                spacing: 16,
+                children: [
+                  Expanded(
+                    child: Opacity(
+                      opacity: 0.5,
+                      child: InkWell(
+                        child: Stack(
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(top: 16),
+                              height: 100,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: AppTheme.customListBg(context),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Text(
+                                  "FAQs",
+                                  style: AppTheme.textLink(context).copyWith(
+                                    fontSize: 13,
+                                    fontFamily: AppFontFamily.poppinsSemiBold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: -40,
+                              bottom: -35,
+                              child: Image.asset(
+                                "assets/images/dashboard/faqs_image.png",
+                                height: 180,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Opacity(
+                      opacity: 0.5,
+                      child: InkWell(
+                        child: Stack(
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(top: 16),
+                              height: 100,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: AppTheme.customListBg(context),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Text(
+                                  "Chat Now",
+                                  style: AppTheme.textLink(context).copyWith(
+                                    fontSize: 13,
+                                    fontFamily: AppFontFamily.poppinsSemiBold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: -40,
+                              bottom: -28,
+                              child: Image.asset(
+                                "assets/images/dashboard/chat_image.png",
+                                height: 180,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Column(
+            //   children: [
+            //     Text("Welcome, ${user?["FullName"] ?? "Guest"}"),
+            //     Text("Email: ${user?["Email"] ?? "N/A"}"),
+            //     Text("Organization Id: ${user?["OrganizationId"] ?? "Unknown"}"),
+            //     Text("Token: ${token ?? "Not available"}"),
+            //   ],
+            // ),
+            SizedBox(height: 20),
           ],
         ),
-        DashboardTopCustomers(
-          customers: topCustomers
-              .map((e) => TopCustomer.fromJson(e as Map<String, dynamic>))
-              .toList(),
-          isChartView: _isChartView,
-          isLoading: _isLoadingDashboardReport,
-          onToggle: (val) => setState(() => _isChartView = val),
-        ),
-        DashboardTopProducts(
-          products: topProducts
-              .map((e) => TopProduct.fromJson(e as Map<String, dynamic>))
-              .toList(),
-          isChartView: _isChartView,
-          isLoading: _isLoadingDashboardReport,
-          onToggle: (val) => setState(() => _isChartView = val),
-        ),
-        // DashboardCharts(),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Text(
-            "Need Help?",
-            style: AppTheme.textLabel(
-              context,
-            ).copyWith(fontSize: 14, fontFamily: AppFontFamily.poppinsSemiBold),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            spacing: 16,
-            children: [
-              Expanded(
-                child: Opacity(
-                  opacity: 0.5,
-                  child: InkWell(
-                    child: Stack(
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(top: 16),
-                          height: 100,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: AppTheme.customListBg(context),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Text(
-                              "FAQs",
-                              style: AppTheme.textLink(context).copyWith(
-                                fontSize: 13,
-                                fontFamily: AppFontFamily.poppinsSemiBold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: -40,
-                          bottom: -35,
-                          child: Image.asset(
-                            "assets/images/dashboard/faqs_image.png",
-                            height: 180,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Opacity(
-                  opacity: 0.5,
-                  child: InkWell(
-                    child: Stack(
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(top: 16),
-                          height: 100,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: AppTheme.customListBg(context),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Text(
-                              "Chat Now",
-                              style: AppTheme.textLink(context).copyWith(
-                                fontSize: 13,
-                                fontFamily: AppFontFamily.poppinsSemiBold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: -40,
-                          bottom: -28,
-                          child: Image.asset(
-                            "assets/images/dashboard/chat_image.png",
-                            height: 180,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Column(
-        //   children: [
-        //     Text("Welcome, ${user?["FullName"] ?? "Guest"}"),
-        //     Text("Email: ${user?["Email"] ?? "N/A"}"),
-        //     Text("Organization Id: ${user?["OrganizationId"] ?? "Unknown"}"),
-        //     Text("Token: ${token ?? "Not available"}"),
-        //   ],
-        // ),
-        SizedBox(height: 20),
-      ],
+      ),
     );
   }
 
@@ -2549,8 +2555,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           color: active ? AppTheme.customListBg(context) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           boxShadow: active
-            ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6)]
-            : [],
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 6,
+                  ),
+                ]
+              : [],
         ),
         child: Row(
           children: [
