@@ -2548,6 +2548,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         decoration: BoxDecoration(
           color: active ? AppTheme.customListBg(context) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
+          boxShadow: active
+            ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6)]
+            : [],
         ),
         child: Row(
           children: [
@@ -2695,6 +2698,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             actions: [
               if (_currentIndex == 0) ...[
+                SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(

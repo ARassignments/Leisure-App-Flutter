@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
-import 'package:y2ksolutions/theme/theme.dart';
+import '/theme/theme.dart';
 
 class DashboardTopProducts extends StatefulWidget {
   final List<TopProduct> products;
@@ -78,13 +78,6 @@ class _DashboardTopProductsState extends State<DashboardTopProducts>
             decoration: BoxDecoration(
               color: AppTheme.customListBg(context),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

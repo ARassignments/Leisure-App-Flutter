@@ -97,7 +97,7 @@ class _DashboardSliderState extends State<DashboardSlider> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             image: DecorationImage(
-              image: NetworkImage(sliderImages[index].url),
+              image: AssetImage(sliderImages[index].url),
               fit: BoxFit.cover,
             ),
           ),

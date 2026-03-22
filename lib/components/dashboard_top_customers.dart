@@ -87,13 +87,6 @@ class _DashboardTopCustomersState extends State<DashboardTopCustomers>
             decoration: BoxDecoration(
               color: AppTheme.customListBg(context),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
