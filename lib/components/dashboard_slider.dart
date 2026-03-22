@@ -20,17 +20,17 @@ class _DashboardSliderState extends State<DashboardSlider> {
   final List<SliderImageModel> sliderImages = [
     SliderImageModel(
       url:
-          'https://plus.unsplash.com/premium_photo-1663931932651-ea743c9a0144?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1470',
+          'assets/images/sliders/1.png',
       isDartWatermark: true,
     ),
     SliderImageModel(
       url:
-          'https://images.unsplash.com/photo-1643101681441-0c38d714fa14?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1332',
+          'assets/images/sliders/2.png',
       isDartWatermark: true,
     ),
     SliderImageModel(
       url:
-          'https://plus.unsplash.com/premium_photo-1663931932688-306b0197d388?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1pbi1zYW1lLXNlcmllc3wxfHx8ZW58MHx8fHx8&auto=format&fit=crop&q=60&w=500',
+          'assets/images/sliders/3.png',
       isDartWatermark: false,
     ),
   ];

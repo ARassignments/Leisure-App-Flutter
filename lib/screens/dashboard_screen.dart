@@ -3,7 +3,9 @@ import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:y2ksolutions/components/dashboard_top_products.dart';
 import '/screens/settings/payment_type_settings.dart';
+import '/components/dashboard_top_customers.dart';
 import '/components/dashboard_grid.dart';
 import '/components/menu_drawer.dart';
 import '/components/dashboard_charts.dart';
@@ -56,6 +58,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Dashboard Screen
   bool _isLoadingDashboardReport = true;
+  bool _isChartView = true;
   DateTime _fromDateDashboardReport = DateTime.now();
   DateTime _toDateDashboardReport = DateTime.now();
   final TextEditingController _filterDashboardController =
@@ -64,6 +67,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double grandRevenueTotalDashboard = 0;
   double grandCreditTotalDashboard = 0;
   double grandDebitTotalDashboard = 0;
+  List<dynamic> topCustomers = [];
+  List<dynamic> topProducts = [];
 
   //Orders Screen
   List<Order> _allOrders = [];
@@ -548,6 +553,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           grandDebitTotalDashboard += totalDebit;
         }
       }
+      setState(() {
+        topCustomers = response.dashboard.TopCustomer;
+        topProducts = response.dashboard.TopProducts;
+      });
 
       // setState(() {
       //   for (var item in response.dashboard.DailyOrders) {
@@ -730,7 +739,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
           ],
         ),
-        DashboardCharts(),
+        DashboardTopCustomers(
+          customers: topCustomers
+              .map((e) => TopCustomer.fromJson(e as Map<String, dynamic>))
+              .toList(),
+          isChartView: _isChartView,
+          isLoading: _isLoadingDashboardReport,
+          onToggle: (val) => setState(() => _isChartView = val),
+        ),
+        DashboardTopProducts(
+          products: topProducts
+              .map((e) => TopProduct.fromJson(e as Map<String, dynamic>))
+              .toList(),
+          isChartView: _isChartView,
+          isLoading: _isLoadingDashboardReport,
+          onToggle: (val) => setState(() => _isChartView = val),
+        ),
+        // DashboardCharts(),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Text(
@@ -2514,6 +2539,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget toggleBtn(String label, bool active, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? AppTheme.customListBg(context) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 12,
+                fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                color: active
+                    ? AppTheme.iconColor(context)
+                    : AppTheme.iconColorThree(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = _pages();
@@ -2640,13 +2694,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             actions: [
-              if (_currentIndex == 0)
+              if (_currentIndex == 0) ...[
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.sliderHighlightBg(context),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      toggleBtn('Chart', _isChartView, () {
+                        setState(() => _isChartView = true);
+                      }),
+                      toggleBtn('List', !_isChartView, () {
+                        setState(() => _isChartView = false);
+                      }),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 8),
                 InkWell(
                   child: const Icon(HugeIconsStroke.calendar03, size: 20),
                   onTap: () {
                     _selectDateRangeForDahboardReport(context);
                   },
                 ),
+              ],
               if (_currentIndex == 1) ...[
                 InkWell(
                   child: const Icon(HugeIconsStroke.refresh, size: 20),

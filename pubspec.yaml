@@ -123,6 +123,7 @@ flutter:
     - assets/images/dashboard/chat_image.png
     - assets/images/dashboard/faqs_image.png
     - assets/images/payment_type/
+    - assets/images/sliders/
   fonts:
     - family: PoppinsLight
       fonts:
