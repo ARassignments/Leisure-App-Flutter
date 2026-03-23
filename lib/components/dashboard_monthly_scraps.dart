@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:y2ksolutions/theme/theme.dart';
+import '/theme/theme.dart';
 
 class DashboardMonthlyScrap extends StatefulWidget {
   final List<MonthlyScrapItem> items;
