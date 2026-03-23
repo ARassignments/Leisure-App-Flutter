@@ -1,33 +1,35 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
+import 'package:intl/intl.dart';
+import 'dart:ui' as ui;
 import '/theme/theme.dart';
 
-class DashboardTopProducts extends StatefulWidget {
-  final List<TopProduct> products;
+class DashboardDeadStock extends StatefulWidget {
+  final List<DeadStockItem> items;
   final bool isLoading;
   final bool isChartView;
   final ValueChanged<bool>? onToggle;
 
-  const DashboardTopProducts({
+  const DashboardDeadStock({
     super.key,
-    required this.products,
+    required this.items,
     this.isLoading = false,
     this.isChartView = true,
     this.onToggle,
   });
 
   @override
-  State<DashboardTopProducts> createState() => _DashboardTopProductsState();
+  State<DashboardDeadStock> createState() => _DashboardDeadStockState();
 }
 
-class _DashboardTopProductsState extends State<DashboardTopProducts>
+class _DashboardDeadStockState extends State<DashboardDeadStock>
     with SingleTickerProviderStateMixin {
   late bool _chart = widget.isChartView;
   int? _sel;
   late final AnimationController _ctrl = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 850),
+    duration: const Duration(milliseconds: 900),
   );
   late final Animation<double> _anim = CurvedAnimation(
     parent: _ctrl,
@@ -41,7 +43,7 @@ class _DashboardTopProductsState extends State<DashboardTopProducts>
   }
 
   @override
-  void didUpdateWidget(DashboardTopProducts old) {
+  void didUpdateWidget(DashboardDeadStock old) {
     super.didUpdateWidget(old);
     if (old.isChartView != widget.isChartView) {
       setState(() => _chart = widget.isChartView);
@@ -55,7 +57,8 @@ class _DashboardTopProductsState extends State<DashboardTopProducts>
     super.dispose();
   }
 
-  int get _total => widget.products.fold(0, (s, p) => s + p.TotalQuantitySold);
+  double get _totalStock =>
+      widget.items.fold(0.0, (s, i) => s + i.AvailableStock);
 
   void _toggle(bool toChart) {
     setState(() {
@@ -73,7 +76,6 @@ class _DashboardTopProductsState extends State<DashboardTopProducts>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Card
           Container(
             decoration: BoxDecoration(
               color: AppTheme.customListBg(context),
@@ -89,7 +91,7 @@ class _DashboardTopProductsState extends State<DashboardTopProducts>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Top Products',
+                        'Dead Stock',
                         style: AppTheme.textLabel(context).copyWith(
                           fontSize: 14,
                           fontFamily: AppFontFamily.poppinsSemiBold,
@@ -111,21 +113,21 @@ class _DashboardTopProductsState extends State<DashboardTopProducts>
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: _SummaryRow(
-                      count: widget.products.length,
-                      total: _total,
-                      loading: widget.isLoading,
+                      count: widget.items.length,
+                      totalStock: _totalStock,
+                      items: widget.items,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (widget.products.isNotEmpty)
+                  if (widget.items.isNotEmpty)
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       child: _chart
                           ? Padding(
-                              padding: const EdgeInsets.only(top: 16),
-                              child: _BarSection(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: _HBarSection(
                                 key: const ValueKey('bar'),
-                                products: widget.products,
+                                items: widget.items,
                                 anim: _anim,
                                 selected: _sel,
                                 onSelect: (i) =>
@@ -134,7 +136,7 @@ class _DashboardTopProductsState extends State<DashboardTopProducts>
                             )
                           : _ListSection(
                               key: const ValueKey('lst'),
-                              products: widget.products,
+                              items: widget.items,
                               anim: _anim,
                             ),
                     ),
@@ -166,77 +168,89 @@ class _DashboardTopProductsState extends State<DashboardTopProducts>
   }
 }
 
-// ─── Model ───────────────────────────────────────────────────────────────────
-class TopProduct {
+// ─── Model (matches your API exactly) ────────────────────────────────────────
+
+class DeadStockItem {
   final int ProductId;
   final String ProductName;
-  final int TotalQuantitySold;
+  final String CompanyName;
+  final double AvailableStock;
+  final DateTime LastSaleDate;
 
-  const TopProduct({
+  const DeadStockItem({
     required this.ProductId,
     required this.ProductName,
-    required this.TotalQuantitySold,
+    required this.CompanyName,
+    required this.AvailableStock,
+    required this.LastSaleDate,
   });
 
-  factory TopProduct.fromJson(Map<String, dynamic> json) => TopProduct(
+  factory DeadStockItem.fromJson(Map<String, dynamic> json) => DeadStockItem(
     ProductId: json['ProductId'] ?? 0,
     ProductName: json['ProductName'] ?? 'Unknown',
-    TotalQuantitySold: (json['TotalQuantitySold'] as num?)?.toInt() ?? 0,
+    CompanyName: json['CompanyName'] ?? '',
+    AvailableStock: (json['AvailableStock'] as num?)?.toDouble() ?? 0.0,
+    LastSaleDate:
+        DateTime.tryParse(json['LastSaleDate'] ?? '') ?? DateTime.now(),
   );
 }
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 
-const Color kTeal = Color(0xFF3BBFB2);
-const Color kTealLight = Color(0xFFE0F7F5);
-const Color kTealDark = Color(0xFF0F9E91);
+const Color kPink = Color(0xFFFF6384);
+const Color kPinkLight = Color(0xFFFFE8ED);
+const Color kPinkDark = Color(0xFFD63060);
 const Color kBg = Color(0xFFF5F6FA);
 const Color kCard = Colors.white;
 const Color kText = Color(0xFF1A1A2E);
 const Color kMuted = Color(0xFF9E9E9E);
 const Color kLine = AppColor.neutral_80;
 
-// ─── Summary ──────────────────────────────────────────────────────────────────
+// ─── Summary cards ────────────────────────────────────────────────────────────
 
 class _SummaryRow extends StatelessWidget {
-  final int count, total;
-  final bool loading;
+  final int count;
+  final double totalStock;
+  final List<DeadStockItem> items;
+
   const _SummaryRow({
     required this.count,
-    required this.total,
-    required this.loading,
+    required this.totalStock,
+    required this.items,
   });
+
+  String _oldestDate() {
+    if (items.isEmpty) return '—';
+    final oldest = items
+        .map((i) => i.LastSaleDate)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    return DateFormat('MMM dd, yyyy').format(oldest);
+  }
 
   @override
   Widget build(BuildContext context) => Row(
     children: [
       _Metric(
-        label: 'Products',
-        value: loading
-            ? '—'
-            : count == 0
-            ? '0'
-            : count.toString().padLeft(2, '0'),
-        color: kTeal,
-        icon: Icons.inventory_2_outlined,
+        label: 'Dead Products',
+        value: count == 0 ? '0' : count.toString().padLeft(2, '0'),
+        color: kPink,
+        icon: Icons.inventory_outlined,
       ),
       const SizedBox(width: 10),
       _Metric(
-        label: 'Units Sold',
-        value: loading
-            ? '—'
-            : total == 0
+        label: 'Total Units',
+        value: totalStock == 0
             ? '0'
-            : total.toString().padLeft(2, '0'),
-        color: const Color(0xFF378ADD),
-        icon: Icons.shopping_cart_outlined,
+            : totalStock.toInt().toString().padLeft(2, '0'),
+        color: const Color(0xFFFF9F40),
+        icon: Icons.warehouse_outlined,
       ),
       const SizedBox(width: 10),
       _Metric(
-        label: 'Rank #1',
-        value: loading ? '—' : 'Top',
-        color: const Color(0xFFD85A30),
-        icon: Icons.emoji_events_outlined,
+        label: 'Oldest Sale',
+        value: _oldestDate(),
+        color: const Color(0xFF9966FF),
+        icon: Icons.event_outlined,
       ),
     ],
   );
@@ -246,6 +260,7 @@ class _Metric extends StatelessWidget {
   final String label, value;
   final Color color;
   final IconData icon;
+
   const _Metric({
     required this.label,
     required this.value,
@@ -319,13 +334,13 @@ class _Toggle extends StatelessWidget {
       children: [
         _TBtn(
           label: 'Chart',
-          icon: HugeIconsSolid.chart01,
+          icon: HugeIconsSolid.barChartHorizontal,
           active: isChart,
           onTap: () => onSwitch(true),
         ),
         _TBtn(
           label: 'List',
-          icon: HugeIconsSolid.packageMoving01,
+          icon: HugeIconsSolid.packageMoving,
           active: !isChart,
           onTap: () => onSwitch(false),
         ),
@@ -339,6 +354,7 @@ class _TBtn extends StatelessWidget {
   final IconData icon;
   final bool active;
   final VoidCallback onTap;
+
   const _TBtn({
     required this.label,
     required this.icon,
@@ -366,13 +382,12 @@ class _TBtn extends StatelessWidget {
           Icon(
             icon,
             size: 14,
-            color: active ? kTeal : AppTheme.iconColorThree(context),
+            color: active ? kPink : AppTheme.iconColorThree(context),
           ),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
-              fontFamily: 'Poppins',
               fontSize: 12,
               fontWeight: active ? FontWeight.w600 : FontWeight.w400,
               color: active
@@ -386,17 +401,17 @@ class _TBtn extends StatelessWidget {
   );
 }
 
-// ─── Bar chart ────────────────────────────────────────────────────────────────
+// ─── Horizontal bar chart ─────────────────────────────────────────────────────
 
-class _BarSection extends StatelessWidget {
-  final List<TopProduct> products;
+class _HBarSection extends StatelessWidget {
+  final List<DeadStockItem> items;
   final Animation<double> anim;
   final int? selected;
   final ValueChanged<int> onSelect;
 
-  const _BarSection({
+  const _HBarSection({
     super.key,
-    required this.products,
+    required this.items,
     required this.anim,
     required this.selected,
     required this.onSelect,
@@ -404,48 +419,48 @@ class _BarSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxQ = products
-        .map((p) => p.TotalQuantitySold)
-        .reduce(max)
-        .toDouble();
+    final maxStock = items.map((i) => i.AvailableStock).reduce(max);
 
     return Column(
       children: [
+        // Chart canvas
         Padding(
-          padding: const EdgeInsets.only(left: 38, right: 16),
-          child: SizedBox(
-            height: 230,
-            child: LayoutBuilder(
-              builder: (ctx, box) {
-                final slotW = box.maxWidth / products.length;
-                return AnimatedBuilder(
-                  animation: anim,
-                  builder: (_, __) => GestureDetector(
-                    onTapUp: (d) {
-                      final idx = (d.localPosition.dx / slotW).floor().clamp(
-                        0,
-                        products.length - 1,
-                      );
-                      onSelect(idx);
-                    },
-                    child: CustomPaint(
-                      size: Size(box.maxWidth, 230),
-                      painter: _BarPainter(
-                        products: products,
-                        maxQ: maxQ,
-                        progress: anim.value,
-                        selected: selected,
-                        slotW: slotW,
-                        separatorColor:
-                            Theme.of(context).brightness == Brightness.dark
+          padding: const EdgeInsets.only(left: 26, right: 38),
+          child: LayoutBuilder(
+            builder: (ctx, box) {
+              // row height * items + x-axis area
+              const rowH = 26.0;
+              const xAxis = 36.0;
+              final chartH = rowH * items.length + xAxis;
+
+              return AnimatedBuilder(
+                animation: anim,
+                builder: (_, __) => GestureDetector(
+                  onTapUp: (d) {
+                    final idx = (d.localPosition.dy / rowH).floor().clamp(
+                      0,
+                      items.length - 1,
+                    );
+                    onSelect(idx);
+                  },
+                  child: CustomPaint(
+                    size: Size(box.maxWidth, chartH),
+                    painter: _HBarPainter(
+                      items: items,
+                      maxStock: maxStock,
+                      progress: anim.value,
+                      selected: selected,
+                      rowH: rowH,
+                      xAxis: xAxis,
+                      canvasW: box.maxWidth,
+                      separatorColor: Theme.of(context).brightness == Brightness.dark
                             ? AppColor.neutral_80
                             : AppColor.neutral_20,
-                      ),
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ),
 
@@ -453,7 +468,7 @@ class _BarSection extends StatelessWidget {
         if (selected != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: _Tooltip(product: products[selected!]),
+            child: _Tooltip(item: items[selected!]),
           ),
 
         // Legend
@@ -466,13 +481,13 @@ class _BarSection extends StatelessWidget {
                 width: 12,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: kTeal,
+                  color: kPink,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(width: 6),
               Text(
-                'Quantity Sold',
+                'Dead Stock',
                 style: AppTheme.textSearchInfoLabeled(
                   context,
                 ).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
@@ -485,91 +500,25 @@ class _BarSection extends StatelessWidget {
   }
 }
 
-class _BarPainter extends CustomPainter {
-  final List<TopProduct> products;
-  final double maxQ, progress, slotW;
+class _HBarPainter extends CustomPainter {
+  final List<DeadStockItem> items;
+  final double maxStock, progress, rowH, xAxis, canvasW;
   final int? selected;
   final Color separatorColor;
 
-  const _BarPainter({
-    required this.products,
-    required this.maxQ,
+  const _HBarPainter({
+    required this.items,
+    required this.maxStock,
     required this.progress,
     required this.selected,
-    required this.slotW,
+    required this.rowH,
+    required this.xAxis,
+    required this.canvasW,
     required this.separatorColor,
   });
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    const labelH = 28.0;
-    final chartH = size.height - labelH;
-    final barW = slotW * 0.62;
-
-    // Grid
-    final gp = Paint()
-      ..color = separatorColor
-      ..strokeWidth = 0.5;
-    for (int i = 0; i <= 4; i++) {
-      final y = chartH * (1 - i / 4);
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gp);
-      _txt(
-        canvas,
-        (maxQ * i / 4).round().toString().padLeft(2, '0'),
-        Offset(-20, y - 13),
-        9,
-        kMuted,
-        FontWeight.w400,
-      );
-    }
-
-    // Bars
-    for (int i = 0; i < products.length; i++) {
-      final p = products[i];
-      final isSel = selected == i;
-      final frac = p.TotalQuantitySold / maxQ;
-      final barH = chartH * frac * progress;
-      final cx = i * slotW + slotW / 2;
-      final left = cx - barW / 2;
-      final top = chartH - barH;
-
-      final color = isSel
-          ? kTealDark
-          : (selected == null ? kTeal : kTeal.withOpacity(0.38));
-
-      canvas.drawRRect(
-        RRect.fromRectAndCorners(
-          Rect.fromLTWH(left, top, barW, barH),
-          topLeft: const Radius.circular(5),
-          topRight: const Radius.circular(5),
-        ),
-        Paint()..color = color,
-      );
-
-      if (isSel && progress > 0.75) {
-        _txt(
-          canvas,
-          '${p.TotalQuantitySold.toString().padLeft(2, '0')} Qty',
-          Offset(cx - 14, top - 16),
-          10,
-          kTealDark,
-          FontWeight.w700,
-        );
-      }
-
-      _txt(
-        canvas,
-        (i + 1).toString().padLeft(2, '0'),
-        Offset(cx - 4, chartH + 8),
-        10,
-        isSel ? kTealDark : kMuted,
-        isSel ? FontWeight.w700 : FontWeight.w400,
-      );
-    }
-  }
-
   void _txt(Canvas c, String t, Offset o, double sz, Color col, FontWeight w) {
-    (TextPainter(
+    final textPainter = TextPainter(
       text: TextSpan(
         text: t,
         style: TextStyle(
@@ -579,20 +528,87 @@ class _BarPainter extends CustomPainter {
           fontFamily: 'Poppins',
         ),
       ),
-      textDirection: TextDirection.ltr,
-    )..layout()).paint(c, o);
+      textDirection: ui.TextDirection.ltr, // ✅ FIX
+    );
+
+    textPainter.layout();
+    textPainter.paint(c, o);
   }
 
   @override
-  bool shouldRepaint(_BarPainter old) =>
+  void paint(Canvas canvas, Size size) {
+    const labelW = 0.0; // no left labels — product names shown in tooltip
+    final chartW = canvasW - labelW;
+    final chartH = size.height - xAxis;
+
+    // Vertical grid lines + X-axis labels
+    const steps = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+    final gp = Paint()
+      ..color = separatorColor
+      ..strokeWidth = 0.5;
+    for (final s in steps) {
+      if (s > maxStock + 5) continue;
+      // final x = labelW + chartW * s / (maxStock + 5) * progress;
+      // Only draw fixed grid — not scaled by progress
+      final xFixed = labelW + chartW * s / (maxStock + 5);
+      canvas.drawLine(Offset(xFixed, 0), Offset(xFixed, chartH), gp);
+      _txt(
+        canvas,
+        s == 0 ? '0' : s.toString().padLeft(2, '0'),
+        Offset(xFixed - 6, chartH + 8),
+        9,
+        kMuted,
+        FontWeight.w400,
+      );
+    }
+
+    // Bars
+    const barPad = 4.0;
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      final isSel = selected == i;
+      final barW = chartW * (item.AvailableStock / (maxStock + 5)) * progress;
+      final top = i * rowH + barPad;
+      final barH = rowH - barPad * 2;
+
+      final color = isSel
+          ? kPinkDark
+          : (selected == null ? kPink : kPink.withOpacity(0.38));
+
+      canvas.drawRRect(
+        RRect.fromRectAndCorners(
+          Rect.fromLTWH(labelW, top, barW, barH),
+          topRight: const Radius.circular(4),
+          bottomRight: const Radius.circular(4),
+        ),
+        Paint()..color = color,
+      );
+
+      // Stock value at end of selected bar
+      if (isSel && progress > 0.7) {
+        final xVal = labelW + barW + 4;
+        _txt(
+          canvas,
+          '${item.AvailableStock.toInt().toString().padLeft(2, '0')} Qty',
+          Offset(xVal, top + barH / 2 - 6),
+          10,
+          kPinkDark,
+          FontWeight.w700,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_HBarPainter old) =>
       old.progress != progress || old.selected != selected;
 }
 
 // ─── Tooltip ─────────────────────────────────────────────────────────────────
 
 class _Tooltip extends StatelessWidget {
-  final TopProduct product;
-  const _Tooltip({required this.product});
+  final DeadStockItem item;
+  const _Tooltip({required this.item});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -606,7 +622,7 @@ class _Tooltip extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          product.ProductName,
+          item.ProductName,
           style: AppTheme.textLabel(
             context,
           ).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
@@ -620,16 +636,29 @@ class _Tooltip extends StatelessWidget {
               width: 12,
               height: 12,
               decoration: BoxDecoration(
-                color: kTeal,
+                color: kPink,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(width: 6),
             Text(
-              'Quantity Sold: ${product.TotalQuantitySold == 0 ? 0 : product.TotalQuantitySold.toString().padLeft(2, '0')} QTY',
+              'Dead Stock:  ${item.AvailableStock.toInt().toString().padLeft(2, '0')}',
               style: AppTheme.textSearchInfoLabeled(
                 context,
               ).copyWith(fontSize: 12, fontWeight: FontWeight.w300),
+            ),
+            const SizedBox(width: 16),
+            Icon(
+              HugeIconsSolid.dateTime,
+              color: AppTheme.iconColorThree(context),
+              size: 14,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'Last Sale: ${DateFormat('MMM dd, yyyy').format(item.LastSaleDate)}',
+              style: AppTheme.textSearchInfoLabeled(
+                context,
+              ).copyWith(fontSize: 11, fontWeight: FontWeight.w300),
             ),
           ],
         ),
@@ -638,21 +667,21 @@ class _Tooltip extends StatelessWidget {
   );
 }
 
-// ─── List ─────────────────────────────────────────────────────────────────────
+// ─── List view ────────────────────────────────────────────────────────────────
 
 class _ListSection extends StatelessWidget {
-  final List<TopProduct> products;
+  final List<DeadStockItem> items;
   final Animation<double> anim;
-  const _ListSection({super.key, required this.products, required this.anim});
+
+  const _ListSection({super.key, required this.items, required this.anim});
 
   @override
   Widget build(BuildContext context) {
-    final maxQ = products
-        .map((p) => p.TotalQuantitySold)
-        .reduce(max)
-        .toDouble();
+    final maxStock = items.map((i) => i.AvailableStock).reduce(max);
+
     return Column(
       children: [
+        // Header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
@@ -667,9 +696,19 @@ class _ListSection extends StatelessWidget {
                 ),
               ),
               SizedBox(
-                width: 80,
+                width: 70,
                 child: Text(
-                  'Qty Sold',
+                  'Stock',
+                  textAlign: TextAlign.center,
+                  style: AppTheme.textSearchInfoLabeled(
+                    context,
+                  ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+              ),
+              SizedBox(
+                width: 90,
+                child: Text(
+                  'Last Sale',
                   textAlign: TextAlign.right,
                   style: AppTheme.textSearchInfoLabeled(
                     context,
@@ -681,12 +720,14 @@ class _ListSection extends StatelessWidget {
         ),
         SizedBox(height: 12),
         Divider(height: 1, color: AppTheme.dividerBg(context)),
+
+        // Rows
         ...List.generate(
-          products.length,
+          items.length,
           (i) => AnimatedBuilder(
             animation: anim,
             builder: (_, __) {
-              final delay = (i / products.length) * 0.6;
+              final delay = (i / items.length) * 0.6;
               final t = ((anim.value - delay) / (1 - delay)).clamp(0.0, 1.0);
               return Opacity(
                 opacity: t,
@@ -694,8 +735,8 @@ class _ListSection extends StatelessWidget {
                   offset: Offset(0, 16 * (1 - t)),
                   child: _ListRow(
                     rank: i + 1,
-                    product: products[i],
-                    maxQ: maxQ,
+                    item: items[i],
+                    maxStock: maxStock,
                   ),
                 ),
               );
@@ -710,12 +751,13 @@ class _ListSection extends StatelessWidget {
 
 class _ListRow extends StatefulWidget {
   final int rank;
-  final TopProduct product;
-  final double maxQ;
+  final DeadStockItem item;
+  final double maxStock;
+
   const _ListRow({
     required this.rank,
-    required this.product,
-    required this.maxQ,
+    required this.item,
+    required this.maxStock,
   });
 
   @override
@@ -725,27 +767,36 @@ class _ListRow extends StatefulWidget {
 class _ListRowState extends State<_ListRow> {
   bool _hover = false;
 
+  // Days since last sale
+  int get _daysSince =>
+      DateTime.now().difference(widget.item.LastSaleDate).inDays;
+
+  Color get _ageColor {
+    if (_daysSince > 180) return const Color(0xFFE24B4A);
+    if (_daysSince > 90) return const Color(0xFFFF9F40);
+    return const Color(0xFF1D9E75);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final pct = widget.product.TotalQuantitySold / widget.maxQ;
-    final isTop = widget.rank <= 3;
+    final pct = widget.item.AvailableStock / widget.maxStock;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        color: _hover ? kTeal.withOpacity(0.05) : Colors.transparent,
+        color: _hover ? kPink.withOpacity(0.05) : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         child: Row(
           children: [
-            // Rank badge
+            // Rank
             Container(
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                color: isTop
-                    ? kTeal.withOpacity(0.15)
+                color: widget.rank <= 3
+                    ? kPink.withOpacity(0.15)
                     : AppTheme.sliderHighlightBg(context),
                 borderRadius: BorderRadius.circular(6),
               ),
@@ -755,58 +806,145 @@ class _ListRowState extends State<_ListRow> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: isTop ? kTealDark : AppTheme.iconColorThree(context),
+                    color: widget.rank <= 3
+                        ? kPinkDark
+                        : AppTheme.iconColorThree(context),
                   ),
                 ),
               ),
             ),
             const SizedBox(width: 10),
-            // Name + progress bar
+
+            // Name + bar + company
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.product.ProductName,
+                    widget.item.ProductName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.textLabel(
                       context,
                     ).copyWith(fontSize: 12, fontWeight: FontWeight.w500),
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.item.CompanyName,
+                    style: AppTheme.textSearchInfoLabeled(
+                      context,
+                    ).copyWith(fontSize: 10, fontWeight: FontWeight.w300),
+                  ),
+                  const SizedBox(height: 4),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(3),
                     child: LinearProgressIndicator(
                       value: pct,
-                      minHeight: 4,
+                      minHeight: 3,
                       backgroundColor: AppTheme.sliderHighlightBg(context),
-                      valueColor: const AlwaysStoppedAnimation(kTeal),
+                      valueColor: const AlwaysStoppedAnimation(kPink),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            // Qty badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppTheme.sliderHighlightBg(context),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${widget.product.TotalQuantitySold.toString().padLeft(2, '0')} Qty',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: kTealDark,
+            const SizedBox(width: 8),
+
+            // Stock badge
+            SizedBox(
+              width: 70,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.sliderHighlightBg(context),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    widget.item.AvailableStock.toInt().toString().padLeft(
+                      2,
+                      '0',
+                    ),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: kPinkDark,
+                    ),
+                  ),
                 ),
+              ),
+            ),
+
+            // Last sale date + age indicator
+            SizedBox(
+              width: 90,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    DateFormat('MMM dd').format(widget.item.LastSaleDate),
+                    style: AppTheme.textLabel(
+                      context,
+                    ).copyWith(fontSize: 11, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _ageColor.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      _timeSinceLastSale,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: _ageColor,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  String get _timeSinceLastSale {
+    final now = DateTime.now();
+    final last = widget.item.LastSaleDate;
+
+    int years = now.year - last.year;
+    int months = now.month - last.month;
+    int days = now.day - last.day;
+
+    // Adjust negative days
+    if (days < 0) {
+      months -= 1;
+      final prevMonth = DateTime(now.year, now.month, 0);
+      days += prevMonth.day;
+    }
+
+    // Adjust negative months
+    if (months < 0) {
+      years -= 1;
+      months += 12;
+    }
+
+    // Build string
+    String result = '';
+    if (years > 0) result += '${years}y ';
+    if (months > 0) result += '${months}m ';
+    if (days > 0) result += '${days}d';
+
+    return result.trim().isEmpty ? 'Today' : '${result.trim()} ago';
   }
 }

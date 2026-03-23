@@ -3,7 +3,10 @@ import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:y2ksolutions/components/dashboard_top_products.dart';
+import '/components/dashboard_monthly_scraps.dart';
+import '/components/dashboard_dead_stocks.dart';
+import '/components/dashboard_ending_stocks.dart';
+import '/components/dashboard_top_products.dart';
 import '/screens/settings/payment_type_settings.dart';
 import '/components/dashboard_top_customers.dart';
 import '/components/dashboard_grid.dart';
@@ -59,16 +62,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Dashboard Screen
   bool _isLoadingDashboardReport = true;
   bool _isChartView = true;
+  bool _showScrollToTop = false;
   DateTime _fromDateDashboardReport = DateTime.now();
   DateTime _toDateDashboardReport = DateTime.now();
   final TextEditingController _filterDashboardController =
       TextEditingController();
+  final ScrollController _scrollControllerDashboard = ScrollController();
   int grandOrderTotalDashboard = 0;
   double grandRevenueTotalDashboard = 0;
   double grandCreditTotalDashboard = 0;
   double grandDebitTotalDashboard = 0;
   List<dynamic> topCustomers = [];
   List<dynamic> topProducts = [];
+  List<dynamic> deadStocks = [];
+  List<dynamic> endingStocks = [];
+  List<dynamic> monthlyScrap = [];
 
   //Orders Screen
   List<Order> _allOrders = [];
@@ -100,6 +108,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     _searchOrderController.addListener(_onOrderSearchChanged);
+    _scrollControllerDashboard.addListener(_onPaymentScroll);
     _loadSessionAndCustomers();
     _loadOrders();
     _loadLedgers(showError: false);
@@ -109,6 +118,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
+    _scrollControllerDashboard.removeListener(_onPaymentScroll);
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _searchOrderController.removeListener(_onOrderSearchChanged);
@@ -116,6 +126,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _scrollControllerOrder.dispose();
     _scrollControllerLedger.dispose();
     super.dispose();
+  }
+
+  void _onPaymentScroll() {
+    final shouldShow = _scrollControllerDashboard.offset > 200;
+    if (shouldShow != _showScrollToTop) {
+      setState(() => _showScrollToTop = shouldShow);
+    }
   }
 
   void _onSearchChanged() {
@@ -556,6 +573,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         topCustomers = response.dashboard.TopCustomer;
         topProducts = response.dashboard.TopProducts;
+        deadStocks = response.dashboard.DeadStock;
+        endingStocks = response.dashboard.EndingStock;
+        monthlyScrap = response.dashboard.MonthlyScap;
       });
 
       // setState(() {
@@ -671,6 +691,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         "From: ${DateFormat('yyyy-MM-dd').format(_fromDateDashboardReport)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDateDashboardReport)}";
     return SafeArea(
       child: SingleChildScrollView(
+        controller: _scrollControllerDashboard,
         physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -758,7 +779,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
               isLoading: _isLoadingDashboardReport,
               onToggle: (val) => setState(() => _isChartView = val),
             ),
+            DashboardDeadStock(
+              items: deadStocks
+                  .map((e) => DeadStockItem.fromJson(e as Map<String, dynamic>))
+                  .toList(),
+              isChartView: _isChartView,
+              isLoading: _isLoadingDashboardReport,
+              onToggle: (val) => setState(() => _isChartView = val),
+            ),
+            DashboardEndingStock(
+              items: endingStocks
+                  .map(
+                    (e) => EndingStockItem.fromJson(e as Map<String, dynamic>),
+                  )
+                  .toList(),
+              isChartView: _isChartView,
+              isLoading: _isLoadingDashboardReport,
+              onToggle: (val) => setState(() => _isChartView = val),
+            ),
+            DashboardMonthlyScrap(
+              items: monthlyScrap
+                  .map(
+                    (e) => MonthlyScrapItem.fromJson(e as Map<String, dynamic>),
+                  )
+                  .toList(),
+              isChartView: _isChartView,
+              isLoading: _isLoadingDashboardReport,
+              onToggle: (val) => setState(() => _isChartView = val),
+            ),
             // DashboardCharts(),
+            SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Text(
@@ -2709,25 +2759,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             actions: [
               if (_currentIndex == 0) ...[
-                SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    color: AppTheme.sliderHighlightBg(context),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      toggleBtn('Chart', _isChartView, () {
-                        setState(() => _isChartView = true);
-                      }),
-                      toggleBtn('List', !_isChartView, () {
-                        setState(() => _isChartView = false);
-                      }),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 8),
                 InkWell(
                   child: const Icon(HugeIconsStroke.calendar03, size: 20),
                   onTap: () {
@@ -2860,6 +2891,83 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 label: "Accounts",
               ),
             ],
+          ),
+          floatingActionButton: Padding(
+            padding: EdgeInsets.only(right: 3),
+            child: Stack(
+              children: [
+                AnimatedPositioned(
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  right: _currentIndex == 0 ? 0 : -120,
+                  top: 145,
+                  child: AnimatedOpacity(
+                    duration: Duration(milliseconds: 300),
+                    opacity: _currentIndex == 0 ? 1.0 : 0.0,
+                    child: SizedBox(
+                      width: 100,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.sliderHighlightBg(context),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            toggleBtn('Chart', _isChartView, () {
+                              setState(() => _isChartView = true);
+                            }),
+                            toggleBtn('List', !_isChartView, () {
+                              setState(() => _isChartView = false);
+                            }),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  bottom: _currentIndex == 0
+                      ? _showScrollToTop
+                            ? 5
+                            : -60
+                      : -60,
+                  left: 36,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 300),
+                    opacity: _currentIndex == 0
+                        ? _showScrollToTop
+                              ? 1.0
+                              : 0.0
+                        : 0.0,
+                    child: FloatingActionButton.small(
+                      heroTag: "scrollToTopDashboard",
+                      backgroundColor: AppTheme.sliderHighlightBg(context),
+                      elevation: 0,
+                      focusElevation: 0,
+                      hoverElevation: 0,
+                      highlightElevation: 0,
+                      onPressed: () {
+                        // WidgetsBinding.instance.addPostFrameCallback((_) {
+                        //   _scrollControllerDashboard.jumpTo(0);
+                        // });
+                        _scrollControllerDashboard.animateTo(
+                          0,
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      child: Icon(
+                        HugeIconsStroke.arrowUp01,
+                        color: AppTheme.iconColor(context),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         borderRadius: 24.0,
