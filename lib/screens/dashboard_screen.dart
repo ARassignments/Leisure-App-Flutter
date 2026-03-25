@@ -3,6 +3,7 @@ import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:y2ksolutions/components/dashboard_payment_summary.dart';
 import '/components/dashboard_monthly_scraps.dart';
 import '/components/dashboard_dead_stocks.dart';
 import '/components/dashboard_ending_stocks.dart';
@@ -77,6 +78,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<dynamic> deadStocks = [];
   List<dynamic> endingStocks = [];
   List<dynamic> monthlyScrap = [];
+  List<dynamic> paymentSummary = [];
 
   //Orders Screen
   List<Order> _allOrders = [];
@@ -576,6 +578,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         deadStocks = response.dashboard.DeadStock;
         endingStocks = response.dashboard.EndingStock;
         monthlyScrap = response.dashboard.MonthlyScap;
+        paymentSummary = response.dashboard.PaymentDetails;
       });
 
       // setState(() {
@@ -801,6 +804,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               items: monthlyScrap
                   .map(
                     (e) => MonthlyScrapItem.fromJson(e as Map<String, dynamic>),
+                  )
+                  .toList(),
+              isChartView: _isChartView,
+              isLoading: _isLoadingDashboardReport,
+              onToggle: (val) => setState(() => _isChartView = val),
+            ),
+            DashboardPaymentsSummary(
+              items: paymentSummary
+                  .map(
+                    (e) => PaymentSummary.fromJson(e as Map<String, dynamic>),
                   )
                   .toList(),
               isChartView: _isChartView,

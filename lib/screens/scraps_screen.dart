@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
+import '/screens/manage_scraps/edit_scrap.dart';
+import 'manage_scraps/add_scrap.dart';
 import '/components/appsnackbar.dart';
 import '/components/dialog_scrap_reciept.dart';
 import '/Models/customer_single_model.dart';
@@ -12,27 +16,34 @@ import '/services/api_service.dart';
 import '/theme/theme.dart';
 import '/utils/session_manager.dart';
 
-class ScrapsScreen extends StatefulWidget {
+class ScrapsScreen extends ConsumerStatefulWidget {
   const ScrapsScreen({super.key});
 
   @override
-  State<ScrapsScreen> createState() => _ScrapsScreenState();
+  ConsumerState<ScrapsScreen> createState() => _ScrapsScreenState();
 }
 
-class _ScrapsScreenState extends State<ScrapsScreen> {
+class _ScrapsScreenState extends ConsumerState<ScrapsScreen>
+    with AutomaticKeepAliveClientMixin {
   String? token;
   Map<String, dynamic>? user;
   CustomerSingleModel? _customer;
 
-  //Customers Screen
+  //Scraps Screen
   late List<ScrapModel> _allScraps = [];
   List<ScrapModel> _filteredScraps = [];
   bool _isLoadingScraps = true;
+  bool _isSortAscendingScraps = true;
   bool _isRefreshingScraps = false;
+  bool _showScrollToTop = false;
 
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now();
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollControllerScrap = ScrollController();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -40,12 +51,14 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
     _searchController.addListener(_onSearchChanged);
     _loadSession();
     _loadScraps();
+    _scrollControllerScrap.addListener(_onScrapScroll);
   }
 
   @override
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _scrollControllerScrap.removeListener(_onScrapScroll);
     super.dispose();
   }
 
@@ -54,9 +67,15 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
     user = await SessionManager.getUser();
   }
 
-  Future<void> _loadScraps() async {
+  Future<void> _loadScraps({bool isResetAll = false}) async {
     setState(() => _isLoadingScraps = true);
     try {
+      if (isResetAll) {
+        setState(() {
+          _fromDate = DateTime.now();
+          _toDate = DateTime.now();
+        });
+      }
       final fromDateFormatted = DateFormat('yyyy-MM-dd').format(_fromDate);
       final toDateFormatted = DateFormat('yyyy-MM-dd').format(_toDate);
       final response = await ApiService.getAllScraps(
@@ -72,6 +91,37 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
       debugPrint("❌ Error fetching scraps: $e");
     } finally {
       setState(() => _isLoadingScraps = false);
+    }
+  }
+
+  Future<void> deleteScrapById(int scrapId) async {
+    try {
+      final response = await ApiService.deleteScrapById(scrapId);
+
+      if (response["Success"] == true) {
+        // Navigate to home
+        if (mounted) {
+          AppSnackBar.show(
+            context,
+            message: 'Scrap Deleted Successfully',
+            type: AppSnackBarType.success,
+          );
+          _refreshScraps();
+        }
+      } else {
+        AppSnackBar.show(
+          context,
+          message: response["msg"] ?? "Scrap failed",
+          type: AppSnackBarType.error,
+        );
+      }
+    } catch (e) {
+      print("Delete scrap error: $e");
+      AppSnackBar.show(
+        context,
+        message: "Failed to delete scrap",
+        type: AppSnackBarType.error,
+      );
     }
   }
 
@@ -96,7 +146,7 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
           context,
           scrap,
           "https://www.y2ksolutions.com/Scrap/ScrapPrint/${scrap.Id}",
-          "${scrap.UserName}-${user!["FullName"]}-Scrap Reciept-${scrap.CreatedAt}-ID_${scrap.Id}",
+          "${scrap.UserName}-${user!["FullName"]}-Scrap_Reciept-${DateFormat('dd-MMM-yyyy').format(scrap.CreatedAt)}_#${scrap.Id}",
           customer,
         );
       });
@@ -142,27 +192,97 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
 
   void _applyFilters() {
     setState(() {
-      _filteredScraps = _allScraps.where((scrap) {
-        final searchMatch =
-            _searchController.text.trim().isEmpty ||
-            scrap.UserName.toLowerCase().contains(
-              _searchController.text.toLowerCase(),
-            ) ||
-            scrap.Id.toString().contains(_searchController.text.toLowerCase());
+      _filteredScraps =
+          _allScraps.where((scrap) {
+            final searchMatch =
+                _searchController.text.trim().isEmpty ||
+                scrap.UserName.toLowerCase().contains(
+                  _searchController.text.toLowerCase(),
+                ) ||
+                scrap.Id.toString().contains(
+                  _searchController.text.toLowerCase(),
+                );
 
-        return searchMatch;
-      }).toList();
+            return searchMatch;
+          }).toList()..sort((a, b) {
+            final dateCompare = _isSortAscendingScraps
+                ? a.CreatedAt.compareTo(b.CreatedAt)
+                : b.CreatedAt.compareTo(a.CreatedAt);
+
+            // ✅ if dates are same, sort by Id
+            if (dateCompare == 0) {
+              return _isSortAscendingScraps
+                  ? a.Id.compareTo(b.Id)
+                  : b.Id.compareTo(a.Id);
+            }
+
+            return dateCompare;
+          });
     });
   }
 
   void _resetFilters() {
     _searchController.clear();
     _filteredScraps = List.from(_allScraps);
+    setState(() {
+      _isSortAscendingScraps = true;
+    });
+  }
+
+  Widget _confirmDeleteSheet(BuildContext context, String name) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        left: 20,
+        right: 20,
+      ),
+      child: Column(
+        spacing: 16,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            "Confirm Delete",
+            textAlign: TextAlign.center,
+            style: AppTheme.textLabel(
+              context,
+            ).copyWith(fontSize: 17, fontWeight: FontWeight.w600),
+          ),
+          Divider(color: AppTheme.dividerBg(context)),
+          Text(
+            "Are you sure you want to delete '$name' scrap?",
+            textAlign: TextAlign.center,
+            style: AppTheme.textLabel(context),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColor.accent_50,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              "Yes, Remove",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+          OutlinedButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onScrapScroll() {
+    final shouldShow = _scrollControllerScrap.offset > 200;
+    if (shouldShow != _showScrollToTop) {
+      setState(() => _showScrollToTop = shouldShow);
+    }
   }
 
   Widget _scrapPage() {
     double paidTotal = _filteredScraps
-        .where((p) => p.OrderType.toString().toLowerCase().contains("Sale"))
+        .where((p) => p.OrderType.toString().toLowerCase().contains("Purchase"))
         .fold(0.0, (sum, p) => sum + p.TotalPrice);
 
     double unpaidTotal = _filteredScraps
@@ -257,17 +377,56 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
 
               const SizedBox(height: 10),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(
-                    HugeIconsSolid.calendar02,
-                    size: 18,
-                    color: AppTheme.iconColor(context),
+                  Row(
+                    children: [
+                      Icon(
+                        HugeIconsSolid.calendar02,
+                        size: 18,
+                        color: AppTheme.iconColor(context),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDate)}",
+                        style: AppTheme.textLabel(
+                          context,
+                        ).copyWith(fontSize: 12),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    "From: ${DateFormat('yyyy-MM-dd').format(_fromDate)}  -  To: ${DateFormat('yyyy-MM-dd').format(_toDate)}",
-                    style: AppTheme.textLabel(context).copyWith(fontSize: 12),
-                  ),
+                  if (_filteredScraps.isNotEmpty)
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _isSortAscendingScraps = !_isSortAscendingScraps;
+                          _filteredScraps.sort((a, b) {
+                            final dateCompare = _isSortAscendingScraps
+                                ? a.CreatedAt.compareTo(b.CreatedAt)
+                                : b.CreatedAt.compareTo(a.CreatedAt);
+
+                            // ✅ if dates are same, sort by OrderId
+                            if (dateCompare == 0) {
+                              return _isSortAscendingScraps
+                                  ? a.Id.compareTo(b.Id)
+                                  : b.Id.compareTo(a.Id);
+                            }
+
+                            return dateCompare;
+                          });
+                        });
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _scrollControllerScrap.jumpTo(0);
+                        });
+                      },
+                      child: Icon(
+                        _isSortAscendingScraps
+                            ? HugeIconsSolid.sortByUp01
+                            : HugeIconsSolid.sortByDown01,
+                        size: 18,
+                        color: AppTheme.iconColor(context),
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -285,179 +444,342 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
                               "No scraps found for the selected date range.",
                         )
                       : SlidableAutoCloseBehavior(
-                          child: ListView.builder(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            itemCount: _filteredScraps.length,
-                            itemBuilder: (context, index) {
-                              final scrap = _filteredScraps[index];
-                              final formattedDate = DateFormat(
-                                'MMMM dd, yyyy',
-                              ).format(scrap.CreatedAt);
-                              final formattedAmount = NumberFormat(
-                                '#,###.00',
-                              ).format(scrap.TotalPrice);
+                          child: Stack(
+                            children: [
+                              ListView.builder(
+                                controller: _scrollControllerScrap,
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                itemCount: _filteredScraps.length + 1,
+                                itemBuilder: (context, index) {
+                                  if (index == _filteredScraps.length) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: 10,
+                                        bottom: 75,
+                                      ),
+                                      child: Shimmer(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            AppTheme.sliderHighlightBg(context),
+                                            AppTheme.iconColorThree(context),
+                                            AppTheme.sliderHighlightBg(context),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        direction: ShimmerDirection.rtl,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          spacing: 12,
+                                          children: [
+                                            const Icon(
+                                              HugeIconsStroke.confused,
+                                            ),
+                                            Text(
+                                              "No more record at the moment",
+                                              style: AppTheme.textLink(context)
+                                                  .copyWith(
+                                                    fontFamily: AppFontFamily
+                                                        .poppinsMedium,
+                                                    fontSize: 14,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }
 
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  left: 20,
-                                  right: 20,
-                                  top: index == 0 ? 0 : 2,
-                                  bottom: index == _filteredScraps.length - 1
-                                      ? 0
-                                      : 2,
-                                ),
-                                child: Slidable(
-                                  key: ValueKey(scrap.Id),
-                                  endActionPane: ActionPane(
-                                    motion: const ScrollMotion(),
-                                    extentRatio: 0.2,
-                                    children: [
-                                      Expanded(
-                                        child: InkWell(
-                                          onTap: () {
-                                            Slidable.of(context)?.close();
-                                            fetchCustomer(scrap);
-                                          },
-                                          child: Container(
-                                            margin: const EdgeInsets.symmetric(
-                                              horizontal: 4,
-                                              vertical: 5,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: AppTheme.cardBg(context),
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            height: double.infinity,
-                                            child: const Icon(
-                                              HugeIconsSolid.navigation03,
-                                              color: Color(0xFF4facfe),
-                                              size: 24,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Card(
-                                    color: AppTheme.customListBg(context),
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
+                                  final scrap = _filteredScraps[index];
+                                  final formattedDate = DateFormat(
+                                    'MMMM dd, yyyy',
+                                  ).format(scrap.CreatedAt);
+                                  final formattedAmount = NumberFormat(
+                                    '#,###.00',
+                                  ).format(scrap.TotalPrice);
+
+                                  return Padding(
+                                    padding: EdgeInsets.only(
+                                      left: 20,
+                                      right: 20,
+                                      top: index == 0 ? 0 : 2,
+                                      bottom: 2,
                                     ),
-                                    child: ListTile(
-                                      onLongPress: () {
-                                        AppSnackBar.show(
-                                          context,
-                                          message: "Hola Bola",
-                                          type: AppSnackBarType.error,
-                                        );
-                                      },
-                                      leading: Text(
-                                        (index + 1).toString().padLeft(2, '0'),
-                                        style: const TextStyle(
-                                          fontFamily:
-                                              AppFontFamily.poppinsMedium,
-                                        ),
-                                      ),
-                                      title: Row(
+                                    child: Slidable(
+                                      key: ValueKey(scrap.Id),
+                                      startActionPane: ActionPane(
+                                        motion: const ScrollMotion(),
+                                        extentRatio: 0.4,
                                         children: [
                                           Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.stretch,
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Row(
+                                            child: InkWell(
+                                              onTap: () async {
+                                                final result =
+                                                    await showModalBottomSheet(
+                                                      context: context,
+                                                      isDismissible: false,
+                                                      enableDrag: false,
+                                                      showDragHandle: true,
+                                                      isScrollControlled: true,
+                                                      backgroundColor: Theme.of(
+                                                        context,
+                                                      ).scaffoldBackgroundColor,
+                                                      shape: const RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.vertical(
+                                                              top:
+                                                                  Radius.circular(
+                                                                    30,
+                                                                  ),
+                                                            ),
+                                                      ),
+                                                      builder: (context) =>
+                                                          EditScrapBottomSheet(
+                                                            scrapId:
+                                                                scrap.Id,
+                                                          ),
+                                                    );
+
+                                                if (result == true) {
+                                                  Slidable.of(context)?.close();
+                                                  _refreshScraps();
+                                                }
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 5,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.customListBg(
+                                                    context,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                height: double.infinity,
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      HugeIconsSolid.edit01,
+                                                      color: Colors.blue,
+                                                      size: 24,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: InkWell(
+                                              onTap: () async {
+                                                final bool? confirmDelete =
+                                                    await showModalBottomSheet<
+                                                      bool
+                                                    >(
+                                                      context: context,
+                                                      isDismissible: false,
+                                                      enableDrag: false,
+                                                      showDragHandle: true,
+                                                      isScrollControlled: true,
+                                                      backgroundColor: Theme.of(
+                                                        context,
+                                                      ).scaffoldBackgroundColor,
+                                                      shape: const RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.vertical(
+                                                              top:
+                                                                  Radius.circular(
+                                                                    30,
+                                                                  ),
+                                                            ),
+                                                      ),
+                                                      builder: (context) {
+                                                        return _confirmDeleteSheet(
+                                                          context,
+                                                          "Id#${scrap.Id} ${scrap.UserName} (${scrap.OrderType})",
+                                                        );
+                                                      },
+                                                    );
+                                                if (confirmDelete == true) {
+                                                  Slidable.of(context)?.close();
+                                                  deleteScrapById(scrap.Id);
+                                                }
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 5,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.customListBg(
+                                                    context,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                height: double.infinity,
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      HugeIconsSolid.delete01,
+                                                      color: Color(0xFFC41F1F),
+                                                      size: 24,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      endActionPane: ActionPane(
+                                        motion: const ScrollMotion(),
+                                        extentRatio: 0.2,
+                                        children: [
+                                          Expanded(
+                                            child: InkWell(
+                                              onTap: () {
+                                                Slidable.of(context)?.close();
+                                                fetchCustomer(scrap);
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 5,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.customListBg(
+                                                    context,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                height: double.infinity,
+                                                child: const Icon(
+                                                  HugeIconsSolid.pdf02,
+                                                  color: Color(0xFFC41F1F),
+                                                  size: 24,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Card(
+                                        color: AppTheme.customListBg(context),
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: ListTile(
+                                          onLongPress: () {
+                                            AppSnackBar.show(
+                                              context,
+                                              message: "Hola Bola",
+                                              type: AppSnackBarType.error,
+                                            );
+                                          },
+                                          leading: Text(
+                                            (index + 1).toString().padLeft(
+                                              2,
+                                              '0',
+                                            ),
+                                            style: const TextStyle(
+                                              fontFamily:
+                                                  AppFontFamily.poppinsMedium,
+                                            ),
+                                          ),
+                                          title: Row(
+                                            children: [
+                                              Expanded(
+                                                child: Column(
                                                   crossAxisAlignment:
-                                                      CrossAxisAlignment.end,
+                                                      CrossAxisAlignment
+                                                          .stretch,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
                                                   children: [
-                                                    Text(
-                                                      "Id# ",
-                                                      style:
-                                                          AppTheme.textLabel(
-                                                            context,
-                                                          ).copyWith(
-                                                            fontFamily:
-                                                                AppFontFamily
-                                                                    .poppinsSemiBold,
-                                                            fontSize: 12,
-                                                          ),
+                                                    Row(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .end,
+                                                      children: [
+                                                        Text(
+                                                          "Id# ",
+                                                          style:
+                                                              AppTheme.textLabel(
+                                                                context,
+                                                              ).copyWith(
+                                                                fontFamily:
+                                                                    AppFontFamily
+                                                                        .poppinsSemiBold,
+                                                                fontSize: 12,
+                                                              ),
+                                                        ),
+                                                        Text(
+                                                          scrap.Id.toString(),
+                                                          style:
+                                                              AppTheme.textLabel(
+                                                                context,
+                                                              ).copyWith(
+                                                                fontFamily:
+                                                                    AppFontFamily
+                                                                        .poppinsSemiBold,
+                                                                fontSize: 16,
+                                                              ),
+                                                        ),
+                                                      ],
                                                     ),
-                                                    Text(
-                                                      scrap.Id.toString(),
-                                                      style:
-                                                          AppTheme.textLabel(
-                                                            context,
-                                                          ).copyWith(
-                                                            fontFamily:
-                                                                AppFontFamily
-                                                                    .poppinsSemiBold,
-                                                            fontSize: 16,
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ),
 
-                                                Row(
-                                                  children: [
-                                                    Icon(
-                                                      HugeIconsStroke
-                                                          .userAccount,
-                                                      size: 16,
-                                                    ),
-                                                    const SizedBox(width: 6),
-                                                    Text(
-                                                      scrap.UserName,
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      softWrap: true,
-
-                                                      style: const TextStyle(
-                                                        fontSize: 11,
-                                                        fontFamily:
-                                                            AppFontFamily
-                                                                .poppinsMedium,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Row(
-                                                  children: [
-                                                    Icon(
-                                                      HugeIconsStroke.package,
-                                                      size: 16,
-                                                    ),
-                                                    const SizedBox(width: 6),
-                                                    Text(
-                                                      "Qty: ${scrap.Items}",
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: const TextStyle(
-                                                        fontSize: 11,
-                                                        fontFamily:
-                                                            AppFontFamily
-                                                                .poppinsMedium,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Row(
-                                                  children: [
                                                     Row(
                                                       children: [
                                                         Icon(
                                                           HugeIconsStroke
-                                                              .moneyBag02,
+                                                              .userAccount,
                                                           size: 16,
                                                         ),
                                                         const SizedBox(
                                                           width: 6,
                                                         ),
                                                         Text(
-                                                          "${NumberFormat('#,###.00').format(scrap.Price)} X ${scrap.Quantity}Kg",
+                                                          scrap.UserName,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          softWrap: true,
+
+                                                          style: const TextStyle(
+                                                            fontSize: 11,
+                                                            fontFamily:
+                                                                AppFontFamily
+                                                                    .poppinsMedium,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                          HugeIconsStroke
+                                                              .package,
+                                                          size: 16,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        Text(
+                                                          "Qty: ${scrap.Items}",
                                                           maxLines: 1,
                                                           overflow: TextOverflow
                                                               .ellipsis,
@@ -470,201 +792,290 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
                                                         ),
                                                       ],
                                                     ),
+                                                    Row(
+                                                      children: [
+                                                        Row(
+                                                          children: [
+                                                            Icon(
+                                                              HugeIconsStroke
+                                                                  .moneyBag02,
+                                                              size: 16,
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 6,
+                                                            ),
+                                                            Text(
+                                                              "${NumberFormat('#,###.00').format(scrap.Price)} X ${scrap.Quantity}Kg",
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style: const TextStyle(
+                                                                fontSize: 11,
+                                                                fontFamily:
+                                                                    AppFontFamily
+                                                                        .poppinsMedium,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ],
                                                 ),
-                                              ],
-                                            ),
-                                          ),
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    HugeIconsStroke.calendar03,
-                                                    size: 16,
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    formattedDate,
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontSize: 11,
-                                                      fontFamily: AppFontFamily
-                                                          .poppinsMedium,
-                                                    ),
-                                                  ),
-                                                ],
                                               ),
-                                              SizedBox(height: 5),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 6,
-                                                      vertical: 3,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      scrap.OrderType.toString()
-                                                          .contains("Purchase")
-                                                      ? Colors.green
-                                                            .withOpacity(0.15)
-                                                      : Colors.blue.withOpacity(
-                                                          0.15,
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        HugeIconsStroke
+                                                            .calendar03,
+                                                        size: 16,
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Text(
+                                                        formattedDate,
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: const TextStyle(
+                                                          fontSize: 11,
+                                                          fontFamily:
+                                                              AppFontFamily
+                                                                  .poppinsMedium,
                                                         ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Icon(
-                                                      scrap.OrderType.toString()
-                                                              .contains(
-                                                                "Purchase",
-                                                              )
-                                                          ? HugeIconsStroke
-                                                                .chartIncrease
-                                                          : HugeIconsStroke
-                                                                .chartDecrease,
-                                                      size: 10,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 5),
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 3,
+                                                        ),
+                                                    decoration: BoxDecoration(
                                                       color:
                                                           scrap.OrderType.toString()
                                                               .contains(
                                                                 "Purchase",
                                                               )
                                                           ? Colors.green
-                                                          : Colors.blue,
-                                                    ),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      scrap.OrderType,
-                                                      style:
-                                                          AppTheme.textLink(
-                                                            context,
-                                                          ).copyWith(
-                                                            fontSize: 8,
-                                                            color:
-                                                                scrap.OrderType.toString()
-                                                                    .contains(
-                                                                      "Purchase",
-                                                                    )
-                                                                ? Colors.green
-                                                                : Colors.blue,
+                                                                .withOpacity(
+                                                                  0.15,
+                                                                )
+                                                          : Colors.blue
+                                                                .withOpacity(
+                                                                  0.15,
+                                                                ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
                                                           ),
                                                     ),
-                                                  ],
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                "Rs $formattedAmount",
-                                                style:
-                                                    AppTheme.textSearchInfoLabeled(
-                                                      context,
-                                                    ).copyWith(
-                                                      fontFamily: AppFontFamily
-                                                          .poppinsBold,
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Icon(
+                                                          scrap.OrderType.toString()
+                                                                  .contains(
+                                                                    "Purchase",
+                                                                  )
+                                                              ? HugeIconsStroke
+                                                                    .chartIncrease
+                                                              : HugeIconsStroke
+                                                                    .chartDecrease,
+                                                          size: 10,
+                                                          color:
+                                                              scrap.OrderType.toString()
+                                                                  .contains(
+                                                                    "Purchase",
+                                                                  )
+                                                              ? Colors.green
+                                                              : Colors.blue,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Text(
+                                                          scrap.OrderType,
+                                                          style:
+                                                              AppTheme.textLink(
+                                                                context,
+                                                              ).copyWith(
+                                                                fontSize: 8,
+                                                                color:
+                                                                    scrap.OrderType.toString()
+                                                                        .contains(
+                                                                          "Purchase",
+                                                                        )
+                                                                    ? Colors
+                                                                          .green
+                                                                    : Colors
+                                                                          .blue,
+                                                              ),
+                                                        ),
+                                                      ],
                                                     ),
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    "Rs $formattedAmount",
+                                                    style:
+                                                        AppTheme.textSearchInfoLabeled(
+                                                          context,
+                                                        ).copyWith(
+                                                          fontFamily:
+                                                              AppFontFamily
+                                                                  .poppinsBold,
+                                                        ),
+                                                  ),
+                                                ],
                                               ),
                                             ],
                                           ),
-                                        ],
+                                        ),
                                       ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              // Scroll to top button
+                              AnimatedPositioned(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                bottom: _filteredScraps.length > 10
+                                    ? _showScrollToTop
+                                          ? 8
+                                          : -60
+                                    : -60,
+                                left: 24,
+                                child: AnimatedOpacity(
+                                  duration: const Duration(milliseconds: 300),
+                                  opacity: _filteredScraps.length > 10
+                                      ? _showScrollToTop
+                                            ? 1.0
+                                            : 0.0
+                                      : 0.0,
+                                  child: FloatingActionButton.small(
+                                    heroTag: "scrollToTopScrap",
+                                    backgroundColor: AppTheme.sliderHighlightBg(
+                                      context,
+                                    ),
+                                    elevation: 0,
+                                    focusElevation: 0,
+                                    hoverElevation: 0,
+                                    highlightElevation: 0,
+                                    onPressed: () {
+                                      _scrollControllerScrap.animateTo(
+                                        0,
+                                        duration: const Duration(
+                                          milliseconds: 500,
+                                        ),
+                                        curve: Curves.easeInOut,
+                                      );
+                                    },
+                                    child: Icon(
+                                      HugeIconsStroke.arrowUp01,
+                                      color: AppTheme.iconColor(context),
                                     ),
                                   ),
                                 ),
-                              );
-                            },
+                              ),
+                            ],
                           ),
                         ),
                 ),
         ),
 
-        SizedBox(height: 20),
-        // if (_filteredScraps.isNotEmpty)
-        // Padding(
-        //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        //   child: Column(
-        //     children: [
-        //       Row(
-        //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //         children: [
-        //           RichText(
-        //             textAlign: TextAlign.start,
-        //             maxLines: 1,
-        //             overflow: TextOverflow.ellipsis,
-        //             text: TextSpan(
-        //               style: AppTheme.textSearchInfo(
-        //                 context,
-        //               ).copyWith(fontSize: 14),
-        //               text: 'Total Sale:',
-        //             ),
-        //           ),
-        //           Row(
-        //             children: [
-        //               Icon(
-        //                 HugeIconsStroke.moneySend01,
-        //                 size: 14,
-        //                 color: AppTheme.iconColor(context),
-        //               ),
-        //               const SizedBox(width: 6),
-        //               RichText(
-        //                 textAlign: TextAlign.end,
-        //                 text: TextSpan(
-        //                   style: AppTheme.textSearchInfoLabeled(
-        //                     context,
-        //                   ).copyWith(fontSize: 14),
-        //                   text: "Rs $formattedPaidTotal",
-        //                 ),
-        //               ),
-        //             ],
-        //           ),
-        //         ],
-        //       ),
-        //       Row(
-        //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //         children: [
-        //           RichText(
-        //             textAlign: TextAlign.start,
-        //             maxLines: 1,
-        //             overflow: TextOverflow.ellipsis,
-        //             text: TextSpan(
-        //               style: AppTheme.textSearchInfo(
-        //                 context,
-        //               ).copyWith(fontSize: 14),
-        //               text: 'Total Purchase:',
-        //             ),
-        //           ),
-        //           Row(
-        //             children: [
-        //               Icon(
-        //                 HugeIconsStroke.moneyReceive01,
-        //                 size: 14,
-        //                 color: AppTheme.iconColor(context),
-        //               ),
-        //               const SizedBox(width: 6),
-        //               RichText(
-        //                 textAlign: TextAlign.end,
-        //                 text: TextSpan(
-        //                   style: AppTheme.textSearchInfoLabeled(
-        //                     context,
-        //                   ).copyWith(fontSize: 14),
-        //                   text: "Rs $formattedUnPaidTotal",
-        //                 ),
-        //               ),
-        //             ],
-        //           ),
-        //         ],
-        //       ),
-        //     ],
-        //   ),
-        // ),
+        if (_filteredScraps.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 10,
+              bottom: 10,
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    RichText(
+                      textAlign: TextAlign.start,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        style: AppTheme.textSearchInfo(
+                          context,
+                        ).copyWith(fontSize: 14),
+                        text: 'Total Sale:',
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          HugeIconsStroke.moneySend01,
+                          size: 14,
+                          color: AppTheme.iconColor(context),
+                        ),
+                        const SizedBox(width: 6),
+                        RichText(
+                          textAlign: TextAlign.end,
+                          text: TextSpan(
+                            style: AppTheme.textSearchInfoLabeled(
+                              context,
+                            ).copyWith(fontSize: 14),
+                            text: "Rs $formattedPaidTotal",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    RichText(
+                      textAlign: TextAlign.start,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        style: AppTheme.textSearchInfo(
+                          context,
+                        ).copyWith(fontSize: 14),
+                        text: 'Total Purchase:',
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          HugeIconsStroke.moneyReceive01,
+                          size: 14,
+                          color: AppTheme.iconColor(context),
+                        ),
+                        const SizedBox(width: 6),
+                        RichText(
+                          textAlign: TextAlign.end,
+                          text: TextSpan(
+                            style: AppTheme.textSearchInfoLabeled(
+                              context,
+                            ).copyWith(fontSize: 14),
+                            text: "Rs $formattedUnPaidTotal",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -699,6 +1110,52 @@ class _ScrapsScreenState extends State<ScrapsScreen> {
         ],
       ),
       body: user == null ? const Center(child: LoadingLogo()) : _scrapPage(),
+      floatingActionButton: AnimatedPadding(
+        duration: Duration(milliseconds: 300),
+        padding: EdgeInsets.only(
+          bottom: _filteredScraps.isEmpty ? 0 : 53,
+          right: 8,
+        ),
+        child: FloatingActionButton.extended(
+          isExtended: true,
+          foregroundColor: AppTheme.iconColor(context),
+          elevation: 0,
+          focusElevation: 0,
+          hoverElevation: 0,
+          highlightElevation: 0,
+          onPressed: () async {
+            final result = await showModalBottomSheet(
+              context: context,
+              isDismissible: false,
+              enableDrag: false,
+              showDragHandle: true,
+              isScrollControlled: true,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+              ),
+              builder: (context) => const AddScrapBottomSheet(),
+            );
+
+            if (result == true) {
+              _searchController.clear();
+              _loadScraps(isResetAll: true);
+            }
+          },
+          backgroundColor: AppTheme.sliderHighlightBg(context),
+          label: Row(
+            spacing: 8,
+            children: [
+              Icon(
+                HugeIconsStroke.add01,
+                color: AppTheme.iconColor(context),
+                size: 20,
+              ),
+              Text("Add Scrap", style: AppTheme.textLabel(context)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

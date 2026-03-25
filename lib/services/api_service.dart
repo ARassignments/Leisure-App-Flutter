@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '/responses/item_location_response.dart';
+import '/responses/scrap_response_by_id.dart';
 import '/responses/payment_response_by_id.dart';
 import '/responses/dashboard_response.dart';
 import '/Models/customer_single_model.dart';
@@ -281,9 +283,7 @@ class ApiService {
     }
   }
 
-  static Future<PaymentResponseById> getPaymentById({
-    required int id
-  }) async {
+  static Future<PaymentResponseById> getPaymentById({required int id}) async {
     final orgId = await SessionManager.getOrganizationId();
 
     if (orgId == null) {
@@ -307,9 +307,7 @@ class ApiService {
     }
   }
 
-  static Future<Map<dynamic, dynamic>> deletePaymentById(
-    int paymentId
-  ) async {
+  static Future<Map<dynamic, dynamic>> deletePaymentById(int paymentId) async {
     final url = Uri.parse("$baseUrl/DeletePaymentById");
     final userPassword = await SessionManager.getUserPassword();
 
@@ -320,16 +318,152 @@ class ApiService {
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "Id": paymentId,
-        "Password": "1"
-      }),
+      body: jsonEncode({"Id": paymentId, "Password": "1"}),
     );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
       throw Exception("Failed to delete payment: ${response.body}");
+    }
+  }
+
+  static Future<Map<dynamic, dynamic>> addScrap(
+    int userId,
+    double scrapQuantity,
+    double scrapWeight,
+    int scrapPrice,
+    int scrapItemLocation,
+    String scrapDate,
+    String scrapOrderType,
+    String scrapRemarks,
+  ) async {
+    final url = Uri.parse("$baseUrl/AddScrap");
+    final orgId = await SessionManager.getOrganizationId();
+
+    if (orgId == null) {
+      throw Exception("OrganizationId not found in session");
+    }
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "Id": 0,
+        "UserId": userId,
+        "Items": scrapQuantity,
+        "LocationId": scrapItemLocation,
+        "Quantity": scrapWeight,
+        "Price": scrapPrice,
+        "Date": scrapDate,
+        "OrderType": scrapOrderType,
+        "Remarks": scrapRemarks,
+        "OrganizationId": orgId,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to add scrap: ${response.body}");
+    }
+  }
+
+  static Future<Map<dynamic, dynamic>> editScrap(
+    int scrapId,
+    int userId,
+    double scrapQuantity,
+    double scrapWeight,
+    int scrapPrice,
+    int scrapItemLocation,
+    String scrapDate,
+    String scrapOrderType,
+    String scrapRemarks,
+  ) async {
+    final url = Uri.parse("$baseUrl/AddScrap");
+    final orgId = await SessionManager.getOrganizationId();
+
+    if (orgId == null) {
+      throw Exception("OrganizationId not found in session");
+    }
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "Id": scrapId,
+        "UserId": userId,
+        "Items": scrapQuantity,
+        "LocationId": scrapItemLocation,
+        "Quantity": scrapWeight,
+        "Price": scrapPrice,
+        "Date": scrapDate,
+        "OrderType": scrapOrderType,
+        "Remarks": scrapRemarks,
+        "OrganizationId": orgId,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to edit scrap: ${response.body}");
+    }
+  }
+
+  static Future<ScrapResponseById> getScrapById({required int id}) async {
+    final url = Uri.parse(
+      "$baseUrl/GetScrapById"
+      "?Id=$id",
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return ScrapResponseById.fromJson(jsonData);
+    } else {
+      throw Exception("Failed to fetch scrap data: ${response.body}");
+    }
+  }
+
+  static Future<Map<dynamic, dynamic>> deleteScrapById(int scrapId) async {
+    final url = Uri.parse("$baseUrl/DeleteScrapById");
+    final userPassword = await SessionManager.getUserPassword();
+
+    if (userPassword == null) {
+      throw Exception("UserPassword not found in session");
+    }
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"Id": scrapId, "Password": "1"}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to delete scrap: ${response.body}");
+    }
+  }
+
+  static Future<ItemLocationResponse> getAllItemLocations() async {
+    final orgId = await SessionManager.getOrganizationId();
+
+    if (orgId == null) {
+      throw Exception("OrganizationId not found in session");
+    }
+
+    final url = Uri.parse("$baseUrl/AllLocations?OrganizationId=$orgId");
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return ItemLocationResponse.fromJson(jsonData);
+    } else {
+      throw Exception("Failed to load item locations");
     }
   }
 }

@@ -225,6 +225,9 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
   void _resetFilters() {
     _searchController.clear();
     _filteredPayments = List.from(_allPayments);
+    setState(() {
+      _isSortAscendingPayments = true;
+    });
   }
 
   Widget _confirmDeleteSheet(BuildContext context, String name) {
@@ -451,8 +454,48 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
                               ListView.builder(
                                 controller: _scrollControllerPayment,
                                 physics: const AlwaysScrollableScrollPhysics(),
-                                itemCount: _filteredPayments.length,
+                                itemCount: _filteredPayments.length + 1,
                                 itemBuilder: (context, index) {
+                                  if (index == _filteredPayments.length) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: 10,
+                                        bottom: 75,
+                                      ),
+                                      child: Shimmer(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            AppTheme.sliderHighlightBg(context),
+                                            AppTheme.iconColorThree(context),
+                                            AppTheme.sliderHighlightBg(context),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        direction: ShimmerDirection.rtl,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          spacing: 12,
+                                          children: [
+                                            const Icon(
+                                              HugeIconsStroke.confused,
+                                            ),
+                                            Text(
+                                              "No more record at the moment",
+                                              style: AppTheme.textLink(context)
+                                                  .copyWith(
+                                                    fontFamily: AppFontFamily
+                                                        .poppinsMedium,
+                                                    fontSize: 14,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }
+
                                   final payment = _filteredPayments[index];
                                   final formattedDate = DateFormat(
                                     'MMMM dd, yyyy',
@@ -466,488 +509,409 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
                                       left: 20,
                                       right: 20,
                                       top: index == 0 ? 0 : 2,
-                                      bottom:
-                                          index == _filteredPayments.length - 1
-                                          ? 75
-                                          : 2,
+                                      bottom: 2,
                                     ),
-                                    child: index == _filteredPayments.length - 1
-                                        ? Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 10,
-                                            ),
-                                            child: Shimmer(
-                                              gradient: LinearGradient(
-                                                colors: [
-                                                  AppTheme.sliderHighlightBg(
-                                                    context,
-                                                  ),
-                                                  AppTheme.iconColorThree(
-                                                    context,
-                                                  ),
-                                                  AppTheme.sliderHighlightBg(
-                                                    context,
-                                                  ),
-                                                ],
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
-                                              ),
-                                              direction: ShimmerDirection.rtl,
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                spacing: 12,
-                                                children: [
-                                                  const Icon(
-                                                    HugeIconsStroke.confused,
-                                                  ),
-                                                  Text(
-                                                    "No more record at the moment",
-                                                    style:
-                                                        AppTheme.textLink(
-                                                          context,
-                                                        ).copyWith(
-                                                          fontFamily:
-                                                              AppFontFamily
-                                                                  .poppinsMedium,
-                                                          fontSize: 14,
-                                                        ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          )
-                                        : Slidable(
-                                            key: ValueKey(payment.Id),
-                                            startActionPane: ActionPane(
-                                              motion: const ScrollMotion(),
-                                              extentRatio: 0.4,
-                                              children: [
-                                                Expanded(
-                                                  child: InkWell(
-                                                    onTap: () async {
-                                                      final result = await showModalBottomSheet(
-                                                        context: context,
-                                                        isDismissible: false,
-                                                        enableDrag: false,
-                                                        showDragHandle: true,
-                                                        isScrollControlled:
-                                                            true,
-                                                        backgroundColor: Theme.of(
-                                                          context,
-                                                        ).scaffoldBackgroundColor,
-                                                        shape: const RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius.vertical(
-                                                                top:
-                                                                    Radius.circular(
-                                                                      30,
-                                                                    ),
-                                                              ),
-                                                        ),
-                                                        builder: (context) =>
-                                                            EditPaymentBottomSheet(
-                                                              paymentId:
-                                                                  payment.Id,
+                                    child: Slidable(
+                                      key: ValueKey(payment.Id),
+                                      startActionPane: ActionPane(
+                                        motion: const ScrollMotion(),
+                                        extentRatio: 0.4,
+                                        children: [
+                                          Expanded(
+                                            child: InkWell(
+                                              onTap: () async {
+                                                final result =
+                                                    await showModalBottomSheet(
+                                                      context: context,
+                                                      isDismissible: false,
+                                                      enableDrag: false,
+                                                      showDragHandle: true,
+                                                      isScrollControlled: true,
+                                                      backgroundColor: Theme.of(
+                                                        context,
+                                                      ).scaffoldBackgroundColor,
+                                                      shape: const RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.vertical(
+                                                              top:
+                                                                  Radius.circular(
+                                                                    30,
+                                                                  ),
                                                             ),
-                                                      );
+                                                      ),
+                                                      builder: (context) =>
+                                                          EditPaymentBottomSheet(
+                                                            paymentId:
+                                                                payment.Id,
+                                                          ),
+                                                    );
 
-                                                      if (result == true) {
-                                                        Slidable.of(
-                                                          context,
-                                                        )?.close();
-                                                        _refreshPayments();
-                                                      }
-                                                    },
-                                                    child: Container(
-                                                      margin:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 4,
-                                                            vertical: 5,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            AppTheme.customListBg(
-                                                              context,
-                                                            ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              10,
-                                                            ),
-                                                      ),
-                                                      height: double.infinity,
-                                                      child: Column(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Icon(
-                                                            HugeIconsSolid
-                                                                .edit01,
-                                                            color: Colors.blue,
-                                                            size: 24,
-                                                          ),
-                                                        ],
-                                                      ),
+                                                if (result == true) {
+                                                  Slidable.of(context)?.close();
+                                                  _refreshPayments();
+                                                }
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 5,
                                                     ),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.customListBg(
+                                                    context,
                                                   ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
                                                 ),
-                                                Expanded(
-                                                  child: InkWell(
-                                                    onTap: () async {
-                                                      final bool?
-                                                      confirmDelete = await showModalBottomSheet<bool>(
-                                                        context: context,
-                                                        isDismissible: false,
-                                                        enableDrag: false,
-                                                        showDragHandle: true,
-                                                        isScrollControlled:
-                                                            true,
-                                                        backgroundColor: Theme.of(
-                                                          context,
-                                                        ).scaffoldBackgroundColor,
-                                                        shape: const RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius.vertical(
-                                                                top:
-                                                                    Radius.circular(
-                                                                      30,
-                                                                    ),
-                                                              ),
-                                                        ),
-                                                        builder: (context) {
-                                                          return _confirmDeleteSheet(
-                                                            context,
-                                                            "Id#${payment.Id} ${payment.UserName} (${payment.PaymentMode})",
-                                                          );
-                                                        },
-                                                      );
-                                                      if (confirmDelete ==
-                                                          true) {
-                                                        Slidable.of(
-                                                          context,
-                                                        )?.close();
-                                                        deletePaymentById(
-                                                          payment.Id,
-                                                        );
-                                                      }
-                                                    },
-                                                    child: Container(
-                                                      margin:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 4,
-                                                            vertical: 5,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            AppTheme.customListBg(
-                                                              context,
-                                                            ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              10,
-                                                            ),
-                                                      ),
-                                                      height: double.infinity,
-                                                      child: Column(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Icon(
-                                                            HugeIconsSolid
-                                                                .delete01,
-                                                            color: Color(
-                                                              0xFFC41F1F,
-                                                            ),
-                                                            size: 24,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            endActionPane: ActionPane(
-                                              motion: const ScrollMotion(),
-                                              extentRatio: 0.4,
-                                              children: [
-                                                Expanded(
-                                                  child: InkWell(
-                                                    onTap: () {
-                                                      Slidable.of(
-                                                        context,
-                                                      )?.close();
-                                                      fetchCustomer(
-                                                        payment,
-                                                        false,
-                                                      );
-                                                    },
-                                                    child: Container(
-                                                      margin:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 4,
-                                                            vertical: 5,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            AppTheme.customListBg(
-                                                              context,
-                                                            ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              10,
-                                                            ),
-                                                      ),
-                                                      height: double.infinity,
-                                                      child: Column(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Icon(
-                                                            HugeIconsSolid
-                                                                .pdf02,
-                                                            color: Color(
-                                                              0xFFC41F1F,
-                                                            ),
-                                                            size: 24,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  child: InkWell(
-                                                    onTap: () {
-                                                      Slidable.of(
-                                                        context,
-                                                      )?.close();
-                                                      fetchCustomer(
-                                                        payment,
-                                                        true,
-                                                      );
-                                                    },
-                                                    child: Container(
-                                                      margin:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 4,
-                                                            vertical: 5,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            AppTheme.customListBg(
-                                                              context,
-                                                            ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              10,
-                                                            ),
-                                                      ),
-                                                      height: double.infinity,
-                                                      child: Column(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Icon(
-                                                            HugeIconsSolid
-                                                                .invoice02,
-                                                            color:
-                                                                AppTheme.iconColorThree(
-                                                                  context,
-                                                                ),
-                                                            size: 24,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            child: Card(
-                                              color: AppTheme.customListBg(
-                                                context,
-                                              ),
-                                              elevation: 0,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              child: ListTile(
-                                                leading: Text(
-                                                  (index + 1)
-                                                      .toString()
-                                                      .padLeft(2, '0'),
-                                                  style: const TextStyle(
-                                                    fontFamily: AppFontFamily
-                                                        .poppinsMedium,
-                                                  ),
-                                                ),
-                                                title: Row(
+                                                height: double.infinity,
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
                                                   children: [
-                                                    Expanded(
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .stretch,
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        children: [
-                                                          Row(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .end,
-                                                            children: [
-                                                              Text(
-                                                                "Id# ",
-                                                                style:
-                                                                    AppTheme.textLabel(
-                                                                      context,
-                                                                    ).copyWith(
-                                                                      fontFamily:
-                                                                          AppFontFamily
-                                                                              .poppinsSemiBold,
-                                                                      fontSize:
-                                                                          12,
-                                                                    ),
-                                                              ),
-                                                              Text(
-                                                                payment
-                                                                    .Id.toString(),
-                                                                style:
-                                                                    AppTheme.textLabel(
-                                                                      context,
-                                                                    ).copyWith(
-                                                                      fontFamily:
-                                                                          AppFontFamily
-                                                                              .poppinsSemiBold,
-                                                                      fontSize:
-                                                                          16,
-                                                                    ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Row(
-                                                            children: [
-                                                              Icon(
-                                                                HugeIconsStroke
-                                                                    .userAccount,
-                                                                size: 16,
-                                                              ),
-                                                              const SizedBox(
-                                                                width: 6,
-                                                              ),
-                                                              Text(
-                                                                payment
-                                                                    .UserName,
-                                                                maxLines: 1,
-                                                                overflow:
-                                                                    TextOverflow
-                                                                        .ellipsis,
-                                                                style: const TextStyle(
-                                                                  fontSize: 11,
-                                                                  fontFamily:
-                                                                      AppFontFamily
-                                                                          .poppinsMedium,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Row(
-                                                            children: [
-                                                              Icon(
-                                                                HugeIconsStroke
-                                                                    .calendar03,
-                                                                size: 16,
-                                                              ),
-                                                              const SizedBox(
-                                                                width: 6,
-                                                              ),
-                                                              Text(
-                                                                formattedDate,
-                                                                style: const TextStyle(
-                                                                  fontSize: 11,
-                                                                  fontFamily:
-                                                                      AppFontFamily
-                                                                          .poppinsMedium,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Row(
-                                                            children: [
-                                                              Icon(
-                                                                HugeIconsStroke
-                                                                    .package,
-                                                                size: 16,
-                                                              ),
-                                                              const SizedBox(
-                                                                width: 6,
-                                                              ),
-                                                              Text(
-                                                                "Payment Type: ${payment.PaymentType}",
-                                                                style: const TextStyle(
-                                                                  fontSize: 11,
-                                                                  fontFamily:
-                                                                      AppFontFamily
-                                                                          .poppinsMedium,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ],
-                                                      ),
+                                                    Icon(
+                                                      HugeIconsSolid.edit01,
+                                                      color: Colors.blue,
+                                                      size: 24,
                                                     ),
-                                                    Column(
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: InkWell(
+                                              onTap: () async {
+                                                final bool? confirmDelete =
+                                                    await showModalBottomSheet<
+                                                      bool
+                                                    >(
+                                                      context: context,
+                                                      isDismissible: false,
+                                                      enableDrag: false,
+                                                      showDragHandle: true,
+                                                      isScrollControlled: true,
+                                                      backgroundColor: Theme.of(
+                                                        context,
+                                                      ).scaffoldBackgroundColor,
+                                                      shape: const RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.vertical(
+                                                              top:
+                                                                  Radius.circular(
+                                                                    30,
+                                                                  ),
+                                                            ),
+                                                      ),
+                                                      builder: (context) {
+                                                        return _confirmDeleteSheet(
+                                                          context,
+                                                          "Id#${payment.Id} ${payment.UserName} (${payment.PaymentMode})",
+                                                        );
+                                                      },
+                                                    );
+                                                if (confirmDelete == true) {
+                                                  Slidable.of(context)?.close();
+                                                  deletePaymentById(payment.Id);
+                                                }
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 5,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.customListBg(
+                                                    context,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                height: double.infinity,
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      HugeIconsSolid.delete01,
+                                                      color: Color(0xFFC41F1F),
+                                                      size: 24,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      endActionPane: ActionPane(
+                                        motion: const ScrollMotion(),
+                                        extentRatio: 0.4,
+                                        children: [
+                                          Expanded(
+                                            child: InkWell(
+                                              onTap: () {
+                                                Slidable.of(context)?.close();
+                                                fetchCustomer(payment, false);
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 5,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.customListBg(
+                                                    context,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                height: double.infinity,
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      HugeIconsSolid.pdf02,
+                                                      color: Color(0xFFC41F1F),
+                                                      size: 24,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: InkWell(
+                                              onTap: () {
+                                                Slidable.of(context)?.close();
+                                                fetchCustomer(payment, true);
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 5,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.customListBg(
+                                                    context,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                height: double.infinity,
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      HugeIconsSolid.invoice02,
+                                                      color:
+                                                          AppTheme.iconColorThree(
+                                                            context,
+                                                          ),
+                                                      size: 24,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Card(
+                                        color: AppTheme.customListBg(context),
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: ListTile(
+                                          leading: Text(
+                                            (index + 1).toString().padLeft(
+                                              2,
+                                              '0',
+                                            ),
+                                            style: const TextStyle(
+                                              fontFamily:
+                                                  AppFontFamily.poppinsMedium,
+                                            ),
+                                          ),
+                                          title: Row(
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment
+                                                          .stretch,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Row(
                                                       crossAxisAlignment:
                                                           CrossAxisAlignment
                                                               .end,
+                                                      children: [
+                                                        Text(
+                                                          "Id# ",
+                                                          style:
+                                                              AppTheme.textLabel(
+                                                                context,
+                                                              ).copyWith(
+                                                                fontFamily:
+                                                                    AppFontFamily
+                                                                        .poppinsSemiBold,
+                                                                fontSize: 12,
+                                                              ),
+                                                        ),
+                                                        Text(
+                                                          payment.Id.toString(),
+                                                          style:
+                                                              AppTheme.textLabel(
+                                                                context,
+                                                              ).copyWith(
+                                                                fontFamily:
+                                                                    AppFontFamily
+                                                                        .poppinsSemiBold,
+                                                                fontSize: 16,
+                                                              ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                          HugeIconsStroke
+                                                              .userAccount,
+                                                          size: 16,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        Text(
+                                                          payment.UserName,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: const TextStyle(
+                                                            fontSize: 11,
+                                                            fontFamily:
+                                                                AppFontFamily
+                                                                    .poppinsMedium,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                          HugeIconsStroke
+                                                              .calendar03,
+                                                          size: 16,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        Text(
+                                                          formattedDate,
+                                                          style: const TextStyle(
+                                                            fontSize: 11,
+                                                            fontFamily:
+                                                                AppFontFamily
+                                                                    .poppinsMedium,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                          HugeIconsStroke
+                                                              .package,
+                                                          size: 16,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        Text(
+                                                          "Payment Type: ${payment.PaymentType}",
+                                                          style: const TextStyle(
+                                                            fontSize: 11,
+                                                            fontFamily:
+                                                                AppFontFamily
+                                                                    .poppinsMedium,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 3,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          payment
+                                                              .PaymentMode.contains(
+                                                            "Recived",
+                                                          )
+                                                          ? Colors.green
+                                                                .withOpacity(
+                                                                  0.15,
+                                                                )
+                                                          : Colors.blue
+                                                                .withOpacity(
+                                                                  0.15,
+                                                                ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
+                                                          ),
+                                                    ),
+                                                    child: Row(
                                                       mainAxisSize:
                                                           MainAxisSize.min,
                                                       children: [
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets.symmetric(
-                                                                horizontal: 6,
-                                                                vertical: 3,
-                                                              ),
-                                                          decoration: BoxDecoration(
-                                                            color:
-                                                                payment
-                                                                    .PaymentMode.contains(
-                                                                  "Recived",
-                                                                )
-                                                                ? Colors.green
-                                                                      .withOpacity(
-                                                                        0.15,
-                                                                      )
-                                                                : Colors.blue
-                                                                      .withOpacity(
-                                                                        0.15,
-                                                                      ),
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  10,
-                                                                ),
-                                                          ),
-                                                          child: Row(
-                                                            mainAxisSize:
-                                                                MainAxisSize
-                                                                    .min,
-                                                            children: [
-                                                              Icon(
-                                                                payment.PaymentMode.contains(
-                                                                      "Recived",
-                                                                    )
-                                                                    ? HugeIconsStroke
-                                                                          .chartIncrease
-                                                                    : HugeIconsStroke
-                                                                          .chartDecrease,
-                                                                size: 10,
+                                                        Icon(
+                                                          payment.PaymentMode.contains(
+                                                                "Recived",
+                                                              )
+                                                              ? HugeIconsStroke
+                                                                    .chartIncrease
+                                                              : HugeIconsStroke
+                                                                    .chartDecrease,
+                                                          size: 10,
+                                                          color:
+                                                              payment
+                                                                  .PaymentMode.contains(
+                                                                "Recived",
+                                                              )
+                                                              ? Colors.green
+                                                              : Colors.blue,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Text(
+                                                          payment.PaymentMode,
+                                                          style:
+                                                              AppTheme.textLink(
+                                                                context,
+                                                              ).copyWith(
+                                                                fontSize: 8,
                                                                 color:
                                                                     payment
                                                                         .PaymentMode.contains(
@@ -958,51 +922,29 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
                                                                     : Colors
                                                                           .blue,
                                                               ),
-                                                              const SizedBox(
-                                                                width: 4,
-                                                              ),
-                                                              Text(
-                                                                payment
-                                                                    .PaymentMode,
-                                                                style:
-                                                                    AppTheme.textLink(
-                                                                      context,
-                                                                    ).copyWith(
-                                                                      fontSize:
-                                                                          8,
-                                                                      color:
-                                                                          payment
-                                                                              .PaymentMode.contains(
-                                                                            "Recived",
-                                                                          )
-                                                                          ? Colors.green
-                                                                          : Colors.blue,
-                                                                    ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 6,
-                                                        ),
-                                                        Text(
-                                                          "Rs $formattedAmount",
-                                                          style:
-                                                              AppTheme.textSearchInfoLabeled(
-                                                                context,
-                                                              ).copyWith(
-                                                                fontFamily:
-                                                                    AppFontFamily
-                                                                        .poppinsBold,
-                                                              ),
                                                         ),
                                                       ],
                                                     ),
-                                                  ],
-                                                ),
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    "Rs $formattedAmount",
+                                                    style:
+                                                        AppTheme.textSearchInfoLabeled(
+                                                          context,
+                                                        ).copyWith(
+                                                          fontFamily:
+                                                              AppFontFamily
+                                                                  .poppinsBold,
+                                                        ),
+                                                  ),
+                                                ],
                                               ),
-                                            ),
+                                            ],
                                           ),
+                                        ),
+                                      ),
+                                    ),
                                   );
                                 },
                               ),
@@ -1133,7 +1075,6 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
               ],
             ),
           ),
