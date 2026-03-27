@@ -3,7 +3,8 @@ import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:y2ksolutions/components/dashboard_payment_summary.dart';
+import '/screens/subscription_screen.dart';
+import '/components/dashboard_payment_summary.dart';
 import '/components/dashboard_monthly_scraps.dart';
 import '/components/dashboard_dead_stocks.dart';
 import '/components/dashboard_ending_stocks.dart';
@@ -2046,7 +2047,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         "Subscription",
                         style: AppTheme.textLabel(context),
                       ),
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            opaque: false,
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    SubscriptionScreen(),
+                            transitionsBuilder:
+                                (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  const begin = Offset(0.0, 1.0);
+                                  const end = Offset.zero;
+                                  const curve = Curves.easeInOut;
+                                  final tween = Tween(
+                                    begin: begin,
+                                    end: end,
+                                  ).chain(CurveTween(curve: curve));
+                                  return SlideTransition(
+                                    position: animation.drive(tween),
+                                    child: child,
+                                  );
+                                },
+                          ),
+                        );
+                      },
                     ),
                     Divider(height: 1, color: AppTheme.dividerBg(context)),
                     ListTile(

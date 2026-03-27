@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +20,14 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  bool _isDesktopOrWeb(BuildContext context) {
+    if (kIsWeb) return true;
+    final platform = defaultTargetPlatform;
+    return platform == TargetPlatform.windows ||
+        platform == TargetPlatform.macOS ||
+        platform == TargetPlatform.linux;
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
@@ -30,6 +39,23 @@ class MyApp extends StatelessWidget {
           darkTheme: MyTheme.darkTheme,
           themeMode: themeMode, // 👈 controlled by ThemeController
           builder: (context, child) {
+            final isDesktop =
+                _isDesktopOrWeb(context) ||
+                MediaQuery.of(context).size.width >= 900;
+
+            if (isDesktop) {
+              // ✅ Desktop/Web — full width, no text scale constraint
+              return MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: const TextScaler.linear(1.0)),
+                child: ColoredBox(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: child!,
+                ),
+              );
+            }
+
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(
                 textScaler: const TextScaler.linear(0.8), // 🔥 fixed scale

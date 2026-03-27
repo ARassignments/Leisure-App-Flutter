@@ -281,7 +281,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                                   ],
                                 ),
                                 trailing: Text(
-                                  "Rs $formattedBalance",
+                                  "Rs ${customer.OpeningBalance.toInt() == 0 ? '0' : formattedBalance}",
                                   style: AppTheme.textSearchInfoLabeled(context)
                                       .copyWith(
                                         fontFamily: AppFontFamily.poppinsBold,

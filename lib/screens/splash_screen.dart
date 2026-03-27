@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '/screens/dashboard_shell.dart';
 import '/screens/dashboard_screen.dart';
 import '/utils/session_manager.dart';
 import '../theme/theme.dart';
@@ -59,15 +61,27 @@ class _AnimatedSplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (remember && token != null && user != null) {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          transitionDuration: const Duration(seconds: 1),
-          pageBuilder: (_, __, ___) => DashboardScreen(),
-          transitionsBuilder: (_, a, __, c) =>
-              FadeTransition(opacity: a, child: c),
-        ),
-      );
+      if (MediaQuery.of(context).size.width >= 900 || kIsWeb) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) =>
+                DashboardShell(child: DashboardScreen()),
+            transitionsBuilder: (_, a, __, c) =>
+                FadeTransition(opacity: a, child: c),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            transitionDuration: const Duration(seconds: 1),
+            pageBuilder: (_, __, ___) => DashboardScreen(),
+            transitionsBuilder: (_, a, __, c) =>
+                FadeTransition(opacity: a, child: c),
+          ),
+        );
+      }
     } else {
       Navigator.pushReplacement(
         context,

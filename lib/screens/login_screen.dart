@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
+import '/screens/dashboard_shell.dart';
 import '../components/appsnackbar.dart';
 import '../screens/dashboard_screen.dart';
 import '/services/api_service.dart';
@@ -59,14 +61,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (remember && token != null && user != null) {
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => DashboardScreen(),
-          transitionsBuilder: (_, a, __, c) =>
-              FadeTransition(opacity: a, child: c),
-        ),
-      );
+      if (MediaQuery.of(context).size.width >= 900 || kIsWeb) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => DashboardShell(child: DashboardScreen()),
+            transitionsBuilder: (_, a, __, c) =>
+                FadeTransition(opacity: a, child: c),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => DashboardScreen(),
+            transitionsBuilder: (_, a, __, c) =>
+                FadeTransition(opacity: a, child: c),
+          ),
+        );
+      }
     }
   }
 
@@ -357,7 +370,12 @@ class _LoginScreenState extends State<LoginScreen> {
         final user = result["User"];
 
         // Save session
-        await SessionManager.saveUserSession(token, user, _rememberMe,_passwordController.text.trim());
+        await SessionManager.saveUserSession(
+          token,
+          user,
+          _rememberMe,
+          _passwordController.text.trim(),
+        );
 
         // Navigate to home
         if (mounted) {
@@ -366,14 +384,26 @@ class _LoginScreenState extends State<LoginScreen> {
             message: 'Login successful!',
             type: AppSnackBarType.success,
           );
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (_, __, ___) => DashboardScreen(),
-              transitionsBuilder: (_, a, __, c) =>
-                  FadeTransition(opacity: a, child: c),
-            ),
-          );
+          if (MediaQuery.of(context).size.width >= 900 || kIsWeb) {
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (_, __, ___) =>
+                    DashboardShell(child: DashboardScreen()),
+                transitionsBuilder: (_, a, __, c) =>
+                    FadeTransition(opacity: a, child: c),
+              ),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (_, __, ___) => DashboardScreen(),
+                transitionsBuilder: (_, a, __, c) =>
+                    FadeTransition(opacity: a, child: c),
+              ),
+            );
+          }
         }
       } else {
         setState(() {

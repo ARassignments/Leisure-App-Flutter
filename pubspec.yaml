@@ -74,6 +74,8 @@ flutter:
     - assets/images/
     - assets/images/logo.png
     - assets/images/logo_dark.png
+    - assets/images/logo_launcher.png
+    - assets/images/logo_launcher_dark.png
     - assets/images/not_found_frame.svg
     - assets/images/not_found_frame_dark.svg
     - assets/images/avatars/boy_1.png

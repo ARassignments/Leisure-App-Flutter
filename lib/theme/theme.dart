@@ -261,6 +261,12 @@ class AppTheme {
         ? 'assets/images/logo_dark.png'
         : 'assets/images/logo.png';
   }
+  
+  static String appLogoLauncher(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? 'assets/images/logo_launcher_dark.png'
+        : 'assets/images/logo_launcher.png';
+  }
 
   static String onboardingBg(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark

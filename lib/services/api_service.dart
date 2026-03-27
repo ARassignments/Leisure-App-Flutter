@@ -330,7 +330,7 @@ class ApiService {
 
   static Future<Map<dynamic, dynamic>> addScrap(
     int userId,
-    double scrapQuantity,
+    int scrapQuantity,
     double scrapWeight,
     int scrapPrice,
     int scrapItemLocation,
@@ -372,7 +372,7 @@ class ApiService {
   static Future<Map<dynamic, dynamic>> editScrap(
     int scrapId,
     int userId,
-    double scrapQuantity,
+    int scrapQuantity,
     double scrapWeight,
     int scrapPrice,
     int scrapItemLocation,

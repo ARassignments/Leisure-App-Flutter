@@ -101,7 +101,7 @@ class _AddScrapBottomSheetState extends ConsumerState<AddScrapBottomSheet> {
       final int? itemLocationId = _selectedItemLocationId?.Id;
       final response = await ApiService.addScrap(
         userId!,
-        double.parse(_scrapQuantityController.text.trim()),
+        int.parse(_scrapQuantityController.text.trim()),
         double.parse(_scrapWeightController.text.trim()),
         int.parse(_scrapPriceController.text.trim()),
         itemLocationId!,
@@ -272,26 +272,18 @@ class _AddScrapBottomSheetState extends ConsumerState<AddScrapBottomSheet> {
                       : null,
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
+                  decimal: false,
                 ),
 
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-                  TextInputFormatter.withFunction((oldValue, newValue) {
-                    final text = newValue.text;
-                    if (text.contains('.')) {
-                      final parts = text.split('.');
-                      if (parts[1].length > 2) return oldValue;
-                    }
-                    return newValue;
-                  }),
-                  LengthLimitingTextInputFormatter(6),
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(3),
                 ],
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return "Scrap Quantity is required";
                   }
-                  final amount = double.tryParse(value);
+                  final amount = int.tryParse(value);
                   if (amount == null) {
                     return "Enter valid scrap quantity";
                   }
@@ -300,7 +292,7 @@ class _AddScrapBottomSheetState extends ConsumerState<AddScrapBottomSheet> {
                   }
                   return null;
                 },
-                maxLength: 6,
+                maxLength: 3,
               ),
 
               TextFormField(
