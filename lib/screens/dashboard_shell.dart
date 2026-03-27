@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
-import 'package:y2ksolutions/theme/theme.dart';
+import 'package:y2ksolutions/screens/customers_screen.dart';
+import 'package:y2ksolutions/screens/payments_screen.dart';
+import 'package:y2ksolutions/screens/scraps_screen.dart';
+import '/screens/home_screen.dart';
+import '/theme/theme.dart';
 
 // ─── Nav Item Model ───────────────────────────────────────────────────────────
 
@@ -8,106 +12,26 @@ class NavItem {
   final String label;
   final IconData icon;
   final String? route;
+  final Widget? page;
   final List<NavItem> children;
   bool expanded;
+  int pageIndex;
 
   NavItem({
     required this.label,
     required this.icon,
     this.route,
+    this.page,
     this.children = const [],
     this.expanded = false,
+    this.pageIndex = -1,
   });
 }
-
-// ─── Nav Data ─────────────────────────────────────────────────────────────────
-
-List<NavItem> buildNavItems() => [
-  NavItem(label: 'Dashboard', icon: Icons.dashboard_outlined, route: '/'),
-  NavItem(
-    label: 'Orders',
-    icon: Icons.shopping_cart_outlined,
-    route: '/orders',
-  ),
-  NavItem(
-    label: 'Payment',
-    icon: Icons.credit_card_outlined,
-    route: '/payment',
-  ),
-  NavItem(label: 'Scrap', icon: Icons.recycling_outlined, route: '/scrap'),
-  NavItem(
-    label: 'Claim/Exchange',
-    icon: Icons.swap_horiz_rounded,
-    route: '/claim',
-  ),
-  NavItem(label: 'Users', icon: Icons.people_outline, route: '/users'),
-  NavItem(
-    label: 'Product',
-    icon: Icons.inventory_2_outlined,
-    children: [
-      NavItem(
-        label: 'All Products',
-        icon: Icons.list_alt_outlined,
-        route: '/products',
-      ),
-      NavItem(
-        label: 'Add Product',
-        icon: Icons.add_box_outlined,
-        route: '/products/add',
-      ),
-      NavItem(
-        label: 'Categories',
-        icon: Icons.category_outlined,
-        route: '/products/categories',
-      ),
-    ],
-  ),
-  NavItem(
-    label: 'Log Book',
-    icon: Icons.menu_book_outlined,
-    children: [
-      NavItem(
-        label: 'Daily Log',
-        icon: Icons.today_outlined,
-        route: '/logbook/daily',
-      ),
-      NavItem(
-        label: 'Reports',
-        icon: Icons.bar_chart_outlined,
-        route: '/logbook/reports',
-      ),
-    ],
-  ),
-  NavItem(
-    label: 'Configuration',
-    icon: Icons.settings_outlined,
-    children: [
-      NavItem(
-        label: 'City',
-        icon: Icons.location_city_outlined,
-        route: '/config/city',
-      ),
-      NavItem(label: 'State', icon: Icons.map_outlined, route: '/config/state'),
-      NavItem(
-        label: 'Bank',
-        icon: Icons.account_balance_outlined,
-        route: '/config/bank',
-      ),
-      NavItem(label: 'Tax', icon: Icons.percent_outlined, route: '/config/tax'),
-      NavItem(
-        label: 'Investors',
-        icon: Icons.monetization_on_outlined,
-        route: '/config/investors',
-      ),
-    ],
-  ),
-];
 
 // ─── Dashboard Shell ──────────────────────────────────────────────────────────
 
 class DashboardShell extends StatefulWidget {
-  final Widget child;
-  const DashboardShell({super.key, required this.child});
+  const DashboardShell({super.key});
 
   @override
   State<DashboardShell> createState() => _DashboardShellState();
@@ -115,10 +39,19 @@ class DashboardShell extends StatefulWidget {
 
 class _DashboardShellState extends State<DashboardShell>
     with SingleTickerProviderStateMixin {
+  late final List<NavItem> _navItems;
+  final HomeScreen homeScreen = const HomeScreen();
+  final PaymentsScreen paymentScreen = const PaymentsScreen();
+  final ScrapsScreen scrapScreen = const ScrapsScreen();
+  final CustomersScreen customerScreen = const CustomersScreen();
   bool _sidebarOpen = true;
-  String _activeRoute = '/';
   bool _profileMenuOpen = false;
-  final List<NavItem> _navItems = buildNavItems();
+  // final List<NavItem> _navItems = buildNavItems();
+
+  int _activeIndex = 0;
+  String _activeLabel = 'Dashboard';
+  late final List<Widget> _pages; // flat list of all pages
+  late final List<String> _pageLabels;
 
   static const double _sidebarExpanded = 220;
   static const double _sidebarCollapsed = 80;
@@ -132,6 +65,7 @@ class _DashboardShellState extends State<DashboardShell>
     parent: _sidebarCtrl,
     curve: Curves.easeInOutCubic,
   );
+  late final List<GlobalKey<NavigatorState>> _navigatorKeys;
 
   void _toggleSidebar() {
     setState(() => _sidebarOpen = !_sidebarOpen);
@@ -139,9 +73,152 @@ class _DashboardShellState extends State<DashboardShell>
   }
 
   @override
+  void initState() {
+    super.initState();
+    _navItems = [
+      NavItem(
+        label: 'Dashboard',
+        icon: Icons.dashboard_outlined,
+        route: '/',
+        page: homeScreen,
+      ),
+      NavItem(
+        label: 'Orders',
+        icon: Icons.shopping_cart_outlined,
+        route: '/orders',
+      ),
+      NavItem(
+        label: 'Payments',
+        icon: Icons.credit_card_outlined,
+        route: '/payment',
+        page: paymentScreen,
+      ),
+      NavItem(
+        label: 'Scraps',
+        icon: Icons.recycling_outlined,
+        route: '/scrap',
+        page: scrapScreen,
+      ),
+      NavItem(
+        label: 'Claim/Exchange',
+        icon: Icons.swap_horiz_rounded,
+        route: '/claim',
+      ),
+      NavItem(
+        label: 'Customers',
+        icon: Icons.people_outline,
+        route: '/users',
+        page: customerScreen,
+      ),
+      NavItem(
+        label: 'Product',
+        icon: Icons.inventory_2_outlined,
+        children: [
+          NavItem(
+            label: 'All Products',
+            icon: Icons.list_alt_outlined,
+            route: '/products',
+          ),
+          NavItem(
+            label: 'Add Product',
+            icon: Icons.add_box_outlined,
+            route: '/products/add',
+          ),
+          NavItem(
+            label: 'Categories',
+            icon: Icons.category_outlined,
+            route: '/products/categories',
+          ),
+        ],
+      ),
+      NavItem(
+        label: 'Log Book',
+        icon: Icons.menu_book_outlined,
+        children: [
+          NavItem(
+            label: 'Daily Log',
+            icon: Icons.today_outlined,
+            route: '/logbook/daily',
+          ),
+          NavItem(
+            label: 'Reports',
+            icon: Icons.bar_chart_outlined,
+            route: '/logbook/reports',
+          ),
+        ],
+      ),
+      NavItem(
+        label: 'Configuration',
+        icon: Icons.settings_outlined,
+        children: [
+          NavItem(
+            label: 'City',
+            icon: Icons.location_city_outlined,
+            route: '/config/city',
+          ),
+          NavItem(
+            label: 'State',
+            icon: Icons.map_outlined,
+            route: '/config/state',
+          ),
+          NavItem(
+            label: 'Bank',
+            icon: Icons.account_balance_outlined,
+            route: '/config/bank',
+          ),
+          NavItem(
+            label: 'Tax',
+            icon: Icons.percent_outlined,
+            route: '/config/tax',
+          ),
+          NavItem(
+            label: 'Investors',
+            icon: Icons.monetization_on_outlined,
+            route: '/config/investors',
+          ),
+        ],
+      ),
+    ];
+    _pages = [];
+    _pageLabels = [];
+
+    void collectPages(List<NavItem> items) {
+      for (final item in items) {
+        if (item.page != null) {
+          item.pageIndex = _pages.length; // assign index to item
+          _pages.add(item.page!);
+          _pageLabels.add(item.label);
+        }
+        if (item.children.isNotEmpty) {
+          collectPages(item.children);
+        }
+      }
+    }
+
+    collectPages(_navItems);
+    _activeIndex = 0;
+    _activeLabel = _pageLabels.isNotEmpty ? _pageLabels[0] : '';
+
+    _navigatorKeys = List.generate(
+      _pages.length,
+      (_) => GlobalKey<NavigatorState>(),
+    );
+  }
+
+  @override
   void dispose() {
     _sidebarCtrl.dispose();
     super.dispose();
+  }
+
+  void _onNavSelect(NavItem item) {
+    if (item.pageIndex >= 0) {
+      setState(() {
+        _activeIndex = item.pageIndex;
+        _activeLabel = item.label;
+        _profileMenuOpen = false;
+      });
+    }
   }
 
   @override
@@ -155,11 +232,8 @@ class _DashboardShellState extends State<DashboardShell>
           ? null
           : _SidebarDrawer(
               navItems: _navItems,
-              activeRoute: _activeRoute,
-              onRouteSelect: (r) => setState(() {
-                _activeRoute = r;
-                Navigator.of(context).pop();
-              }),
+              activeIndex: _activeIndex,
+              onItemSelect: _onNavSelect,
             ),
       body: Row(
         children: [
@@ -175,13 +249,18 @@ class _DashboardShellState extends State<DashboardShell>
                   width: w,
                   child: _Sidebar(
                     navItems: _navItems,
-                    activeRoute: _activeRoute,
+                    activeIndex: _activeIndex,
                     collapsed: !_sidebarOpen,
                     animValue: _sidebarAnim.value,
-                    onRouteSelect: (r) => setState(() => _activeRoute = r),
-                    onToggleItem: (item) => setState(() {
-                      item.expanded = !item.expanded;
-                    }),
+                    onItemSelect: _onNavSelect,
+                    onToggleItem: (item) {
+                      // ✅ receives NavItem
+                      setState(() {
+                        for (final nav in _navItems) {
+                          nav.expanded = nav == item ? !nav.expanded : false;
+                        }
+                      });
+                    },
                   ),
                 );
               },
@@ -193,6 +272,7 @@ class _DashboardShellState extends State<DashboardShell>
               children: [
                 // Topbar
                 _Topbar(
+                  title: _activeLabel,
                   isDesktop: isDesktop,
                   onMenuTap: isDesktop
                       ? _toggleSidebar
@@ -218,7 +298,28 @@ class _DashboardShellState extends State<DashboardShell>
                             ),
                           ),
                           clipBehavior: Clip.antiAlias,
-                          child: widget.child,
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              return IndexedStack(
+                                index: _activeIndex,
+                                children: List.generate(_pages.length, (i) {
+                                  final navigator = Navigator(
+                                    key: _navigatorKeys[i],
+                                    onGenerateRoute: (_) => MaterialPageRoute(
+                                      builder: (_) => _pages[i],
+                                    ),
+                                  );
+
+                                  return SizedBox(
+                                    width: constraints.maxWidth,
+                                    height: constraints.maxHeight,
+                                    child:
+                                        navigator, // ✅ full width scoped navigator
+                                  );
+                                }),
+                              );
+                            },
+                          ),
                         ),
                       ),
                       Positioned(
@@ -262,18 +363,18 @@ class _DashboardShellState extends State<DashboardShell>
 
 class _Sidebar extends StatelessWidget {
   final List<NavItem> navItems;
-  final String activeRoute;
+  final int activeIndex;
   final bool collapsed;
   final double animValue;
-  final ValueChanged<String> onRouteSelect;
+  final ValueChanged<NavItem> onItemSelect;
   final ValueChanged<NavItem> onToggleItem;
 
   const _Sidebar({
     required this.navItems,
-    required this.activeRoute,
+    required this.activeIndex,
     required this.collapsed,
     required this.animValue,
-    required this.onRouteSelect,
+    required this.onItemSelect,
     required this.onToggleItem,
   });
 
@@ -348,10 +449,10 @@ class _Sidebar extends StatelessWidget {
                   .map(
                     (item) => _NavItemTile(
                       item: item,
-                      activeRoute: activeRoute,
+                      activeIndex: activeIndex,
                       collapsed: collapsed,
                       animValue: animValue,
-                      onSelect: onRouteSelect,
+                      onSelect: onItemSelect,
                       onToggle: () => onToggleItem(item),
                     ),
                   )
@@ -422,15 +523,15 @@ class _Sidebar extends StatelessWidget {
 
 class _NavItemTile extends StatefulWidget {
   final NavItem item;
-  final String activeRoute;
+  final int activeIndex;
   final bool collapsed;
   final double animValue;
-  final ValueChanged<String> onSelect;
+  final ValueChanged<NavItem> onSelect;
   final VoidCallback onToggle;
 
   const _NavItemTile({
     required this.item,
-    required this.activeRoute,
+    required this.activeIndex,
     required this.collapsed,
     required this.animValue,
     required this.onSelect,
@@ -438,8 +539,8 @@ class _NavItemTile extends StatefulWidget {
   });
 
   bool get _isActive =>
-      item.route == activeRoute ||
-      item.children.any((c) => c.route == activeRoute);
+      item.pageIndex == activeIndex ||
+      item.children.any((c) => c.pageIndex == activeIndex);
 
   @override
   State<_NavItemTile> createState() => _NavItemTileState();
@@ -467,7 +568,7 @@ class _NavItemTileState extends State<_NavItemTile> {
               borderRadius: BorderRadius.circular(10),
               onTap: hasChildren
                   ? widget.onToggle
-                  : () => widget.onSelect(widget.item.route ?? '/'),
+                  : () => widget.onSelect(widget.item),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(
@@ -569,7 +670,7 @@ class _NavItemTileState extends State<_NavItemTile> {
                     children: widget.item.children.map((child) {
                       return _SubItemTile(
                         child: child,
-                        isActive: child.route == widget.activeRoute,
+                        isActive: child.pageIndex == widget.activeIndex,
                         onSelect: widget.onSelect,
                         context: context,
                       );
@@ -588,7 +689,7 @@ class _NavItemTileState extends State<_NavItemTile> {
 class _SubItemTile extends StatefulWidget {
   final NavItem child;
   final bool isActive;
-  final ValueChanged<String> onSelect;
+  final ValueChanged<NavItem> onSelect;
   final BuildContext context;
 
   const _SubItemTile({
@@ -617,7 +718,7 @@ class _SubItemTileState extends State<_SubItemTile> {
       onExit: (_) => setState(() => _hovered = false),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        onTap: () => widget.onSelect(widget.child.route ?? '/'),
+        onTap: () => widget.onSelect(widget.child),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -692,13 +793,13 @@ class _SubItemTileState extends State<_SubItemTile> {
 
 class _SidebarDrawer extends StatefulWidget {
   final List<NavItem> navItems;
-  final String activeRoute;
-  final ValueChanged<String> onRouteSelect;
+  final int activeIndex;
+  final ValueChanged<NavItem> onItemSelect;
 
   const _SidebarDrawer({
     required this.navItems,
-    required this.activeRoute,
-    required this.onRouteSelect,
+    required this.activeIndex,
+    required this.onItemSelect,
   });
 
   @override
@@ -710,17 +811,20 @@ class _SidebarDrawerState extends State<_SidebarDrawer> {
   Widget build(BuildContext context) => Drawer(
     child: _Sidebar(
       navItems: widget.navItems,
-      activeRoute: widget.activeRoute,
+      activeIndex: widget.activeIndex,
       collapsed: false,
       animValue: 1.0,
-      onRouteSelect: widget.onRouteSelect,
-      onToggleItem: (item) => setState(() {
-        // ✅ Close all others before opening
-        for (final nav in widget.navItems) {
-          if (nav != item) nav.expanded = false;
-        }
-        item.expanded = !item.expanded;
-      }),
+      onItemSelect: (item) {
+        widget.onItemSelect(item); // ✅ notify parent
+        Navigator.of(context).pop(); // ✅ close drawer on select
+      },
+      onToggleItem: (tappedItem) {
+        setState(() {
+          for (final nav in widget.navItems) {
+            nav.expanded = nav == tappedItem ? !nav.expanded : false;
+          }
+        });
+      },
     ),
   );
 }
@@ -728,6 +832,7 @@ class _SidebarDrawerState extends State<_SidebarDrawer> {
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
 class _Topbar extends StatelessWidget {
+  final String title;
   final bool isDesktop;
   final VoidCallback onMenuTap;
   final bool profileOpen;
@@ -735,6 +840,7 @@ class _Topbar extends StatelessWidget {
   final VoidCallback onProfileClose;
 
   const _Topbar({
+    required this.title,
     required this.isDesktop,
     required this.onMenuTap,
     required this.profileOpen,
@@ -774,7 +880,7 @@ class _Topbar extends StatelessWidget {
                 ).copyWith(fontSize: 20, fontFamily: AppFontFamily.poppinsBold),
               ),
               Text(
-                "Dashboard",
+                title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTheme.textTitle(context).copyWith(

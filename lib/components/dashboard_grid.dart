@@ -79,7 +79,9 @@ class DashboardGrid extends StatelessWidget {
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 2.2,
+            childAspectRatio: MediaQuery.of(context).size.width >= 900
+                ? 3.2
+                : 2.2,
           ),
           itemCount: stats.length,
           itemBuilder: (context, index) {
@@ -112,6 +114,7 @@ class DashboardGrid extends StatelessWidget {
     String prefix,
     String suffix,
   ) {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -126,7 +129,11 @@ class DashboardGrid extends StatelessWidget {
           Positioned(
             right: -10,
             bottom: -10,
-            child: Icon(icon, size: 90, color: Colors.white.withOpacity(0.1)),
+            child: Icon(
+              icon,
+              size: isDesktop ? 100 : 90,
+              color: Colors.white.withOpacity(0.1),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
@@ -136,9 +143,10 @@ class DashboardGrid extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AppTheme.textTitle(
-                    context,
-                  ).copyWith(color: Colors.white, fontSize: 18),
+                  style: AppTheme.textTitle(context).copyWith(
+                    color: Colors.white,
+                    fontSize: isDesktop ? 23 : 18,
+                  ),
                 ),
                 AnimatedDigitWidget(
                   prefix: prefix,
@@ -150,7 +158,7 @@ class DashboardGrid extends StatelessWidget {
                   enableSeparator: true,
                   textStyle: AppTheme.textLabel(context).copyWith(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: isDesktop ? 18 : 16,
                     fontFamily: AppFontFamily.poppinsMedium,
                   ),
                 ),

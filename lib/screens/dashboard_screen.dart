@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
@@ -767,59 +768,98 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
               ],
             ),
-            DashboardTopCustomers(
-              customers: topCustomers
-                  .map((e) => TopCustomer.fromJson(e as Map<String, dynamic>))
-                  .toList(),
-              isChartView: _isChartView,
-              isLoading: _isLoadingDashboardReport,
-              onToggle: (val) => setState(() => _isChartView = val),
-            ),
-            DashboardTopProducts(
-              products: topProducts
-                  .map((e) => TopProduct.fromJson(e as Map<String, dynamic>))
-                  .toList(),
-              isChartView: _isChartView,
-              isLoading: _isLoadingDashboardReport,
-              onToggle: (val) => setState(() => _isChartView = val),
-            ),
-            DashboardDeadStock(
-              items: deadStocks
-                  .map((e) => DeadStockItem.fromJson(e as Map<String, dynamic>))
-                  .toList(),
-              isChartView: _isChartView,
-              isLoading: _isLoadingDashboardReport,
-              onToggle: (val) => setState(() => _isChartView = val),
-            ),
-            DashboardEndingStock(
-              items: endingStocks
-                  .map(
-                    (e) => EndingStockItem.fromJson(e as Map<String, dynamic>),
-                  )
-                  .toList(),
-              isChartView: _isChartView,
-              isLoading: _isLoadingDashboardReport,
-              onToggle: (val) => setState(() => _isChartView = val),
-            ),
-            DashboardMonthlyScrap(
-              items: monthlyScrap
-                  .map(
-                    (e) => MonthlyScrapItem.fromJson(e as Map<String, dynamic>),
-                  )
-                  .toList(),
-              isChartView: _isChartView,
-              isLoading: _isLoadingDashboardReport,
-              onToggle: (val) => setState(() => _isChartView = val),
-            ),
-            DashboardPaymentsSummary(
-              items: paymentSummary
-                  .map(
-                    (e) => PaymentSummary.fromJson(e as Map<String, dynamic>),
-                  )
-                  .toList(),
-              isChartView: _isChartView,
-              isLoading: _isLoadingDashboardReport,
-              onToggle: (val) => setState(() => _isChartView = val),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  int crossAxisCount = constraints.maxWidth > 1200
+                      ? 3
+                      : constraints.maxWidth > 900
+                      ? 2
+                      : 1;
+              
+                  final widgets = [
+                    DashboardTopCustomers(
+                      customers: topCustomers
+                          .map(
+                            (e) =>
+                                TopCustomer.fromJson(e as Map<String, dynamic>),
+                          )
+                          .toList(),
+                      isChartView: _isChartView,
+                      isLoading: _isLoadingDashboardReport,
+                      onToggle: (val) => setState(() => _isChartView = val),
+                    ),
+                    DashboardTopProducts(
+                      products: topProducts
+                          .map(
+                            (e) => TopProduct.fromJson(e as Map<String, dynamic>),
+                          )
+                          .toList(),
+                      isChartView: _isChartView,
+                      isLoading: _isLoadingDashboardReport,
+                      onToggle: (val) => setState(() => _isChartView = val),
+                    ),
+                    DashboardDeadStock(
+                      items: deadStocks
+                          .map(
+                            (e) =>
+                                DeadStockItem.fromJson(e as Map<String, dynamic>),
+                          )
+                          .toList(),
+                      isChartView: _isChartView,
+                      isLoading: _isLoadingDashboardReport,
+                      onToggle: (val) => setState(() => _isChartView = val),
+                    ),
+                    DashboardEndingStock(
+                      items: endingStocks
+                          .map(
+                            (e) => EndingStockItem.fromJson(
+                              e as Map<String, dynamic>,
+                            ),
+                          )
+                          .toList(),
+                      isChartView: _isChartView,
+                      isLoading: _isLoadingDashboardReport,
+                      onToggle: (val) => setState(() => _isChartView = val),
+                    ),
+                    DashboardMonthlyScrap(
+                      items: monthlyScrap
+                          .map(
+                            (e) => MonthlyScrapItem.fromJson(
+                              e as Map<String, dynamic>,
+                            ),
+                          )
+                          .toList(),
+                      isChartView: _isChartView,
+                      isLoading: _isLoadingDashboardReport,
+                      onToggle: (val) => setState(() => _isChartView = val),
+                    ),
+                    DashboardPaymentsSummary(
+                      items: paymentSummary
+                          .map(
+                            (e) => PaymentSummary.fromJson(
+                              e as Map<String, dynamic>,
+                            ),
+                          )
+                          .toList(),
+                      isChartView: _isChartView,
+                      isLoading: _isLoadingDashboardReport,
+                      onToggle: (val) => setState(() => _isChartView = val),
+                    ),
+                  ];
+                  return MasonryGridView.count(
+                    crossAxisCount: crossAxisCount,
+                    mainAxisSpacing: 0,
+                    crossAxisSpacing: 16,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: widgets.length,
+                    itemBuilder: (context, index) => widgets[index],
+                  );
+                },
+              ),
             ),
             // DashboardCharts(),
             SizedBox(height: 16),
@@ -2936,7 +2976,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           floatingActionButton: Padding(
-            padding: EdgeInsets.only(right: 3),
+            padding: EdgeInsets.only(right: 0),
             child: Stack(
               children: [
                 AnimatedPositioned(
@@ -2948,7 +2988,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     duration: Duration(milliseconds: 300),
                     opacity: _currentIndex == 0 ? 1.0 : 0.0,
                     child: SizedBox(
-                      width: 100,
+                      width: 111,
                       child: Container(
                         padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(

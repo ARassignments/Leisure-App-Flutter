@@ -66,7 +66,7 @@ class _AnimatedSplashScreenState extends State<SplashScreen>
           context,
           PageRouteBuilder(
             pageBuilder: (_, __, ___) =>
-                DashboardShell(child: DashboardScreen()),
+                DashboardShell(),
             transitionsBuilder: (_, a, __, c) =>
                 FadeTransition(opacity: a, child: c),
           ),

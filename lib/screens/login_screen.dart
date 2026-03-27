@@ -8,7 +8,6 @@ import '../screens/dashboard_screen.dart';
 import '/services/api_service.dart';
 import '/utils/session_manager.dart';
 import '../screens/forgot_password_screen.dart';
-import '../screens/otp_verification_screen.dart';
 import '../screens/auth/signup_screen.dart';
 import '../theme/theme.dart';
 
@@ -65,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) => DashboardShell(child: DashboardScreen()),
+            pageBuilder: (_, __, ___) => DashboardShell(),
             transitionsBuilder: (_, a, __, c) =>
                 FadeTransition(opacity: a, child: c),
           ),
@@ -389,7 +388,7 @@ class _LoginScreenState extends State<LoginScreen> {
               context,
               PageRouteBuilder(
                 pageBuilder: (_, __, ___) =>
-                    DashboardShell(child: DashboardScreen()),
+                    DashboardShell(),
                 transitionsBuilder: (_, a, __, c) =>
                     FadeTransition(opacity: a, child: c),
               ),

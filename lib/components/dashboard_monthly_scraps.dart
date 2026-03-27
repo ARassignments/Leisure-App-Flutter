@@ -82,7 +82,7 @@ class _DashboardMonthlyScrapState extends State<DashboardMonthlyScrap>
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, top: 16),
+      padding: const EdgeInsets.only(left: 0, right: 0, top: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -459,7 +459,7 @@ class _PieSection extends StatelessWidget {
                   total: total,
                   progress: anim.value,
                   selected: selected,
-                  separatorColor: AppTheme.customListBg(context)
+                  separatorColor: AppTheme.customListBg(context),
                 ),
                 child: selected != null
                     ? _PieCenter(item: items[selected!], total: total, fmt: fmt)
@@ -897,26 +897,37 @@ class _ListSection extends StatelessWidget {
       ),
       SizedBox(height: 12),
       Divider(height: 1, color: AppTheme.dividerBg(context)),
-      ...List.generate(
-        items.length,
-        (i) => AnimatedBuilder(
-          animation: anim,
-          builder: (_, __) {
-            final delay = (i / items.length) * 0.6;
-            final t = ((anim.value - delay) / (1 - delay)).clamp(0.0, 1.0);
-            return Opacity(
-              opacity: t,
-              child: Transform.translate(
-                offset: Offset(0, 16 * (1 - t)),
-                child: _ListRow(
-                  rank: i + 1,
-                  item: items[i],
-                  total: total,
-                  fmt: fmt,
-                ),
+      SizedBox(
+        height: 300,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: List.generate(
+              items.length,
+              (i) => AnimatedBuilder(
+                animation: anim,
+                builder: (_, __) {
+                  final delay = (i / items.length) * 0.6;
+                  final t = ((anim.value - delay) / (1 - delay)).clamp(
+                    0.0,
+                    1.0,
+                  );
+                  return Opacity(
+                    opacity: t,
+                    child: Transform.translate(
+                      offset: Offset(0, 16 * (1 - t)),
+                      child: _ListRow(
+                        rank: i + 1,
+                        item: items[i],
+                        total: total,
+                        fmt: fmt,
+                      ),
+                    ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ),
         ),
       ),
       const SizedBox(height: 10),

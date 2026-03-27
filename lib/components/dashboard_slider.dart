@@ -18,19 +18,10 @@ class _DashboardSliderState extends State<DashboardSlider> {
       CarouselSliderController();
 
   final List<SliderImageModel> sliderImages = [
+    SliderImageModel(url: 'assets/images/sliders/1.png', isDartWatermark: true),
+    SliderImageModel(url: 'assets/images/sliders/2.png', isDartWatermark: true),
     SliderImageModel(
-      url:
-          'assets/images/sliders/1.png',
-      isDartWatermark: true,
-    ),
-    SliderImageModel(
-      url:
-          'assets/images/sliders/2.png',
-      isDartWatermark: true,
-    ),
-    SliderImageModel(
-      url:
-          'assets/images/sliders/3.png',
+      url: 'assets/images/sliders/3.png',
       isDartWatermark: false,
     ),
   ];
@@ -87,6 +78,7 @@ class _DashboardSliderState extends State<DashboardSlider> {
 
   /// 🟢 Actual Carousel
   Widget _buildImageCarousel(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
     return CarouselSlider.builder(
       carouselController: _carouselController,
       itemCount: sliderImages.length,
@@ -119,13 +111,15 @@ class _DashboardSliderState extends State<DashboardSlider> {
         );
       },
       options: CarouselOptions(
-        height: 200,
+        height: isDesktop ? 400 : 200,
         autoPlay: true,
         clipBehavior: Clip.antiAlias,
-        enlargeStrategy: CenterPageEnlargeStrategy.scale,
+        enlargeStrategy: isDesktop
+            ? CenterPageEnlargeStrategy.zoom
+            : CenterPageEnlargeStrategy.scale,
         enlargeCenterPage: true,
-        enableInfiniteScroll: false,
-        viewportFraction: 0.9,
+        enableInfiniteScroll: isDesktop ? true : false,
+        viewportFraction: isDesktop ? 0.5 : 0.9,
         autoPlayInterval: const Duration(seconds: 3),
         onPageChanged: (index, reason) {
           setState(() {

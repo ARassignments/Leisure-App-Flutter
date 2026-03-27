@@ -116,7 +116,7 @@ class _DashboardPaymentsSummaryState extends State<DashboardPaymentsSummary>
     final grouped = _grouped;
 
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, top: 16),
+      padding: const EdgeInsets.only(left: 0, right: 0, top: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -572,7 +572,9 @@ class _PolarSection extends StatelessWidget {
                           fontWeight: isActive
                               ? FontWeight.w600
                               : FontWeight.w400,
-                          color: isActive ? AppTheme.iconColor(context) : AppTheme.iconColorThree(context),
+                          color: isActive
+                              ? AppTheme.iconColor(context)
+                              : AppTheme.iconColorThree(context),
                         ),
                       ),
                     ],
@@ -866,37 +868,45 @@ class _ListSectionState extends State<_ListSection> {
         SizedBox(height: 12),
         Divider(height: 1, color: AppTheme.dividerBg(context)),
 
-        ...List.generate(
-          widget.grouped.length,
-          (i) => AnimatedBuilder(
-            animation: widget.anim,
-            builder: (_, __) {
-              final delay = (i / widget.grouped.length) * 0.6;
-              final t = ((widget.anim.value - delay) / (1 - delay)).clamp(
-                0.0,
-                1.0,
-              );
-              return Opacity(
-                opacity: t,
-                child: Transform.translate(
-                  offset: Offset(0, 16 * (1 - t)),
-                  child: _ListRow(
-                    rank: i + 1,
-                    group: widget.grouped[i],
-                    maxTotal: maxTotal,
-                    fmtFull: widget.fmtFull,
-                    isExpanded: _expandedIndex == i, // ✅ control here
-                    onToggle: () {
-                      setState(() {
-                        _expandedIndex = _expandedIndex == i
-                            ? null
-                            : i; // toggle
-                      });
-                    },
-                  ),
+        SizedBox(
+          height: 300,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: List.generate(
+                widget.grouped.length,
+                (i) => AnimatedBuilder(
+                  animation: widget.anim,
+                  builder: (_, __) {
+                    final delay = (i / widget.grouped.length) * 0.6;
+                    final t = ((widget.anim.value - delay) / (1 - delay)).clamp(
+                      0.0,
+                      1.0,
+                    );
+                    return Opacity(
+                      opacity: t,
+                      child: Transform.translate(
+                        offset: Offset(0, 16 * (1 - t)),
+                        child: _ListRow(
+                          rank: i + 1,
+                          group: widget.grouped[i],
+                          maxTotal: maxTotal,
+                          fmtFull: widget.fmtFull,
+                          isExpanded: _expandedIndex == i, // ✅ control here
+                          onToggle: () {
+                            setState(() {
+                              _expandedIndex = _expandedIndex == i
+                                  ? null
+                                  : i; // toggle
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 10),

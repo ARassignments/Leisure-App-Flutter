@@ -78,7 +78,7 @@ class _DashboardTopCustomersState extends State<DashboardTopCustomers>
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, top: 16),
+      padding: const EdgeInsets.only(left: 0, right: 0, top: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -225,13 +225,15 @@ class SummaryCards extends StatelessWidget {
       children: [
         _MetricCard(
           label: 'Customers',
-          value: count==0?'0':count.toString().padLeft(2, '0'),
+          value: count == 0 ? '0' : count.toString().padLeft(2, '0'),
           color: const Color(0xFF378ADD),
         ),
         const SizedBox(width: 10),
         _MetricCard(
           label: 'Total Orders',
-          value: totalOrders==0?'0':totalOrders.toString().padLeft(2, '0'),
+          value: totalOrders == 0
+              ? '0'
+              : totalOrders.toString().padLeft(2, '0'),
           color: const Color(0xFF1D9E75),
         ),
         const SizedBox(width: 10),
@@ -283,7 +285,7 @@ class _MetricCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 29),
             Text(
               value,
               style: AppTheme.textLabel(
@@ -755,36 +757,43 @@ class _ListView extends StatelessWidget {
         SizedBox(height: 12),
         Divider(height: 1, color: AppTheme.dividerBg(context)),
 
-        // Rows
-        ...List.generate(customers.length, (i) {
-          final c = customers[i];
-          final color = kChartColors[i % kChartColors.length];
-          final pct = c.TotalAmount / total;
-
-          return AnimatedBuilder(
-            animation: animation,
-            builder: (_, __) {
-              final delay = (i / customers.length) * 0.6;
-              final t = ((animation.value - delay) / (1 - delay)).clamp(
-                0.0,
-                1.0,
-              );
-              return Opacity(
-                opacity: t,
-                child: Transform.translate(
-                  offset: Offset(0, 20 * (1 - t)),
-                  child: _CustomerRow(
-                    rank: i + 1,
-                    customer: c,
-                    color: color,
-                    pct: pct,
-                    formatFull: formatFull,
-                  ),
-                ),
-              );
-            },
-          );
-        }),
+        SizedBox(
+          height: 300,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: List.generate(customers.length, (i) {
+                final c = customers[i];
+                final color = kChartColors[i % kChartColors.length];
+                final pct = c.TotalAmount / total;
+            
+                return AnimatedBuilder(
+                  animation: animation,
+                  builder: (_, __) {
+                    final delay = (i / customers.length) * 0.6;
+                    final t = ((animation.value - delay) / (1 - delay)).clamp(
+                      0.0,
+                      1.0,
+                    );
+                    return Opacity(
+                      opacity: t,
+                      child: Transform.translate(
+                        offset: Offset(0, 20 * (1 - t)),
+                        child: _CustomerRow(
+                          rank: i + 1,
+                          customer: c,
+                          color: color,
+                          pct: pct,
+                          formatFull: formatFull,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ),
+        ),
         const SizedBox(height: 8),
       ],
     );

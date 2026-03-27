@@ -72,7 +72,7 @@ class _DashboardDeadStockState extends State<DashboardDeadStock>
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, top: 16),
+      padding: const EdgeInsets.only(left: 0, right: 0, top: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -453,9 +453,10 @@ class _HBarSection extends StatelessWidget {
                       rowH: rowH,
                       xAxis: xAxis,
                       canvasW: box.maxWidth,
-                      separatorColor: Theme.of(context).brightness == Brightness.dark
-                            ? AppColor.neutral_80
-                            : AppColor.neutral_20,
+                      separatorColor:
+                          Theme.of(context).brightness == Brightness.dark
+                          ? AppColor.neutral_80
+                          : AppColor.neutral_20,
                     ),
                   ),
                 ),
@@ -722,25 +723,33 @@ class _ListSection extends StatelessWidget {
         Divider(height: 1, color: AppTheme.dividerBg(context)),
 
         // Rows
-        ...List.generate(
-          items.length,
-          (i) => AnimatedBuilder(
-            animation: anim,
-            builder: (_, __) {
-              final delay = (i / items.length) * 0.6;
-              final t = ((anim.value - delay) / (1 - delay)).clamp(0.0, 1.0);
-              return Opacity(
-                opacity: t,
-                child: Transform.translate(
-                  offset: Offset(0, 16 * (1 - t)),
-                  child: _ListRow(
-                    rank: i + 1,
-                    item: items[i],
-                    maxStock: maxStock,
-                  ),
+        SizedBox(
+          height: 300,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: List.generate(
+                items.length,
+                (i) => AnimatedBuilder(
+                  animation: anim,
+                  builder: (_, __) {
+                    final delay = (i / items.length) * 0.6;
+                    final t = ((anim.value - delay) / (1 - delay)).clamp(0.0, 1.0);
+                    return Opacity(
+                      opacity: t,
+                      child: Transform.translate(
+                        offset: Offset(0, 16 * (1 - t)),
+                        child: _ListRow(
+                          rank: i + 1,
+                          item: items[i],
+                          maxStock: maxStock,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 10),

@@ -1,14 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
-import 'package:intl/intl.dart';
-import '/Models/customer_model.dart';
-import '/components/loading_screen.dart';
-import '/components/not_found.dart';
-import '/responses/customer_response.dart';
-import '/screens/customer_detail_screen.dart';
-import '/services/api_service.dart';
 import '/theme/theme.dart';
-import '/utils/session_manager.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});

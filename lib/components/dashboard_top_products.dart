@@ -69,7 +69,7 @@ class _DashboardTopProductsState extends State<DashboardTopProducts>
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, top: 16),
+      padding: const EdgeInsets.only(left: 0, right: 0, top: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -681,25 +681,33 @@ class _ListSection extends StatelessWidget {
         ),
         SizedBox(height: 12),
         Divider(height: 1, color: AppTheme.dividerBg(context)),
-        ...List.generate(
-          products.length,
-          (i) => AnimatedBuilder(
-            animation: anim,
-            builder: (_, __) {
-              final delay = (i / products.length) * 0.6;
-              final t = ((anim.value - delay) / (1 - delay)).clamp(0.0, 1.0);
-              return Opacity(
-                opacity: t,
-                child: Transform.translate(
-                  offset: Offset(0, 16 * (1 - t)),
-                  child: _ListRow(
-                    rank: i + 1,
-                    product: products[i],
-                    maxQ: maxQ,
-                  ),
+        SizedBox(
+          height: 300,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: List.generate(
+                products.length,
+                (i) => AnimatedBuilder(
+                  animation: anim,
+                  builder: (_, __) {
+                    final delay = (i / products.length) * 0.6;
+                    final t = ((anim.value - delay) / (1 - delay)).clamp(0.0, 1.0);
+                    return Opacity(
+                      opacity: t,
+                      child: Transform.translate(
+                        offset: Offset(0, 16 * (1 - t)),
+                        child: _ListRow(
+                          rank: i + 1,
+                          product: products[i],
+                          maxQ: maxQ,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 10),
