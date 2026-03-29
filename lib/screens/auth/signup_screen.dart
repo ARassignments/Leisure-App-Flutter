@@ -2,9 +2,9 @@ import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
-import '../../screens/login_screen.dart';
-import '../../screens/otp_verification_screen.dart';
-import '../../theme/theme.dart';
+import '../login_screen.dart';
+import '/screens/otp_verification_screen.dart';
+import '/theme/theme.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -172,7 +172,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    Widget child = Scaffold(
       body: Center(
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 600),
@@ -211,6 +211,20 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
         ),
       ),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth > 500) {
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: child,
+            ),
+          );
+        } else {
+          return child!;
+        }
+      },
     );
   }
 

@@ -123,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    Widget child =  Scaffold(
       body: Center(
         child: SingleChildScrollView(
           child: IntrinsicHeight(
@@ -134,6 +134,20 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth > 500) {
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: child,
+            ),
+          );
+        } else {
+          return child!;
+        }
+      },
     );
   }
 
@@ -387,8 +401,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Navigator.pushReplacement(
               context,
               PageRouteBuilder(
-                pageBuilder: (_, __, ___) =>
-                    DashboardShell(),
+                pageBuilder: (_, __, ___) => DashboardShell(),
                 transitionsBuilder: (_, a, __, c) =>
                     FadeTransition(opacity: a, child: c),
               ),

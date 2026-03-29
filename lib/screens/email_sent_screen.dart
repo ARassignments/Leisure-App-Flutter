@@ -37,7 +37,7 @@ class _EmailSentState extends State<EmailSentScreen> {
       return '$maskedName@$domain';
     }
 
-    return Scaffold(
+    Widget child = Scaffold(
       body: Center(
         child: SingleChildScrollView(
           child: IntrinsicHeight(
@@ -91,6 +91,20 @@ class _EmailSentState extends State<EmailSentScreen> {
           ),
         ),
       ),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth > 500) {
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: child,
+            ),
+          );
+        } else {
+          return child!;
+        }
+      },
     );
   }
 }

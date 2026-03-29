@@ -67,7 +67,7 @@ class DashboardGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        int crossAxisCount = constraints.maxWidth < 600
+        int crossAxisCount = constraints.maxWidth < 700
             ? 2 // small screen → 2 cards per row
             : 4; // large screen → 4 cards per row
 
@@ -131,7 +131,7 @@ class DashboardGrid extends StatelessWidget {
             bottom: -10,
             child: Icon(
               icon,
-              size: isDesktop ? 100 : 90,
+              size: isDesktop ? 95 : 90,
               color: Colors.white.withOpacity(0.1),
             ),
           ),

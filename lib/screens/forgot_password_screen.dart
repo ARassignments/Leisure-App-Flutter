@@ -39,11 +39,11 @@ class _ForgotPasswordState extends State<ForgotPasswordScreen> {
   bool _validateCurrentForm() {
     // final isValid = _formKey.currentState?.validate() ?? false;
     final isEmailValid =
-          _emailController.text.isNotEmpty &&
-          _emailController.text.length >= 5 &&
-          RegExp(
-            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-          ).hasMatch(_emailController.text);
+        _emailController.text.isNotEmpty &&
+        _emailController.text.length >= 5 &&
+        RegExp(
+          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+        ).hasMatch(_emailController.text);
     final allFieldsFilled = isEmailValid;
 
     return allFieldsFilled;
@@ -57,7 +57,7 @@ class _ForgotPasswordState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    Widget child = Scaffold(
       body: Center(
         child: SingleChildScrollView(
           child: IntrinsicHeight(
@@ -68,6 +68,20 @@ class _ForgotPasswordState extends State<ForgotPasswordScreen> {
           ),
         ),
       ),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth > 500) {
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: child,
+            ),
+          );
+        } else {
+          return child!;
+        }
+      },
     );
   }
 
@@ -133,7 +147,8 @@ class _ForgotPasswordState extends State<ForgotPasswordScreen> {
               disabled: !_isFormValid || _isLoading,
               onPressed: (_isFormValid && !_isLoading)
                   ? () async {
-                      if (!_validateCurrentForm()) return; // Use validation method
+                      if (!_validateCurrentForm())
+                        return; // Use validation method
                       await _submitForm();
                     }
                   : null,

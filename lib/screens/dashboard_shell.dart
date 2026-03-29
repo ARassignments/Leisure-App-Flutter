@@ -1,34 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:html' as html show document, Element;
 import 'package:hugeicons_pro/hugeicons.dart';
-import 'package:y2ksolutions/screens/customers_screen.dart';
-import 'package:y2ksolutions/screens/payments_screen.dart';
-import 'package:y2ksolutions/screens/scraps_screen.dart';
+import '/utils/session_manager.dart';
+import '/screens/customers_screen.dart';
+import '/screens/payments_screen.dart';
+import '/screens/scraps_screen.dart';
 import '/screens/home_screen.dart';
 import '/theme/theme.dart';
-
-// ─── Nav Item Model ───────────────────────────────────────────────────────────
-
-class NavItem {
-  final String label;
-  final IconData icon;
-  final String? route;
-  final Widget? page;
-  final List<NavItem> children;
-  bool expanded;
-  int pageIndex;
-
-  NavItem({
-    required this.label,
-    required this.icon,
-    this.route,
-    this.page,
-    this.children = const [],
-    this.expanded = false,
-    this.pageIndex = -1,
-  });
-}
-
-// ─── Dashboard Shell ──────────────────────────────────────────────────────────
 
 class DashboardShell extends StatefulWidget {
   const DashboardShell({super.key});
@@ -39,6 +19,13 @@ class DashboardShell extends StatefulWidget {
 
 class _DashboardShellState extends State<DashboardShell>
     with SingleTickerProviderStateMixin {
+  String? token;
+  Map<String, dynamic>? user;
+  bool _isLoadingUser = true;
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final FocusNode _globalFocusNode = FocusNode();
+  bool _isFullscreen = false;
   late final List<NavItem> _navItems;
   final HomeScreen homeScreen = const HomeScreen();
   final PaymentsScreen paymentScreen = const PaymentsScreen();
@@ -46,16 +33,16 @@ class _DashboardShellState extends State<DashboardShell>
   final CustomersScreen customerScreen = const CustomersScreen();
   bool _sidebarOpen = true;
   bool _profileMenuOpen = false;
-  // final List<NavItem> _navItems = buildNavItems();
-
+  bool _dropdownHovered = false;
   int _activeIndex = 0;
   String _activeLabel = 'Dashboard';
-  late final List<Widget> _pages; // flat list of all pages
+  late final List<Widget> _pages;
   late final List<String> _pageLabels;
 
   static const double _sidebarExpanded = 220;
   static const double _sidebarCollapsed = 80;
 
+  late final List<GlobalKey<NavigatorState>> _navigatorKeys;
   late final AnimationController _sidebarCtrl = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 260),
@@ -65,16 +52,42 @@ class _DashboardShellState extends State<DashboardShell>
     parent: _sidebarCtrl,
     curve: Curves.easeInOutCubic,
   );
-  late final List<GlobalKey<NavigatorState>> _navigatorKeys;
+
+  Future<void> _loadSession() async {
+    token = await SessionManager.getUserToken();
+    final userData = await SessionManager.getUser();
+    setState(() {
+      user = userData;
+      _isLoadingUser = false;
+    });
+  }
 
   void _toggleSidebar() {
-    setState(() => _sidebarOpen = !_sidebarOpen);
-    _sidebarOpen ? _sidebarCtrl.forward() : _sidebarCtrl.reverse();
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+    if (isDesktop) {
+      setState(() => _sidebarOpen = !_sidebarOpen);
+      _sidebarOpen ? _sidebarCtrl.forward() : _sidebarCtrl.reverse();
+    } else {
+      final scaffold = _scaffoldKey.currentState;
+      if (scaffold == null) return;
+      scaffold.isDrawerOpen ? scaffold.closeDrawer() : scaffold.openDrawer();
+    }
+  }
+
+  void _toggleFullscreen() {
+    if (!kIsWeb) return;
+    setState(() => _isFullscreen = !_isFullscreen);
+    if (_isFullscreen) {
+      html.document.documentElement?.requestFullscreen();
+    } else {
+      html.document.exitFullscreen();
+    }
   }
 
   @override
   void initState() {
     super.initState();
+    _loadSession();
     _navItems = [
       NavItem(
         label: 'Dashboard',
@@ -203,11 +216,20 @@ class _DashboardShellState extends State<DashboardShell>
       _pages.length,
       (_) => GlobalKey<NavigatorState>(),
     );
+
+    if (kIsWeb) {
+      // ✅ Browser fullscreen change (Esc, F11, etc.)
+      html.document.onFullscreenChange.listen((_) {
+        final isNow = html.document.fullscreenElement != null;
+        if (mounted) setState(() => _isFullscreen = isNow);
+      });
+    }
   }
 
   @override
   void dispose() {
     _sidebarCtrl.dispose();
+    _globalFocusNode.dispose();
     super.dispose();
   }
 
@@ -221,142 +243,222 @@ class _DashboardShellState extends State<DashboardShell>
     }
   }
 
+  void _closeProfileIfNotHovered() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (!_dropdownHovered && mounted) {
+        setState(() => _profileMenuOpen = false);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-    return Scaffold(
-      backgroundColor: AppTheme.customListBg(context),
-      // Mobile: use drawer
-      drawer: isDesktop
-          ? null
-          : _SidebarDrawer(
-              navItems: _navItems,
-              activeIndex: _activeIndex,
-              onItemSelect: _onNavSelect,
-            ),
-      body: Row(
-        children: [
-          // ── Desktop Sidebar ──
-          if (isDesktop)
-            AnimatedBuilder(
-              animation: _sidebarAnim,
-              builder: (_, __) {
-                final w =
-                    _sidebarCollapsed +
-                    (_sidebarExpanded - _sidebarCollapsed) * _sidebarAnim.value;
-                return SizedBox(
-                  width: w,
-                  child: _Sidebar(
-                    navItems: _navItems,
-                    activeIndex: _activeIndex,
-                    collapsed: !_sidebarOpen,
-                    animValue: _sidebarAnim.value,
-                    onItemSelect: _onNavSelect,
-                    onToggleItem: (item) {
-                      // ✅ receives NavItem
-                      setState(() {
-                        for (final nav in _navItems) {
-                          nav.expanded = nav == item ? !nav.expanded : false;
-                        }
-                      });
-                    },
-                  ),
-                );
-              },
-            ),
+    return KeyboardListener(
+      focusNode: _globalFocusNode,
+      autofocus: true, // ✅ always listening
+      onKeyEvent: (event) {
+        if (event is! KeyDownEvent) return;
 
-          // ── Main content ──
-          Expanded(
-            child: Column(
-              children: [
-                // Topbar
-                _Topbar(
-                  title: _activeLabel,
-                  isDesktop: isDesktop,
-                  onMenuTap: isDesktop
-                      ? _toggleSidebar
-                      : () => Scaffold.of(context).openDrawer(),
-                  profileOpen: _profileMenuOpen,
-                  onProfileTap: () =>
-                      setState(() => _profileMenuOpen = !_profileMenuOpen),
-                  onProfileClose: () =>
-                      setState(() => _profileMenuOpen = false),
+        // ✅ Escape — exit fullscreen
+        if (event.logicalKey == LogicalKeyboardKey.escape && _isFullscreen) {
+          if (!kIsWeb) {
+            setState(() => _isFullscreen = false);
+          }
+        }
+
+        // ✅ F11 — toggle fullscreen
+        if (event.logicalKey == LogicalKeyboardKey.f11) {
+          if (!kIsWeb) {
+            setState(() => _isFullscreen = true);
+          }
+        }
+      },
+      child: PopScope(
+        canPop: false,
+        child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: AppTheme.customListBg(context),
+          // Mobile: use drawer
+          drawer: isDesktop
+              ? null
+              : _SidebarDrawer(
+                  navItems: _navItems,
+                  activeIndex: _activeIndex,
+                  onItemSelect: _onNavSelect,
+                  userName: _isLoadingUser
+                      ? ''
+                      : user?["FullName"] ?? 'Unknown User',
+                ),
+          body: Row(
+            children: [
+              // ── Desktop Sidebar ──
+              if (isDesktop)
+                AnimatedBuilder(
+                  animation: _sidebarAnim,
+                  builder: (_, __) {
+                    final w =
+                        _sidebarCollapsed +
+                        (_sidebarExpanded - _sidebarCollapsed) *
+                            _sidebarAnim.value;
+                    return SizedBox(
+                      width: w,
+                      child: _Sidebar(
+                        navItems: _navItems,
+                        activeIndex: _activeIndex,
+                        collapsed: !_sidebarOpen,
+                        animValue: _sidebarAnim.value,
+                        onItemSelect: _onNavSelect,
+                        onToggleItem: (item) {
+                          setState(() {
+                            for (final nav in _navItems) {
+                              nav.expanded = nav == item
+                                  ? !nav.expanded
+                                  : false;
+                            }
+                          });
+                        },
+                        userName: _isLoadingUser
+                            ? ''
+                            : user?["FullName"] ?? 'Unknown User',
+                      ),
+                    );
+                  },
                 ),
 
-                // Page content
-                Expanded(
-                  child: Stack(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 60),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              bottomLeft: Radius.circular(20),
+              // ── Main content ──
+              Expanded(
+                child: Column(
+                  children: [
+                    // Topbar
+                    _Topbar(
+                      title: _activeLabel,
+                      isDesktop: isDesktop,
+                      isFullscreen: _isFullscreen,
+                      onToggleFullscreen: _toggleFullscreen,
+                      onMenuTap: _toggleSidebar,
+                      profileOpen: _profileMenuOpen,
+                      onProfileTap: () =>
+                          setState(() => _profileMenuOpen = !_profileMenuOpen),
+                      onProfileClose: _closeProfileIfNotHovered,
+                      userName: _isLoadingUser
+                          ? ''
+                          : user?["FullName"] ?? 'Unknown User',
+                    ),
+
+                    // Page content
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 60),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  bottomLeft: Radius.circular(20),
+                                ),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return IndexedStack(
+                                    index: _activeIndex,
+                                    children: List.generate(_pages.length, (i) {
+                                      final navigator = Navigator(
+                                        key: _navigatorKeys[i],
+                                        onGenerateRoute: (_) =>
+                                            MaterialPageRoute(
+                                              builder: (_) => _pages[i],
+                                            ),
+                                      );
+
+                                      return SizedBox(
+                                        width: constraints.maxWidth,
+                                        height: constraints.maxHeight,
+                                        child:
+                                            navigator, // ✅ full width scoped navigator
+                                      );
+                                    }),
+                                  );
+                                },
+                              ),
                             ),
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              return IndexedStack(
-                                index: _activeIndex,
-                                children: List.generate(_pages.length, (i) {
-                                  final navigator = Navigator(
-                                    key: _navigatorKeys[i],
-                                    onGenerateRoute: (_) => MaterialPageRoute(
-                                      builder: (_) => _pages[i],
-                                    ),
-                                  );
-
-                                  return SizedBox(
-                                    width: constraints.maxWidth,
-                                    height: constraints.maxHeight,
-                                    child:
-                                        navigator, // ✅ full width scoped navigator
-                                  );
-                                }),
-                              );
-                            },
+                          Positioned(
+                            bottom: 0,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 20,
+                              ),
+                              child: Text(
+                                "Y2k Solutions © 2026 all right reserved.",
+                                style: AppTheme.textLink(
+                                  context,
+                                ).copyWith(fontSize: 14),
+                              ),
+                            ),
                           ),
-                        ),
+                          // Profile dropdown
+                          if (_profileMenuOpen)
+                            Positioned(
+                              top: 0,
+                              right: 20,
+                              child: MouseRegion(
+                                onEnter: (_) => setState(
+                                  () => _dropdownHovered = true,
+                                ),
+                                onExit: (_) {
+                                  setState(() => _dropdownHovered = false);
+                                  _closeProfileIfNotHovered();
+                                },
+                                child: _ProfileDropdown(
+                                  onClose: () => setState(() {
+                                    _profileMenuOpen = false;
+                                    _dropdownHovered = false;
+                                  }),
+                                  userName: _isLoadingUser
+                                      ? ''
+                                      : user?["FullName"] ?? 'Unknown User',
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                      Positioned(
-                        bottom: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 20,
-                          ),
-                          child: Text(
-                            "Y2k Solutions © 2026 all right reserved.",
-                            style: AppTheme.textLink(
-                              context,
-                            ).copyWith(fontSize: 14),
-                          ),
-                        ),
-                      ),
-                      // Profile dropdown
-                      if (_profileMenuOpen)
-                        Positioned(
-                          top: 0,
-                          right: 20,
-                          child: _ProfileDropdown(
-                            onClose: () =>
-                                setState(() => _profileMenuOpen = false),
-                          ),
-                        ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
+}
+
+// ─── Nav Item Model ───────────────────────────────────────────────────────────
+
+class NavItem {
+  final String label;
+  final IconData icon;
+  final String? route;
+  final Widget? page;
+  final List<NavItem> children;
+  bool expanded;
+  int pageIndex;
+
+  NavItem({
+    required this.label,
+    required this.icon,
+    this.route,
+    this.page,
+    this.children = const [],
+    this.expanded = false,
+    this.pageIndex = -1,
+  });
 }
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
@@ -368,6 +470,7 @@ class _Sidebar extends StatelessWidget {
   final double animValue;
   final ValueChanged<NavItem> onItemSelect;
   final ValueChanged<NavItem> onToggleItem;
+  final String userName;
 
   const _Sidebar({
     required this.navItems,
@@ -376,10 +479,16 @@ class _Sidebar extends StatelessWidget {
     required this.animValue,
     required this.onItemSelect,
     required this.onToggleItem,
+    required this.userName,
   });
 
   @override
   Widget build(BuildContext context) {
+    final initials = userName.trim().isNotEmpty
+        ? userName.trim().split(' ').length >= 2
+              ? '${userName.trim().split(' ').first[0]}${userName.trim().split(' ').last[0]}'
+              : userName.trim()[0]
+        : '?';
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.customListBg(context).withOpacity(0.5),
@@ -475,7 +584,7 @@ class _Sidebar extends StatelessWidget {
                     context,
                   ).withOpacity(0.95),
                   child: Text(
-                    'ST',
+                    initials.toUpperCase(),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -492,7 +601,7 @@ class _Sidebar extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'SAIM TRADERS',
+                          userName.toUpperCase(),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -795,11 +904,13 @@ class _SidebarDrawer extends StatefulWidget {
   final List<NavItem> navItems;
   final int activeIndex;
   final ValueChanged<NavItem> onItemSelect;
+  final String userName;
 
   const _SidebarDrawer({
     required this.navItems,
     required this.activeIndex,
     required this.onItemSelect,
+    required this.userName,
   });
 
   @override
@@ -825,19 +936,23 @@ class _SidebarDrawerState extends State<_SidebarDrawer> {
           }
         });
       },
+      userName: widget.userName,
     ),
   );
 }
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
-class _Topbar extends StatelessWidget {
+class _Topbar extends StatefulWidget {
   final String title;
   final bool isDesktop;
   final VoidCallback onMenuTap;
   final bool profileOpen;
   final VoidCallback onProfileTap;
   final VoidCallback onProfileClose;
+  final String userName;
+  final bool isFullscreen;
+  final VoidCallback onToggleFullscreen;
 
   const _Topbar({
     required this.title,
@@ -846,10 +961,24 @@ class _Topbar extends StatelessWidget {
     required this.profileOpen,
     required this.onProfileTap,
     required this.onProfileClose,
+    required this.userName,
+    required this.isFullscreen,
+    required this.onToggleFullscreen,
   });
 
   @override
+  State<_Topbar> createState() => _TopbarState();
+}
+
+class _TopbarState extends State<_Topbar> {
+  bool _avatarHovered = false;
+  @override
   Widget build(BuildContext context) {
+    final initials = widget.userName.trim().isNotEmpty
+        ? widget.userName.trim().split(' ').length >= 2
+              ? '${widget.userName.trim().split(' ').first[0]}${widget.userName.trim().split(' ').last[0]}'
+              : widget.userName.trim()[0]
+        : '?';
     return Container(
       height: 60,
       decoration: BoxDecoration(
@@ -865,7 +994,7 @@ class _Topbar extends StatelessWidget {
               size: 22,
               color: AppTheme.iconColor(context),
             ),
-            onPressed: onMenuTap,
+            onPressed: widget.onMenuTap,
             tooltip: 'Toggle Sidebar',
           ),
           const SizedBox(width: 5),
@@ -880,7 +1009,7 @@ class _Topbar extends StatelessWidget {
                 ).copyWith(fontSize: 20, fontFamily: AppFontFamily.poppinsBold),
               ),
               Text(
-                title,
+                widget.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTheme.textTitle(context).copyWith(
@@ -900,12 +1029,18 @@ class _Topbar extends StatelessWidget {
           const Spacer(),
 
           // Action icons
-          _TopbarIcon(icon: Icons.save_outlined, tooltip: 'Save'),
           _TopbarIcon(
-            icon: Icons.bookmark_border_rounded,
-            tooltip: 'Bookmarks',
+            icon: Icons.calculate_outlined,
+            tooltip: 'Calculator',
+            onTap: () => _showCalculator(context),
           ),
-          _TopbarIcon(icon: Icons.fullscreen_rounded, tooltip: 'Fullscreen'),
+          _TopbarIcon(
+            icon: widget.isFullscreen
+                ? Icons.fullscreen_exit_rounded
+                : Icons.fullscreen_rounded,
+            tooltip: widget.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen',
+            onTap: widget.onToggleFullscreen,
+          ),
           _TopbarIcon(
             icon: Icons.notifications_none_rounded,
             tooltip: 'Notifications',
@@ -914,25 +1049,39 @@ class _Topbar extends StatelessWidget {
           const SizedBox(width: 6),
 
           // Avatar
-          InkWell(
-            onTap: onProfileTap,
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [AppColor.primary_40, AppColor.primary_50],
+          MouseRegion(
+            onEnter: (_) {
+              setState(() => _avatarHovered = true);
+              widget.onProfileTap();
+            },
+            onExit: (_) {
+              setState(() => _avatarHovered = false);
+              Future.delayed(const Duration(milliseconds: 200), () {
+                if (!_avatarHovered && mounted) {
+                  widget.onProfileClose();
+                }
+              });
+            },
+            child: InkWell(
+              onTap: widget.onProfileTap,
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [AppColor.primary_40, AppColor.primary_50],
+                  ),
                 ),
-              ),
-              child: const Center(
-                child: Text(
-                  'ST',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
+                child: Center(
+                  child: Text(
+                    initials.toUpperCase(),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ),
@@ -942,17 +1091,27 @@ class _Topbar extends StatelessWidget {
       ),
     );
   }
+
+  void _showCalculator(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black26,
+      builder: (_) => const _CalculatorDialog(),
+    );
+  }
 }
 
 class _TopbarIcon extends StatelessWidget {
   final IconData icon;
   final String tooltip;
   final String badge;
+  final VoidCallback? onTap;
 
   const _TopbarIcon({
     required this.icon,
     required this.tooltip,
     this.badge = '',
+    this.onTap,
   });
 
   @override
@@ -960,7 +1119,7 @@ class _TopbarIcon extends StatelessWidget {
     children: [
       IconButton(
         icon: Icon(icon, size: 20, color: AppTheme.iconColorTwo(context)),
-        onPressed: () {},
+        onPressed: onTap,
         tooltip: tooltip,
       ),
       if (badge.isNotEmpty)
@@ -970,8 +1129,8 @@ class _TopbarIcon extends StatelessWidget {
           child: Container(
             width: 16,
             height: 16,
-            decoration: const BoxDecoration(
-              color: Color(0xFFE53935),
+            decoration: BoxDecoration(
+              color: AppTheme.sliderHighlightBg(context),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -994,12 +1153,19 @@ class _TopbarIcon extends StatelessWidget {
 
 class _ProfileDropdown extends StatelessWidget {
   final VoidCallback onClose;
-  const _ProfileDropdown({required this.onClose});
+  final String userName;
+  const _ProfileDropdown({required this.onClose, required this.userName});
 
   @override
   Widget build(BuildContext context) {
+    final initials = userName.trim().isNotEmpty
+        ? userName.trim().split(' ').length >= 2
+              ? '${userName.trim().split(' ').first[0]}${userName.trim().split(' ').last[0]}'
+              : userName.trim()[0]
+        : '?';
     return InkWell(
       onTap: () {}, // prevent close on tap inside
+      mouseCursor: MouseCursor.defer,
       child: Material(
         elevation: 12,
         borderRadius: BorderRadius.circular(14),
@@ -1036,9 +1202,9 @@ class _ProfileDropdown extends StatelessWidget {
                           colors: [AppColor.primary_40, AppColor.primary_50],
                         ),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          'ST',
+                          initials.toUpperCase(),
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -1050,7 +1216,7 @@ class _ProfileDropdown extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'HI! SAIM TRADERS',
+                        'HI! ${userName.toUpperCase()}',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -1146,4 +1312,383 @@ class _DropdownItemState extends State<_DropdownItem> {
       ),
     ),
   );
+}
+
+// ─── Calculator Dialog ─────────────────────────────────────────────────────────
+
+class _CalculatorDialog extends StatefulWidget {
+  const _CalculatorDialog();
+
+  @override
+  State<_CalculatorDialog> createState() => _CalculatorDialogState();
+}
+
+class _CalculatorDialogState extends State<_CalculatorDialog> {
+  String _display = '0';
+  String _expression = '';
+  double _firstOperand = 0;
+  String _operator = '';
+  bool _shouldResetDisplay = false;
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    // ✅ Auto-focus so keyboard works immediately on open
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onKeyEvent(KeyEvent event) {
+    if (event is! KeyDownEvent) return;
+
+    final key = event.logicalKey;
+
+    if (key == LogicalKeyboardKey.digit0 || key == LogicalKeyboardKey.numpad0) {
+      _onButton('0');
+    } else if (key == LogicalKeyboardKey.digit1 ||
+        key == LogicalKeyboardKey.numpad1) {
+      _onButton('1');
+    } else if (key == LogicalKeyboardKey.digit2 ||
+        key == LogicalKeyboardKey.numpad2) {
+      _onButton('2');
+    } else if (key == LogicalKeyboardKey.digit3 ||
+        key == LogicalKeyboardKey.numpad3) {
+      _onButton('3');
+    } else if (key == LogicalKeyboardKey.digit4 ||
+        key == LogicalKeyboardKey.numpad4) {
+      _onButton('4');
+    } else if (key == LogicalKeyboardKey.digit5 ||
+        key == LogicalKeyboardKey.numpad5) {
+      _onButton('5');
+    } else if (key == LogicalKeyboardKey.digit6 ||
+        key == LogicalKeyboardKey.numpad6) {
+      _onButton('6');
+    } else if (key == LogicalKeyboardKey.digit7 ||
+        key == LogicalKeyboardKey.numpad7) {
+      _onButton('7');
+    } else if (key == LogicalKeyboardKey.digit8 ||
+        key == LogicalKeyboardKey.numpad8) {
+      _onButton('8');
+    } else if (key == LogicalKeyboardKey.digit9 ||
+        key == LogicalKeyboardKey.numpad9) {
+      _onButton('9');
+    } else if (key == LogicalKeyboardKey.add ||
+        key == LogicalKeyboardKey.numpadAdd) {
+      _onButton('+');
+    } else if (key == LogicalKeyboardKey.minus ||
+        key == LogicalKeyboardKey.numpadSubtract) {
+      _onButton('-');
+    } else if (key == LogicalKeyboardKey.asterisk ||
+        key == LogicalKeyboardKey.numpadMultiply) {
+      _onButton('×');
+    } else if (key == LogicalKeyboardKey.slash ||
+        key == LogicalKeyboardKey.numpadDivide) {
+      _onButton('÷');
+    } else if (key == LogicalKeyboardKey.equal ||
+        key == LogicalKeyboardKey.numpadEqual ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter) {
+      _onButton('=');
+    } else if (key == LogicalKeyboardKey.period ||
+        key == LogicalKeyboardKey.numpadDecimal) {
+      _onButton('.');
+    } else if (key == LogicalKeyboardKey.backspace) {
+      _onButton('⌫');
+    } else if (key == LogicalKeyboardKey.escape) {
+      Navigator.of(context).pop(); // ✅ Esc closes dialog
+    } else if (key == LogicalKeyboardKey.delete) {
+      _onButton('C'); // ✅ Delete clears
+    } else if (key == LogicalKeyboardKey.percent) {
+      _onButton('%');
+    }
+  }
+
+  void _onButton(String value) {
+    setState(() {
+      if (value == 'C') {
+        _display = '0';
+        _expression = '';
+        _firstOperand = 0;
+        _operator = '';
+        _shouldResetDisplay = false;
+      } else if (value == '⌫') {
+        if (_display.length > 1) {
+          _display = _display.substring(0, _display.length - 1);
+        } else {
+          _display = '0';
+        }
+      } else if (['+', '-', '×', '÷'].contains(value)) {
+        _firstOperand = double.tryParse(_display) ?? 0;
+        _operator = value;
+        _expression = '$_display $value';
+        _shouldResetDisplay = true;
+      } else if (value == '=') {
+        if (_operator.isEmpty) return;
+        final second = double.tryParse(_display) ?? 0;
+        double result = 0;
+        switch (_operator) {
+          case '+':
+            result = _firstOperand + second;
+            break;
+          case '-':
+            result = _firstOperand - second;
+            break;
+          case '×':
+            result = _firstOperand * second;
+            break;
+          case '÷':
+            result = second != 0 ? _firstOperand / second : 0;
+            break;
+        }
+        _expression = '$_expression $_display =';
+        _display = result == result.truncateToDouble()
+            ? result.toInt().toString()
+            : result.toStringAsFixed(6).replaceAll(RegExp(r'0+$'), '');
+        _operator = '';
+        _shouldResetDisplay = true;
+      } else if (value == '%') {
+        final current = double.tryParse(_display) ?? 0;
+        _display = (current / 100).toString();
+        _shouldResetDisplay = false;
+      } else if (value == '+/-') {
+        if (_display.startsWith('-')) {
+          _display = _display.substring(1);
+        } else if (_display != '0') {
+          _display = '-$_display';
+        }
+      } else if (value == '.') {
+        if (_shouldResetDisplay) {
+          _display = '0.';
+          _shouldResetDisplay = false;
+        } else if (!_display.contains('.')) {
+          _display += '.';
+        }
+      } else {
+        // Number
+        if (_shouldResetDisplay || _display == '0') {
+          _display = value;
+          _shouldResetDisplay = false;
+        } else {
+          if (_display.length < 12) _display += value;
+        }
+      }
+    });
+  }
+
+  Color _btnColor(String label) {
+    if (label == 'C' || label == '+/-' || label == '%') {
+      return AppTheme.iconColorTwo(context).withOpacity(0.2);
+    }
+    if (['+', '-', '×', '÷', '='].contains(label)) {
+      return AppColor.primary_50;
+    }
+    return AppTheme.iconColorThree(context).withOpacity(0.1);
+  }
+
+  Color _btnTextColor(String label) {
+    if (['+', '-', '×', '÷', '='].contains(label)) return Colors.white;
+    if (label == 'C' || label == '+/-' || label == '%') {
+      return AppTheme.iconColorTwo(context);
+    }
+    return AppTheme.iconColorThree(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final buttons = [
+      ['C', '+/-', '%', '÷'],
+      ['7', '8', '9', '×'],
+      ['4', '5', '6', '-'],
+      ['1', '2', '3', '+'],
+      ['⌫', '0', '.', '='],
+    ];
+
+    return KeyboardListener(
+      focusNode: _focusNode,
+      onKeyEvent: _onKeyEvent,
+      child: Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Container(
+          width: MediaQuery.of(context).size.width >= 500
+              ? 300
+              : double.infinity,
+          decoration: BoxDecoration(
+            color: AppTheme.customListBg(context),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 14, 8, 0),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.calculate_outlined,
+                      size: 18,
+                      color: AppTheme.iconColorTwo(context),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Calculator',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: AppTheme.iconColorTwo(context),
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: AppTheme.iconColorTwo(context),
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Display
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Expression
+                    Text(
+                      _expression,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.iconColorThree(context),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    // Main display
+                    Text(
+                      _display,
+                      style: TextStyle(
+                        fontSize: _display.length > 10 ? 22 : 32,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.iconColor(context),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+
+              const Divider(height: 1, thickness: 0.5),
+
+              // Buttons
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: buttons.map((row) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: row.asMap().entries.map((e) {
+                          final label = e.value;
+                          return Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                right: e.key < row.length - 1 ? 8 : 0,
+                              ),
+                              child: _CalcButton(
+                                label: label,
+                                color: _btnColor(label),
+                                textColor: _btnTextColor(label),
+                                onTap: () => _onButton(label),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Calc Button ──────────────────────────────────────────────────────────────
+
+class _CalcButton extends StatefulWidget {
+  final String label;
+  final Color color;
+  final Color textColor;
+  final VoidCallback onTap;
+
+  const _CalcButton({
+    required this.label,
+    required this.color,
+    required this.textColor,
+    required this.onTap,
+  });
+
+  @override
+  State<_CalcButton> createState() => _CalcButtonState();
+}
+
+class _CalcButtonState extends State<_CalcButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        height: 52,
+        decoration: BoxDecoration(
+          color: _pressed ? widget.color.withOpacity(0.75) : widget.color,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: widget.textColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -463,12 +463,118 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  Widget toggleBtn(String label, bool active, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? AppTheme.customListBg(context) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 6,
+                  ),
+                ]
+              : [],
+        ),
+        child: Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 12,
+                fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                color: active
+                    ? AppTheme.iconColor(context)
+                    : AppTheme.iconColorThree(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _homePage(),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(right: 0),
+        child: Stack(
+          children: [
+            AnimatedPositioned(
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              right: 3,
+              top: 35,
+              child: AnimatedOpacity(
+                duration: Duration(milliseconds: 300),
+                opacity: 1.0,
+                child: SizedBox(
+                  width: 111,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: AppTheme.sliderHighlightBg(context),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        toggleBtn('Chart', _isChartView, () {
+                          setState(() => _isChartView = true);
+                        }),
+                        toggleBtn('List', !_isChartView, () {
+                          setState(() => _isChartView = false);
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              bottom: _showScrollToTop ? 5 : -60,
+              right: 3,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: _showScrollToTop ? 1.0 : 0.0,
+                child: FloatingActionButton.small(
+                  heroTag: "scrollToTopDashboard",
+                  backgroundColor: AppTheme.sliderHighlightBg(context),
+                  elevation: 0,
+                  focusElevation: 0,
+                  hoverElevation: 0,
+                  highlightElevation: 0,
+                  onPressed: () {
+                    // WidgetsBinding.instance.addPostFrameCallback((_) {
+                    //   _scrollControllerDashboard.jumpTo(0);
+                    // });
+                    _scrollControllerDashboard.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                  child: Icon(
+                    HugeIconsStroke.arrowUp01,
+                    color: AppTheme.iconColor(context),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
