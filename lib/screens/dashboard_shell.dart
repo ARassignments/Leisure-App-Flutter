@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:html' as html show document, Element;
 import 'package:hugeicons_pro/hugeicons.dart';
+import '/screens/desktop/payments_screen.dart';
+import '/screens/account_screen.dart';
+import '/screens/login_screen.dart';
 import '/utils/session_manager.dart';
 import '/screens/customers_screen.dart';
-import '/screens/payments_screen.dart';
 import '/screens/scraps_screen.dart';
 import '/screens/home_screen.dart';
 import '/theme/theme.dart';
@@ -28,13 +30,14 @@ class _DashboardShellState extends State<DashboardShell>
   bool _isFullscreen = false;
   late final List<NavItem> _navItems;
   final HomeScreen homeScreen = const HomeScreen();
-  final PaymentsScreen paymentScreen = const PaymentsScreen();
+  final PaymentsTableScreen paymentScreen = const PaymentsTableScreen();
   final ScrapsScreen scrapScreen = const ScrapsScreen();
   final CustomersScreen customerScreen = const CustomersScreen();
   bool _sidebarOpen = true;
   bool _profileMenuOpen = false;
   bool _dropdownHovered = false;
   int _activeIndex = 0;
+  int _previousIndex = 0;
   String _activeLabel = 'Dashboard';
   late final List<Widget> _pages;
   late final List<String> _pageLabels;
@@ -235,10 +238,24 @@ class _DashboardShellState extends State<DashboardShell>
 
   void _onNavSelect(NavItem item) {
     if (item.pageIndex >= 0) {
+      // ✅ Reset current (old) page stack
+      _navigatorKeys[_activeIndex].currentState?.popUntil(
+        (route) => route.isFirst,
+      );
+
       setState(() {
+        _previousIndex = _activeIndex;
         _activeIndex = item.pageIndex;
         _activeLabel = item.label;
         _profileMenuOpen = false;
+        _dropdownHovered = false;
+      });
+
+      // ✅ Also reset new page stack (in case it was left mid-navigation)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _navigatorKeys[_activeIndex].currentState?.popUntil(
+          (route) => route.isFirst,
+        );
       });
     }
   }
@@ -363,24 +380,104 @@ class _DashboardShellState extends State<DashboardShell>
                               clipBehavior: Clip.antiAlias,
                               child: LayoutBuilder(
                                 builder: (context, constraints) {
-                                  return IndexedStack(
-                                    index: _activeIndex,
-                                    children: List.generate(_pages.length, (i) {
-                                      final navigator = Navigator(
-                                        key: _navigatorKeys[i],
-                                        onGenerateRoute: (_) =>
-                                            MaterialPageRoute(
-                                              builder: (_) => _pages[i],
-                                            ),
-                                      );
+                                  // ✅ Determine slide direction based on index
+                                  final isForward =
+                                      _activeIndex >= _previousIndex;
 
-                                      return SizedBox(
-                                        width: constraints.maxWidth,
-                                        height: constraints.maxHeight,
-                                        child:
-                                            navigator, // ✅ full width scoped navigator
+                                  return AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 300),
+                                    switchInCurve: Curves.easeOutCubic,
+                                    switchOutCurve: Curves.easeInCubic,
+                                    transitionBuilder: (child, animation) {
+                                      // ✅ Slide from right if going forward, left if going back
+                                      final begin = Offset(
+                                        isForward ? 1.0 : -1.0,
+                                        0.0,
                                       );
-                                    }),
+                                      final tween =
+                                          Tween<Offset>(
+                                            begin: begin,
+                                            end: Offset.zero,
+                                          ).chain(
+                                            CurveTween(
+                                              curve: Curves.easeOutCubic,
+                                            ),
+                                          );
+
+                                      return SlideTransition(
+                                        position: animation.drive(tween),
+                                        child: FadeTransition(
+                                          opacity: animation,
+                                          child: child,
+                                        ),
+                                      );
+                                    },
+                                    child: IndexedStack(
+                                      key: ValueKey(
+                                        _activeIndex,
+                                      ), // ✅ triggers AnimatedSwitcher
+                                      index: _activeIndex,
+                                      children: List.generate(_pages.length, (
+                                        i,
+                                      ) {
+                                        final navigator = Navigator(
+                                          key: _navigatorKeys[i],
+                                          onGenerateRoute: (_) => PageRouteBuilder(
+                                            opaque: true,
+                                            pageBuilder:
+                                                (
+                                                  context,
+                                                  animation,
+                                                  secondaryAnimation,
+                                                ) => _pages[i],
+                                            transitionsBuilder:
+                                                (
+                                                  context,
+                                                  animation,
+                                                  secondaryAnimation,
+                                                  child,
+                                                ) {
+                                                  // ✅ Slide up animation for push inside navigator
+                                                  const begin = Offset(
+                                                    0.0,
+                                                    0.04,
+                                                  );
+                                                  const end = Offset.zero;
+                                                  final tween =
+                                                      Tween(
+                                                        begin: begin,
+                                                        end: end,
+                                                      ).chain(
+                                                        CurveTween(
+                                                          curve: Curves
+                                                              .easeOutCubic,
+                                                        ),
+                                                      );
+
+                                                  return SlideTransition(
+                                                    position: animation.drive(
+                                                      tween,
+                                                    ),
+                                                    child: FadeTransition(
+                                                      opacity: CurvedAnimation(
+                                                        parent: animation,
+                                                        curve: Curves.easeOut,
+                                                      ),
+                                                      child: child,
+                                                    ),
+                                                  );
+                                                },
+                                          ),
+                                        );
+
+                                        return SizedBox(
+                                          key: ValueKey(i),
+                                          width: constraints.maxWidth,
+                                          height: constraints.maxHeight,
+                                          child: navigator,
+                                        );
+                                      }),
+                                    ),
                                   );
                                 },
                               ),
@@ -407,9 +504,8 @@ class _DashboardShellState extends State<DashboardShell>
                               top: 0,
                               right: 20,
                               child: MouseRegion(
-                                onEnter: (_) => setState(
-                                  () => _dropdownHovered = true,
-                                ),
+                                onEnter: (_) =>
+                                    setState(() => _dropdownHovered = true),
                                 onExit: (_) {
                                   setState(() => _dropdownHovered = false);
                                   _closeProfileIfNotHovered();
@@ -419,6 +515,8 @@ class _DashboardShellState extends State<DashboardShell>
                                     _profileMenuOpen = false;
                                     _dropdownHovered = false;
                                   }),
+                                  activeNavigatorKey:
+                                      _navigatorKeys[_activeIndex],
                                   userName: _isLoadingUser
                                       ? ''
                                       : user?["FullName"] ?? 'Unknown User',
@@ -594,29 +692,47 @@ class _Sidebar extends StatelessWidget {
                 ),
                 if (animValue > 0.4) ...[
                   const SizedBox(width: 8),
-                  Opacity(
-                    opacity: ((animValue - 0.4) / 0.6).clamp(0.0, 1.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          userName.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.iconColor(context),
+                  Expanded(
+                    child: Opacity(
+                      opacity: ((animValue - 0.4) / 0.6).clamp(0.0, 1.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userName.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.iconColor(context),
+                            ),
                           ),
-                        ),
-                        Text(
-                          'Administrator',
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: Color(0xFF9E9E9E),
+                          Text(
+                            'Administrator',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Color(0xFF9E9E9E),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        barrierColor: Colors.black26,
+                        barrierDismissible: false,
+                        builder: (_) => const _LogoutDialog(),
+                      );
+                    },
+                    icon: Icon(
+                      HugeIconsSolid.shutDown,
+                      color: AppTheme.iconColor(context),
+                      size: 15,
+                    ),
+                    tooltip: "Logout",
                   ),
                 ],
               ],
@@ -1130,7 +1246,9 @@ class _TopbarIcon extends StatelessWidget {
             width: 16,
             height: 16,
             decoration: BoxDecoration(
-              color: AppTheme.sliderHighlightBg(context),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppTheme.sliderHighlightBg(context)
+                  : AppTheme.iconColorThree(context),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -1154,7 +1272,43 @@ class _TopbarIcon extends StatelessWidget {
 class _ProfileDropdown extends StatelessWidget {
   final VoidCallback onClose;
   final String userName;
-  const _ProfileDropdown({required this.onClose, required this.userName});
+  final GlobalKey<NavigatorState> activeNavigatorKey;
+  const _ProfileDropdown({
+    required this.onClose,
+    required this.userName,
+    required this.activeNavigatorKey,
+  });
+
+  // void _navigateTo(Widget page) {
+  //   activeNavigatorKey.currentState?.push(
+  //     MaterialPageRoute(builder: (_) => page),
+  //   );
+  // }
+
+  void _navigateTo(Widget page) {
+    final nav = activeNavigatorKey.currentState;
+    if (nav == null) return;
+    nav.popUntil((route) => route.isFirst);
+    nav.push(
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (context, animation, secondaryAnimation) => page,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          final tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1183,50 +1337,54 @@ class _ProfileDropdown extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColor.primary_50.withOpacity(0.06),
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(14),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColor.primary_50.withOpacity(0.06),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(14),
+                      bottom: Radius.circular(14),
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [AppColor.primary_40, AppColor.primary_50],
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [AppColor.primary_40, AppColor.primary_50],
+                          ),
                         ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          initials.toUpperCase(),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 11,
+                        child: Center(
+                          child: Text(
+                            initials.toUpperCase(),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 11,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'HI! ${userName.toUpperCase()}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.iconColor(context),
-                          letterSpacing: 0.3,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'HI! ${userName.toUpperCase()}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.iconColor(context),
+                            letterSpacing: 0.3,
+                          ),
+                          maxLines: 2,
                         ),
-                        maxLines: 2,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: 8),
@@ -1236,7 +1394,12 @@ class _ProfileDropdown extends StatelessWidget {
                 icon: Icons.person_outline_rounded,
                 label: 'Profile',
                 color: AppTheme.iconColorTwo(context),
-                onTap: onClose,
+                onTap: () {
+                  onClose();
+                  _navigateTo(
+                    const AccountScreen(),
+                  ); // ✅ push to active navigator
+                },
               ),
               _DropdownItem(
                 icon: Icons.refresh_rounded,
@@ -1244,11 +1407,20 @@ class _ProfileDropdown extends StatelessWidget {
                 color: AppTheme.iconColorTwo(context),
                 onTap: onClose,
               ),
+              Divider(color: AppTheme.dividerBg(context)),
               _DropdownItem(
                 icon: Icons.logout_rounded,
                 label: 'Logout',
                 color: AppColor.accent_50,
-                onTap: onClose,
+                onTap: () {
+                  onClose();
+                  showDialog(
+                    context: context,
+                    barrierColor: Colors.black26,
+                    barrierDismissible: false,
+                    builder: (_) => const _LogoutDialog(),
+                  );
+                },
               ),
             ],
           ),
@@ -1527,7 +1699,7 @@ class _CalculatorDialogState extends State<_CalculatorDialog> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withOpacity(0.55),
                 blurRadius: 30,
                 offset: const Offset(0, 10),
               ),
@@ -1687,6 +1859,94 @@ class _CalcButtonState extends State<_CalcButton> {
               color: widget.textColor,
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Logout Dialog ─────────────────────────────────────────────────────────
+
+class _LogoutDialog extends StatefulWidget {
+  const _LogoutDialog();
+
+  @override
+  State<_LogoutDialog> createState() => _LogoutDialogState();
+}
+
+class _LogoutDialogState extends State<_LogoutDialog> {
+  Future<void> _logout() async {
+    await SessionManager.clearSession();
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => LoginScreen(),
+          transitionsBuilder: (_, a, __, c) =>
+              FadeTransition(opacity: a, child: c),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        width: MediaQuery.of(context).size.width >= 500 ? 400 : double.infinity,
+        decoration: BoxDecoration(
+          color: AppTheme.customListBg(context),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.55),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              child: Column(
+                spacing: 16,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    "Logout",
+                    textAlign: TextAlign.center,
+                    style: AppTheme.textLabel(context).copyWith(
+                      fontSize: 16,
+                      fontFamily: AppFontFamily.poppinsBold,
+                    ),
+                  ),
+                  const Divider(),
+                  Text(
+                    "Are you sure you want to logout?",
+                    textAlign: TextAlign.center,
+                    style: AppTheme.textLabel(context),
+                  ),
+                  OutlineErrorButton(
+                    text: "Yes, Logout",
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _logout();
+                    },
+                  ),
+                  FlatButton(
+                    text: "Cancel",
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
