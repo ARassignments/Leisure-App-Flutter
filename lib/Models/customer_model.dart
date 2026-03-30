@@ -13,6 +13,7 @@ class Customer {
   final String BankName;
   final String BankAccount;
   final String BankBranchCode;
+  final String UserImage;
 
   Customer({
     required this.UserId,
@@ -29,6 +30,7 @@ class Customer {
     required this.BankName,
     required this.BankAccount,
     required this.BankBranchCode,
+    required this.UserImage,
   });
 
   factory Customer.fromJson(Map<String, dynamic> json) {
@@ -47,6 +49,7 @@ class Customer {
       BankName: json['BankName'] ?? '',
       BankAccount: json['BankAccount'] ?? '',
       BankBranchCode: json['BankBranchCode'] ?? '',
+      UserImage: json['UserImage'] ?? '',
     );
   }
 }

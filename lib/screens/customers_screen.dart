@@ -247,11 +247,56 @@ class _CustomersScreenState extends State<CustomersScreen> {
                                     ),
                                   );
                                 },
-                                leading: Text(
-                                  (index + 1).toString().padLeft(2, '0'),
-                                  style: const TextStyle(
-                                    fontFamily: AppFontFamily.poppinsMedium,
-                                  ),
+                                leading: Row(
+                                  spacing: 8,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      (index + 1).toString().padLeft(2, '0'),
+                                      style: const TextStyle(
+                                        fontFamily: AppFontFamily.poppinsMedium,
+                                      ),
+                                    ),
+                                    CircleAvatar(
+                                      radius: 20,
+                                      backgroundColor: AppTheme.customListBg(
+                                        context,
+                                      ),
+                                      child: customer.UserImage != "N/A"
+                                          ? ClipOval(
+                                              child: Image.network(
+                                                customer.UserImage,
+                                                width: 40,
+                                                height: 40,
+                                                fit: BoxFit.cover,
+                                                errorBuilder:
+                                                    (
+                                                      context,
+                                                      error,
+                                                      stackTrace,
+                                                    ) {
+                                                      return _defaultAvatar(
+                                                        context,
+                                                      );
+                                                    },
+                                                loadingBuilder:
+                                                    (
+                                                      context,
+                                                      child,
+                                                      loadingProgress,
+                                                    ) {
+                                                      if (loadingProgress ==
+                                                          null)
+                                                        return child;
+                                                      return _defaultAvatar(
+                                                        context,
+                                                      );
+                                                    },
+                                              ),
+                                            )
+                                          : _defaultAvatar(context),
+                                    ),
+                                  ],
                                 ),
                                 title: Text(
                                   customer.UserName,
@@ -334,6 +379,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
       ],
     );
   }
+
+  Widget _defaultAvatar(BuildContext context) => Icon(
+    HugeIconsSolid.user03,
+    size: 20,
+    color: AppTheme.iconColorThree(context),
+  );
 
   @override
   Widget build(BuildContext context) {
