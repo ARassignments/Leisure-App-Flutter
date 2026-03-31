@@ -523,6 +523,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen>
                                                 final result =
                                                     await showModalBottomSheet(
                                                       context: context,
+                                                      useRootNavigator: true,
                                                       isDismissible: false,
                                                       enableDrag: false,
                                                       showDragHandle: true,

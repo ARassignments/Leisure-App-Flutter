@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:html' as html show document, Element;
 import 'package:hugeicons_pro/hugeicons.dart';
+import 'package:y2ksolutions/screens/payments_screen.dart';
 import '/screens/desktop/payments_screen.dart';
 import '/screens/account_screen.dart';
 import '/screens/login_screen.dart';
@@ -31,6 +32,7 @@ class _DashboardShellState extends State<DashboardShell>
   late final List<NavItem> _navItems;
   final HomeScreen homeScreen = const HomeScreen();
   final PaymentsTableScreen paymentScreen = const PaymentsTableScreen();
+  // final PaymentsScreen paymentScreen = const PaymentsScreen();
   final ScrapsScreen scrapScreen = const ScrapsScreen();
   final CustomersScreen customerScreen = const CustomersScreen();
   bool _sidebarOpen = true;
@@ -1699,7 +1701,7 @@ class _CalculatorDialogState extends State<_CalculatorDialog> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.55),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 30,
                 offset: const Offset(0, 10),
               ),
@@ -1901,7 +1903,7 @@ class _LogoutDialogState extends State<_LogoutDialog> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.55),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 30,
               offset: const Offset(0, 10),
             ),

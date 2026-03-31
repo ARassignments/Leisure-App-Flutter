@@ -109,8 +109,7 @@ class _EditPaymentBottomSheetState
           // Payment Mode dropdown
           selectedPaymentMode = paymentModes.firstWhere(
             (mode) =>
-                mode.name.toLowerCase() ==
-                (payment.PaymentMode).toLowerCase(),
+                mode.name.toLowerCase() == (payment.PaymentMode).toLowerCase(),
             orElse: () => paymentModes.first,
           );
 
@@ -175,7 +174,8 @@ class _EditPaymentBottomSheetState
             message: 'Payment Edit Successfully',
             type: AppSnackBarType.success,
           );
-          Navigator.pop(context, true);
+          Navigator.of(context, rootNavigator: true).pop(true);
+          // Navigator.pop(context, true);
         }
       } else {
         AppSnackBar.show(
@@ -489,7 +489,9 @@ class _EditPaymentBottomSheetState
                   dropdownStyleData: DropdownStyleData(
                     maxHeight: 205,
                     elevation: 0,
-                    width: MediaQuery.of(context).size.width - 40,
+                    width: MediaQuery.of(context).size.width >= 500
+                        ? 400 - 40
+                        : MediaQuery.of(context).size.width - 40,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       color: Theme.of(context).brightness == Brightness.dark
@@ -649,7 +651,9 @@ class _EditPaymentBottomSheetState
                   dropdownStyleData: DropdownStyleData(
                     maxHeight: 205,
                     elevation: 0,
-                    width: MediaQuery.of(context).size.width - 40,
+                    width: MediaQuery.of(context).size.width >= 500
+                        ? 400 - 40
+                        : MediaQuery.of(context).size.width - 40,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       color: Theme.of(context).brightness == Brightness.dark
@@ -733,7 +737,8 @@ class _EditPaymentBottomSheetState
               ),
 
               OutlinedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () =>
+                    Navigator.of(context, rootNavigator: true).pop(),
                 child: Text("Cancel"),
               ),
             ],

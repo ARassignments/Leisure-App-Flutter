@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
-import 'package:y2ksolutions/Models/payment_dropdown_model.dart';
-import 'package:y2ksolutions/components/not_found.dart';
-import 'package:y2ksolutions/providers/payment_type_provider.dart';
-import 'package:y2ksolutions/screens/manage_payments/add_payment.dart';
-import 'package:y2ksolutions/theme/theme.dart';
+import 'package:y2ksolutions/components/appsnackbar.dart';
+import 'package:y2ksolutions/screens/manage_payments/edit_payment.dart';
+import '/Models/payment_dropdown_model.dart';
+import '/components/not_found.dart';
+import '/providers/payment_type_provider.dart';
+import '/screens/manage_payments/add_payment.dart';
+import '/theme/theme.dart';
 import '/Models/customer_single_model.dart';
 import '/Models/payment_model.dart';
 import '/services/api_service.dart';
@@ -90,6 +92,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
       setState(() {
         _allPayments = response.payments;
         _filteredPayments = List.from(_allPayments);
+        // _applyFilter();
       });
     } catch (e) {
       debugPrint("❌ Error fetching payments: $e");
@@ -110,7 +113,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
   void _applyFilter() {
     final q = _searchController.text.toLowerCase();
     setState(() {
-      _filteredPayments = _allPayments.where((p) {
+      final newFiltered = _allPayments.where((p) {
         final matchSearch =
             q.isEmpty ||
             p.UserName.toLowerCase().contains(q) ||
@@ -124,13 +127,38 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
             _filterPaymentMode == null || p.PaymentMode == _filterPaymentMode;
         return matchSearch && matchDate && matchType && matchMode;
       }).toList();
-      _sortData();
-      _page = 0;
+
+      setState(() {
+        _filteredPayments = newFiltered;
+        if (_filterPaymentType != null &&
+            !_filteredPayments.any(
+              (p) => p.PaymentType == _filterPaymentType,
+            )) {
+          _filterPaymentType = null;
+        }
+        if (_filterPaymentMode != null &&
+            !_filteredPayments.any(
+              (p) => p.PaymentMode == _filterPaymentMode,
+            )) {
+          _filterPaymentMode = null;
+        }
+        _sortData();
+        final maxPage = _totalPages > 0 ? _totalPages - 1 : 0;
+        if (_page > maxPage) {
+          _page = maxPage;
+        }
+      });
     });
   }
 
   void _resetFilters() {
     _searchController.clear();
+    _filterPaymentType = null;
+    _filterPaymentMode = null;
+    _page = 0;
+    _checkedIds.clear();
+    _sortCol = 'id';
+    _sortAsc = false;
     _filteredPayments = List.from(_allPayments);
   }
 
@@ -182,35 +210,135 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
     _applyFilter();
   }
 
+  Widget _confirmDeleteModal(BuildContext context, String name) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        width: MediaQuery.of(context).size.width >= 500 ? 400 : double.infinity,
+        decoration: BoxDecoration(
+          color: AppTheme.customListBg(context),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              child: Column(
+                spacing: 16,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    "Confirm Delete",
+                    textAlign: TextAlign.center,
+                    style: AppTheme.textLabel(context).copyWith(
+                      fontSize: 16,
+                      fontFamily: AppFontFamily.poppinsBold,
+                    ),
+                  ),
+                  const Divider(),
+                  Text(
+                    "Are you sure you want to delete '$name' payment?",
+                    textAlign: TextAlign.center,
+                    style: AppTheme.textLabel(context),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.accent_50,
+                    ),
+                    onPressed: () =>
+                        Navigator.of(context, rootNavigator: true) // ✅
+                            .pop(true),
+                    child: const Text(
+                      "Yes, Remove",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  OutlinedButton(
+                    onPressed: () =>
+                        Navigator.of(context, rootNavigator: true) // ✅
+                            .pop(false),
+                    child: const Text("Cancel"),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> deletePaymentById(int paymentId) async {
+    try {
+      final response = await ApiService.deletePaymentById(paymentId);
+
+      if (response["Success"] == true) {
+        // Navigate to home
+        if (mounted) {
+          AppSnackBar.show(
+            context,
+            message: 'Payment Deleted Successfully',
+            type: AppSnackBarType.success,
+          );
+          _refreshPayments();
+        }
+      } else {
+        AppSnackBar.show(
+          context,
+          message: response["msg"] ?? "Payment failed",
+          type: AppSnackBarType.error,
+        );
+      }
+    } catch (e) {
+      print("Delete payment error: $e");
+      AppSnackBar.show(
+        context,
+        message: "Failed to delete payment",
+        type: AppSnackBarType.error,
+      );
+    }
+  }
+
   String _fmtAmount(double v) => NumberFormat('#,##0.00').format(v);
   String _fmtDate(DateTime d) => DateFormat('MMM dd, yyyy').format(d);
 
   double get totalPaid => _filteredPayments
-      .where((p) => p.PaymentMode.toString().toLowerCase().contains("recived"))
+      .where((p) => !p.PaymentMode.toString().toLowerCase().contains("recived"))
       .fold(0.0, (sum, p) => sum + p.Payment);
 
   double get totalReceived => _filteredPayments
-      .where((p) => !p.PaymentMode.toString().toLowerCase().contains("recived"))
+      .where((p) => p.PaymentMode.toString().toLowerCase().contains("recived"))
       .fold(0.0, (sum, p) => sum + p.Payment);
 
   List<PaymentModel> get _pageData {
     // ✅ null = show all entries
+    if (_filteredPayments.isEmpty) return [];
     if (_rowsPerPage == null) return _filteredPayments;
-    final start = _page * _rowsPerPage!;
+    final start = (_page * _rowsPerPage!).clamp(
+      0,
+      _filteredPayments.length - 1,
+    );
     final end = (start + _rowsPerPage!).clamp(0, _filteredPayments.length);
     return _filteredPayments.sublist(start, end);
   }
 
   int get _totalPages {
+    if (_filteredPayments.isEmpty) return 1;
     if (_rowsPerPage == null) return 1;
     return (_filteredPayments.length / _rowsPerPage!).ceil();
   }
 
-  List<String> get _paymentTypes {
-    final types = _filteredPayments.map((p) => p.PaymentType).toSet().toList();
-    types.sort();
-    return types;
-  }
+  List<String> get _paymentTypes =>
+      _filteredPayments.map((p) => p.PaymentType).toSet().toList()..sort();
 
   List<String> get _paymentModes =>
       _filteredPayments.map((p) => p.PaymentMode).toSet().toList()..sort();
@@ -617,13 +745,17 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
               sortCol: _sortCol,
               sortAsc: _sortAsc,
               onSort: _onSort,
-              selected: _filterPaymentType,
-              items: _paymentTypes,
+              selected:
+                  _allPayments
+                      .map((p) => p.PaymentType)
+                      .contains(_filterPaymentType)
+                  ? _filterPaymentType
+                  : null,
+              items: _allPayments.map((p) => p.PaymentType).toSet().toList()
+                ..sort(),
+              allItems: _allPayments.map((p) => p.PaymentType).toList(),
               onFilterChanged: (val) {
-                setState(() {
-                  _filterPaymentType = val;
-                  _page = 0;
-                });
+                setState(() => _filterPaymentType = val);
                 _applyFilter();
               },
             ),
@@ -639,13 +771,17 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
               sortCol: _sortCol,
               sortAsc: _sortAsc,
               onSort: _onSort,
-              selected: _filterPaymentMode,
-              items: _paymentModes,
+              selected:
+                  _allPayments
+                      .map((p) => p.PaymentMode)
+                      .contains(_filterPaymentMode)
+                  ? _filterPaymentMode
+                  : null,
+              items: _allPayments.map((p) => p.PaymentMode).toSet().toList()
+                ..sort(),
+              allItems: _allPayments.map((p) => p.PaymentMode).toList(),
               onFilterChanged: (val) {
-                setState(() {
-                  _filterPaymentMode = val;
-                  _page = 0;
-                });
+                setState(() => _filterPaymentMode = val);
                 _applyFilter();
               },
             ),
@@ -839,7 +975,10 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
                           p.PaymentType,
                           style: TextStyle(
                             fontSize: 11,
-                            color: AppTheme.iconColorThree(context),
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppTheme.iconColorThree(context)
+                                : AppTheme.iconColor(context),
                             fontWeight: FontWeight.w500,
                           ),
                           maxLines: 1,
@@ -930,13 +1069,69 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
                         _ActionBtn(
                           icon: HugeIconsSolid.edit01,
                           color: Colors.blue,
-                          onTap: () {},
+                          onTap: () async {
+                            final result = await showDialog(
+                              context: context,
+                              useRootNavigator: true,
+                              barrierColor: Colors.black26,
+                              barrierDismissible: false,
+                              builder: (context) => Dialog(
+                                backgroundColor: Colors.transparent,
+                                elevation: 0,
+                                child: Container(
+                                  padding: EdgeInsets.only(top: 20),
+                                  width:
+                                      MediaQuery.of(context).size.width >= 500
+                                      ? 400
+                                      : double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.screenBg(context),
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 30,
+                                        offset: const Offset(0, 10),
+                                      ),
+                                    ],
+                                  ),
+                                  child: EditPaymentBottomSheet(
+                                    paymentId: p.Id,
+                                  ),
+                                ),
+                              ),
+                            );
+
+                            if (result == true) {
+                              // AppSnackBar.showAwesomeSnackbar(
+                              //   context,
+                              //   title: "Success",
+                              //   message: "Payment Edit Successfully",
+                              //   type: AppSnackBarType.success,
+                              // );
+                              _refreshPayments();
+                            }
+                          },
                         ),
                         const SizedBox(width: 4),
                         _ActionBtn(
                           icon: HugeIconsSolid.delete01,
                           color: const Color(0xFFE53935),
-                          onTap: () {},
+                          onTap: () async {
+                            final bool? confirmDelete = await showDialog<bool>(
+                              context: context,
+                              useRootNavigator: true,
+                              barrierColor: Colors.black26,
+                              barrierDismissible: false,
+                              builder: (_) => _confirmDeleteModal(
+                                context,
+                                "Id#${p.Id} ${p.UserName} (${p.PaymentMode})",
+                              ),
+                            );
+                            if (confirmDelete == true) {
+                              deletePaymentById(p.Id);
+                            }
+                          },
                         ),
                       ],
                     )
@@ -1397,7 +1592,7 @@ class _ActionBtn extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) => InkWell(
     onTap: onTap,
     child: Container(
       width: 26,
@@ -1464,6 +1659,7 @@ class _SortFilterHeader extends StatelessWidget {
   final ValueChanged<String> onSort;
   final String? selected;
   final List<String> items;
+  final List<String> allItems;
   final ValueChanged<String?> onFilterChanged;
 
   const _SortFilterHeader({
@@ -1474,15 +1670,19 @@ class _SortFilterHeader extends StatelessWidget {
     required this.onSort,
     required this.selected,
     required this.items,
+    required this.allItems,
     required this.onFilterChanged,
   });
 
   bool get _isSortActive => sortCol == col;
-  bool get _isFilterActive => selected != null;
+  // bool get _isFilterActive => selected != null;
 
   @override
   Widget build(BuildContext context) {
-    final isActive = selected != null;
+    final safeSelected = (selected != null && items.contains(selected))
+        ? selected
+        : null;
+    final isActive = safeSelected != null;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1524,129 +1724,166 @@ class _SortFilterHeader extends StatelessWidget {
         const SizedBox(width: 4),
 
         // ✅ Filter dropdown
-        Expanded(
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton2<String?>(
-              value: selected,
-              isDense: true,
-              selectedItemBuilder: (_) => [
-                // null selected — show default label (hidden, icon only)
-                const SizedBox.shrink(),
-                // each item selected
-                ...items.map((_) => const SizedBox.shrink()),
-              ],
-              iconStyleData: IconStyleData(
-                icon: Icon(
-                  isActive
-                      ? Icons.filter_alt_rounded
-                      : HugeIconsStroke.arrowDown01,
-                  color: isActive
-                      ? Theme.of(context).brightness == Brightness.dark
-                            ? AppTheme.iconColor(context)
-                            : kPrimary
-                      : Theme.of(context).brightness == Brightness.dark
-                      ? AppTheme.iconColorThree(context)
-                      : AppColor.neutral_40,
-                ),
-                iconSize: 14,
-                openMenuIcon: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? kPrimary.withOpacity(0.10)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Icon(
+        if (items.length > 1)
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton2<String?>(
+                value: safeSelected,
+                isDense: true,
+                selectedItemBuilder: (_) => [
+                  // null selected — show default label (hidden, icon only)
+                  const SizedBox.shrink(),
+                  // each item selected
+                  ...items.map((_) => const SizedBox.shrink()),
+                ],
+                iconStyleData: IconStyleData(
+                  icon: Icon(
                     isActive
                         ? Icons.filter_alt_rounded
                         : HugeIconsStroke.arrowDown01,
-                    size: 14,
-                    color: isActive ? kPrimary : kMuted,
+                    color: isActive
+                        ? Theme.of(context).brightness == Brightness.dark
+                              ? AppTheme.iconColorThree(context)
+                              : kPrimary
+                        : Theme.of(context).brightness == Brightness.dark
+                        ? AppTheme.iconColorThree(context)
+                        : AppColor.neutral_40,
+                  ),
+                  iconSize: 14,
+                  openMenuIcon: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? Theme.of(context).brightness == Brightness.dark
+                                ? AppTheme.iconColor(context).withOpacity(0.10)
+                                : kPrimary.withOpacity(0.10)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Icon(
+                      isActive
+                          ? Icons.filter_alt_rounded
+                          : HugeIconsStroke.arrowDown01,
+                      size: 14,
+                      color: isActive
+                          ? Theme.of(context).brightness == Brightness.dark
+                                ? AppTheme.iconColorThree(context)
+                                : kPrimary
+                          : kMuted,
+                    ),
                   ),
                 ),
-              ),
-              dropdownStyleData: DropdownStyleData(
-                padding: EdgeInsets.all(0),
-                width: 200,
-                elevation: 0,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColor.neutral_90
-                      : AppColor.neutral_5,
-                ),
-              ),
-              items: [
-                // ✅ All option
-                DropdownMenuItem<String?>(
-                  value: null,
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.clear_all_rounded,
-                        size: 14,
-                        color: _isFilterActive ? kPrimary : kMuted,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'All',
-                        style: TextStyle(fontSize: 12, color: kMuted),
-                      ),
-                    ],
+                dropdownStyleData: DropdownStyleData(
+                  padding: EdgeInsets.all(0),
+                  width: 200,
+                  elevation: 0,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColor.neutral_90
+                        : AppColor.neutral_5,
                   ),
                 ),
-                // ✅ Each item
-                ...items.map((t) {
-                  final isSelected = t == selected;
-                  return DropdownMenuItem<String?>(
-                    value: t,
+                items: [
+                  // ✅ All option
+                  DropdownMenuItem<String?>(
+                    value: null,
                     child: Row(
                       children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? (t == 'Recived' ? kReceived : kPaid)
-                                : kMuted.withOpacity(0.3),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
+                        Icon(Icons.clear_all_rounded, size: 14, color: kMuted),
                         const SizedBox(width: 8),
-                        Text(
-                          t,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: isSelected
-                                ? (t == 'Recived' ? kReceived : kPaid)
-                                : AppTheme.iconColorThree(context),
-                          ),
+                        const Text(
+                          'All',
+                          style: TextStyle(fontSize: 12, color: kMuted),
                         ),
-                        if (isSelected) ...[
-                          const SizedBox(width: 6),
-                          Icon(
-                            Icons.check_rounded,
-                            size: 12,
-                            color: t == 'Recived' ? kReceived : kPaid,
-                          ),
-                        ],
                       ],
                     ),
-                  );
-                }),
-              ],
-              onChanged: onFilterChanged,
+                  ),
+                  // ✅ Each item
+                  ...items.map((t) {
+                    final isSelected = safeSelected == t;
+                    final count = allItems.where((x) => x == t).length;
+                    return DropdownMenuItem<String?>(
+                      value: t,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? (t == 'Recived' ? kReceived : kPaid)
+                                  : kMuted.withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            t,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: isSelected
+                                  ? (t == 'Recived' ? kReceived : kPaid)
+                                  : AppTheme.iconColorThree(context),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? (t == 'Recived' ? kReceived : kPaid)
+                                        .withOpacity(0.10)
+                                  : kMuted.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              count.toString().padLeft(2, '0'),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected
+                                    ? (t == 'Recived' ? kReceived : kPaid)
+                                    : kMuted,
+                              ),
+                            ),
+                          ),
+                          if (isSelected) ...[
+                            const SizedBox(width: 6),
+                            Icon(
+                              Icons.check_rounded,
+                              size: 12,
+                              color: t == 'Recived' ? kReceived : kPaid,
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+                onChanged: (val) {
+                  onFilterChanged(val == safeSelected ? null : val);
+                },
+              ),
             ),
+          )
+        else
+          // ✅ Single unique value — show plain icon, no dropdown
+          Icon(
+            HugeIconsStroke.arrowDown01,
+            size: 14,
+            color: AppTheme.iconColorTwo(context).withOpacity(0.3),
           ),
-        ),
       ],
     );
   }

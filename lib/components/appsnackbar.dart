@@ -1,3 +1,4 @@
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import '/theme/theme.dart';
@@ -29,6 +30,48 @@ class AppSnackBar {
     );
 
     overlay.insert(entry);
+  }
+
+  static void showAwesomeSnackbar(
+    BuildContext context, {
+    required String title,
+    required String message,
+    AppSnackBarType type = AppSnackBarType.info,
+  }) {
+    final contentType = _toContentType(type);
+    final capitalizedMessage = message
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join(' ');
+    final snackBar = SnackBar(
+      elevation: 0,
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: Colors.transparent,
+      duration: const Duration(seconds: 4),
+      content: AwesomeSnackbarContent(
+        title: title,
+        message: capitalizedMessage,
+        contentType: contentType,
+        inMaterialBanner: false,
+      ),
+    );
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(snackBar);
+  }
+
+  static ContentType _toContentType(AppSnackBarType type) {
+    switch (type) {
+      case AppSnackBarType.success:
+        return ContentType.success;
+      case AppSnackBarType.error:
+        return ContentType.failure;
+      case AppSnackBarType.warning:
+        return ContentType.warning;
+      case AppSnackBarType.info:
+        return ContentType.help;
+    }
   }
 }
 
