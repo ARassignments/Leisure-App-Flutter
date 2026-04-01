@@ -71,6 +71,8 @@ class _AccountScreenState extends State<AccountScreen>
     return number;
   }
 
+  Widget _defaultAvatar(BuildContext context) => Image.asset("assets/images/avatars/boy_14.png");
+
   Widget _accountsPage() {
     return SafeArea(
       child: SingleChildScrollView(
@@ -99,6 +101,15 @@ class _AccountScreenState extends State<AccountScreen>
                               : Image.network(
                                   '${ApiService.getImagebaseUrl}${user!["UserImage"]}',
                                   fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _defaultAvatar(context);
+                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null)
+                                          return child;
+                                        return _defaultAvatar(context);
+                                      },
                                 ),
                         ),
                       ),
