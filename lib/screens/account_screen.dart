@@ -91,8 +91,11 @@ class _AccountScreenState extends State<AccountScreen>
                           backgroundColor: AppTheme.customListBg(context),
                           foregroundImage: avatar != null
                               ? AssetImage(avatar)
-                              : const AssetImage(
-                                  "assets/images/avatars/boy_14.png",
+                              // : const AssetImage(
+                              //     "assets/images/avatars/boy_14.png",
+                              //   )
+                              : NetworkImage(
+                                  user!["UserImage"],
                                 ),
                           child: avatar != null
                               ? Icon(

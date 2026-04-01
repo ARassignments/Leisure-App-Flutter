@@ -17,7 +17,8 @@ class AddPaymentBottomSheet extends ConsumerStatefulWidget {
   const AddPaymentBottomSheet({super.key});
 
   @override
-  ConsumerState<AddPaymentBottomSheet> createState() => _AddPaymentBottomSheetState();
+  ConsumerState<AddPaymentBottomSheet> createState() =>
+      _AddPaymentBottomSheetState();
 }
 
 class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
@@ -91,7 +92,7 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
             message: 'Payment Added Successfully',
             type: AppSnackBarType.success,
           );
-          Navigator.pop(context, true);
+          Navigator.of(context, rootNavigator: true).pop(true);
         }
       } else {
         AppSnackBar.show(
@@ -181,8 +182,7 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
                           child: IconButton(
                             icon: Icon(HugeIconsStroke.cancel02),
                             onPressed: () {
-                              _paymentDateController
-                                  .clear();
+                              _paymentDateController.clear();
                             },
                           ),
                         )
@@ -197,7 +197,9 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
                   );
 
                   if (pickedDate != null) {
-                    String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
+                    String formattedDate = DateFormat(
+                      'yyyy-MM-dd',
+                    ).format(pickedDate);
                     setState(() {
                       _paymentDateController.text = formattedDate;
                     });
@@ -402,7 +404,9 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
                   dropdownStyleData: DropdownStyleData(
                     maxHeight: 205,
                     elevation: 0,
-                    width: MediaQuery.of(context).size.width - 40,
+                    width: MediaQuery.of(context).size.width >= 500
+                        ? 400 - 40
+                        : MediaQuery.of(context).size.width - 40,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       color: Theme.of(context).brightness == Brightness.dark
@@ -562,7 +566,9 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
                   dropdownStyleData: DropdownStyleData(
                     maxHeight: 205,
                     elevation: 0,
-                    width: MediaQuery.of(context).size.width - 40,
+                    width: MediaQuery.of(context).size.width >= 500
+                        ? 400 - 40
+                        : MediaQuery.of(context).size.width - 40,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       color: Theme.of(context).brightness == Brightness.dark
@@ -646,7 +652,8 @@ class _AddPaymentBottomSheetState extends ConsumerState<AddPaymentBottomSheet> {
               ),
 
               OutlinedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () =>
+                    Navigator.of(context, rootNavigator: true).pop(),
                 child: Text("Cancel"),
               ),
             ],

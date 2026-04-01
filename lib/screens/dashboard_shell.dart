@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:html' as html show document, Element;
 import 'package:hugeicons_pro/hugeicons.dart';
-import 'package:y2ksolutions/screens/payments_screen.dart';
+import '/components/dialog_bounce.global.dart';
+import '/screens/payments_screen.dart';
 import '/screens/desktop/payments_screen.dart';
 import '/screens/account_screen.dart';
 import '/screens/login_screen.dart';
@@ -126,7 +127,7 @@ class _DashboardShellState extends State<DashboardShell>
         label: 'Customers',
         icon: Icons.people_outline,
         route: '/users',
-        page: customerScreen,
+        // page: customerScreen,
       ),
       NavItem(
         label: 'Product',
@@ -722,11 +723,9 @@ class _Sidebar extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () {
-                      showDialog(
+                      BounceDialog.showBounceDialog<bool>(
                         context: context,
-                        barrierColor: Colors.black26,
-                        barrierDismissible: false,
-                        builder: (_) => const _LogoutDialog(),
+                        child: const _LogoutDialog(),
                       );
                     },
                     icon: Icon(
@@ -1211,10 +1210,9 @@ class _TopbarState extends State<_Topbar> {
   }
 
   void _showCalculator(BuildContext context) {
-    showDialog(
+    BounceDialog.showBounceDialog<bool>(
       context: context,
-      barrierColor: Colors.black26,
-      builder: (_) => const _CalculatorDialog(),
+      child: const _CalculatorDialog(),
     );
   }
 }
@@ -1416,11 +1414,9 @@ class _ProfileDropdown extends StatelessWidget {
                 color: AppColor.accent_50,
                 onTap: () {
                   onClose();
-                  showDialog(
+                  BounceDialog.showBounceDialog<bool>(
                     context: context,
-                    barrierColor: Colors.black26,
-                    barrierDismissible: false,
-                    builder: (_) => const _LogoutDialog(),
+                    child: const _LogoutDialog(),
                   );
                 },
               ),
@@ -1697,7 +1693,7 @@ class _CalculatorDialogState extends State<_CalculatorDialog> {
               ? 300
               : double.infinity,
           decoration: BoxDecoration(
-            color: AppTheme.customListBg(context),
+            color: AppTheme.screenBg(context),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -1779,7 +1775,12 @@ class _CalculatorDialogState extends State<_CalculatorDialog> {
 
               // Buttons
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.only(
+                  top: 12,
+                  left: 12,
+                  right: 12,
+                  bottom: 4,
+                ),
                 child: Column(
                   children: buttons.map((row) {
                     return Padding(
@@ -1899,7 +1900,7 @@ class _LogoutDialogState extends State<_LogoutDialog> {
       child: Container(
         width: MediaQuery.of(context).size.width >= 500 ? 400 : double.infinity,
         decoration: BoxDecoration(
-          color: AppTheme.customListBg(context),
+          color: AppTheme.screenBg(context),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(

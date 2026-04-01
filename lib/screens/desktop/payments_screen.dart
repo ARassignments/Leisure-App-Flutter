@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
-import 'package:y2ksolutions/components/appsnackbar.dart';
-import 'package:y2ksolutions/screens/manage_payments/edit_payment.dart';
+import '/components/appsnackbar.dart';
+import '/components/dialog_bounce.global.dart';
+import '/screens/manage_payments/edit_payment.dart';
 import '/Models/payment_dropdown_model.dart';
 import '/components/not_found.dart';
 import '/providers/payment_type_provider.dart';
@@ -217,7 +218,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
       child: Container(
         width: MediaQuery.of(context).size.width >= 500 ? 400 : double.infinity,
         decoration: BoxDecoration(
-          color: AppTheme.customListBg(context),
+          color: AppTheme.screenBg(context),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -535,7 +536,38 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
 
       // Add Payment
       InkWell(
-        onTap: () {},
+        onTap: () async {
+          final result = await BounceDialog.showBounceDialog<bool>(
+            context: context,
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              child: Container(
+                padding: EdgeInsets.only(top: 20),
+                width: MediaQuery.of(context).size.width >= 500
+                    ? 400
+                    : double.infinity,
+                decoration: BoxDecoration(
+                  color: AppTheme.screenBg(context),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: const AddPaymentBottomSheet(),
+              ),
+            ),
+          );
+
+          if (result == true) {
+            _searchController.clear();
+            _loadPayments(isResetAll: true);
+          }
+        },
         child: Container(
           height: 46,
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1070,45 +1102,40 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
                           icon: HugeIconsSolid.edit01,
                           color: Colors.blue,
                           onTap: () async {
-                            final result = await showDialog(
-                              context: context,
-                              useRootNavigator: true,
-                              barrierColor: Colors.black26,
-                              barrierDismissible: false,
-                              builder: (context) => Dialog(
-                                backgroundColor: Colors.transparent,
-                                elevation: 0,
-                                child: Container(
-                                  padding: EdgeInsets.only(top: 20),
-                                  width:
-                                      MediaQuery.of(context).size.width >= 500
-                                      ? 400
-                                      : double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.screenBg(context),
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
-                                        blurRadius: 30,
-                                        offset: const Offset(0, 10),
+                            final result =
+                                await BounceDialog.showBounceDialog<bool>(
+                                  context: context,
+                                  child: Dialog(
+                                    backgroundColor: Colors.transparent,
+                                    elevation: 0,
+                                    child: Container(
+                                      padding: EdgeInsets.only(top: 20),
+                                      width:
+                                          MediaQuery.of(context).size.width >=
+                                              500
+                                          ? 400
+                                          : double.infinity,
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.screenBg(context),
+                                        borderRadius: BorderRadius.circular(20),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(
+                                              0.05,
+                                            ),
+                                            blurRadius: 30,
+                                            offset: const Offset(0, 10),
+                                          ),
+                                        ],
                                       ),
-                                    ],
+                                      child: EditPaymentBottomSheet(
+                                        paymentId: p.Id,
+                                      ),
+                                    ),
                                   ),
-                                  child: EditPaymentBottomSheet(
-                                    paymentId: p.Id,
-                                  ),
-                                ),
-                              ),
-                            );
+                                );
 
                             if (result == true) {
-                              // AppSnackBar.showAwesomeSnackbar(
-                              //   context,
-                              //   title: "Success",
-                              //   message: "Payment Edit Successfully",
-                              //   type: AppSnackBarType.success,
-                              // );
                               _refreshPayments();
                             }
                           },
@@ -1118,12 +1145,9 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
                           icon: HugeIconsSolid.delete01,
                           color: const Color(0xFFE53935),
                           onTap: () async {
-                            final bool? confirmDelete = await showDialog<bool>(
+                            final bool? confirmDelete = await BounceDialog.showBounceDialog<bool>(
                               context: context,
-                              useRootNavigator: true,
-                              barrierColor: Colors.black26,
-                              barrierDismissible: false,
-                              builder: (_) => _confirmDeleteModal(
+                              child: _confirmDeleteModal(
                                 context,
                                 "Id#${p.Id} ${p.UserName} (${p.PaymentMode})",
                               ),
