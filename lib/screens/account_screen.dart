@@ -71,7 +71,8 @@ class _AccountScreenState extends State<AccountScreen>
     return number;
   }
 
-  Widget _defaultAvatar(BuildContext context) => Image.asset("assets/images/avatars/boy_14.png");
+  Widget _defaultAvatar(BuildContext context) =>
+      Image.asset("assets/images/avatars/boy_14.png");
 
   Widget _accountsPage() {
     return SafeArea(

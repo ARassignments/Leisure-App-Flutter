@@ -1110,6 +1110,9 @@ class _Topbar extends StatefulWidget {
 
 class _TopbarState extends State<_Topbar> {
   bool _avatarHovered = false;
+  Widget _defaultAvatar(BuildContext context) =>
+      Image.asset("assets/images/avatars/boy_14.png");
+
   @override
   Widget build(BuildContext context) {
     final initials = widget.userName.trim().isNotEmpty
@@ -1233,6 +1236,13 @@ class _TopbarState extends State<_Topbar> {
                         child: Image.network(
                           widget.userImage,
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return _defaultAvatar(context);
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return _defaultAvatar(context);
+                          },
                         ),
                       ),
                     ),
@@ -1346,6 +1356,9 @@ class _ProfileDropdown extends StatelessWidget {
     );
   }
 
+  Widget _defaultAvatar(BuildContext context) =>
+      Image.asset("assets/images/avatars/boy_14.png");
+
   @override
   Widget build(BuildContext context) {
     final initials = userName.trim().isNotEmpty
@@ -1421,6 +1434,15 @@ class _ProfileDropdown extends StatelessWidget {
                                 child: Image.network(
                                   userImage,
                                   fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _defaultAvatar(context);
+                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null)
+                                          return child;
+                                        return _defaultAvatar(context);
+                                      },
                                 ),
                               ),
                             ),
