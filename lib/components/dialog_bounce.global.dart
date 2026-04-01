@@ -27,7 +27,7 @@ class _BounceDialogState extends State<BounceDialog>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1000),
+    duration: const Duration(milliseconds: 500),
   );
 
   late final Animation<double> _scale = TweenSequence<double>([

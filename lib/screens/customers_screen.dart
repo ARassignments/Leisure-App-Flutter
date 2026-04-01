@@ -265,7 +265,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
                                       child: customer.UserImage != "N/A"
                                           ? ClipOval(
                                               child: Image.network(
-                                                customer.UserImage,
+                                                customer.UserImage != "N/A"?
+                                                "${ApiService.liveUrl}${customer.UserImage}":"",
                                                 width: 40,
                                                 height: 40,
                                                 fit: BoxFit.cover,

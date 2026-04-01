@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:html' as html show document, Element;
 import 'package:hugeicons_pro/hugeicons.dart';
+import 'package:y2ksolutions/services/api_service.dart';
 import '/components/dialog_bounce.global.dart';
 import '/screens/payments_screen.dart';
 import '/screens/desktop/payments_screen.dart';
@@ -127,7 +128,7 @@ class _DashboardShellState extends State<DashboardShell>
         label: 'Customers',
         icon: Icons.people_outline,
         route: '/users',
-        // page: customerScreen,
+        page: customerScreen,
       ),
       NavItem(
         label: 'Product',
@@ -365,6 +366,9 @@ class _DashboardShellState extends State<DashboardShell>
                       userName: _isLoadingUser
                           ? ''
                           : user?["FullName"] ?? 'Unknown User',
+                      userImage: user!["UserImage"] != 'N/A'
+                          ? '${ApiService.getImagebaseUrl}${user!["UserImage"]}'
+                          : '',
                     ),
 
                     // Page content
@@ -493,11 +497,23 @@ class _DashboardShellState extends State<DashboardShell>
                                 horizontal: 20,
                                 vertical: 20,
                               ),
-                              child: Text(
-                                "Y2k Solutions © 2026 all right reserved.",
-                                style: AppTheme.textLink(
-                                  context,
-                                ).copyWith(fontSize: 14),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "2026 © Y2k Solutions. All Right Reserved",
+                                    style: AppTheme.textLink(
+                                      context,
+                                    ).copyWith(fontSize: 14),
+                                  ),
+                                  Text(
+                                    "Designed & Developed by AR Assignments",
+                                    style: AppTheme.textLink(
+                                      context,
+                                    ).copyWith(fontSize: 14),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -523,6 +539,9 @@ class _DashboardShellState extends State<DashboardShell>
                                   userName: _isLoadingUser
                                       ? ''
                                       : user?["FullName"] ?? 'Unknown User',
+                                  userImage: user!["UserImage"] != 'N/A'
+                                      ? '${ApiService.getImagebaseUrl}${user!["UserImage"]}'
+                                      : '',
                                 ),
                               ),
                             ),
@@ -1068,6 +1087,7 @@ class _Topbar extends StatefulWidget {
   final VoidCallback onProfileTap;
   final VoidCallback onProfileClose;
   final String userName;
+  final String userImage;
   final bool isFullscreen;
   final VoidCallback onToggleFullscreen;
 
@@ -1079,6 +1099,7 @@ class _Topbar extends StatefulWidget {
     required this.onProfileTap,
     required this.onProfileClose,
     required this.userName,
+    required this.userImage,
     required this.isFullscreen,
     required this.onToggleFullscreen,
   });
@@ -1181,27 +1202,40 @@ class _TopbarState extends State<_Topbar> {
             },
             child: InkWell(
               onTap: widget.onProfileTap,
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [AppColor.primary_40, AppColor.primary_50],
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    initials.toUpperCase(),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
+              child: widget.userImage.isEmpty
+                  ? Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [AppColor.primary_40, AppColor.primary_50],
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          initials.toUpperCase(),
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(shape: BoxShape.circle),
+                      child: CircleAvatar(
+                        backgroundColor: AppTheme.sliderHighlightBg(context),
+                        child: Image.network(
+                          widget.userImage,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
             ),
           ),
         ],
@@ -1272,10 +1306,12 @@ class _TopbarIcon extends StatelessWidget {
 class _ProfileDropdown extends StatelessWidget {
   final VoidCallback onClose;
   final String userName;
+  final String userImage;
   final GlobalKey<NavigatorState> activeNavigatorKey;
   const _ProfileDropdown({
     required this.onClose,
     required this.userName,
+    required this.userImage,
     required this.activeNavigatorKey,
   });
 
@@ -1350,26 +1386,44 @@ class _ProfileDropdown extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [AppColor.primary_40, AppColor.primary_50],
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            initials.toUpperCase(),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 11,
+                      userImage.isEmpty
+                          ? Container(
+                              width: 32,
+                              height: 32,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColor.primary_40,
+                                    AppColor.primary_50,
+                                  ],
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  initials.toUpperCase(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(shape: BoxShape.circle),
+                              child: CircleAvatar(
+                                backgroundColor: AppTheme.sliderHighlightBg(
+                                  context,
+                                ),
+                                child: Image.network(
+                                  userImage,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(

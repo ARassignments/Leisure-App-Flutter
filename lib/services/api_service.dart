@@ -14,7 +14,11 @@ import '/responses/customer_response.dart';
 import '/utils/session_manager.dart';
 
 class ApiService {
-  static const String baseUrl = "https://y2ksolutions.com/api/MobileAppApi";
+
+  static const String liveUrl = "https://y2ksolutions.com";
+  // static const String uatUrl = "https://kinfotech.online/api/MobileAppApi";
+  static const String baseUrl = "$liveUrl/api/MobileAppApi";
+  static const String getImagebaseUrl = "$liveUrl/api/MobileAppApi/GetImage?url=";
 
   static Future<Map<String, dynamic>> login(
     String username,

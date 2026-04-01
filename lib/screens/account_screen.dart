@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:y2ksolutions/services/api_service.dart';
 import '/components/appsnackbar.dart';
 import '/notifiers/avatar_notifier.dart';
 import '/screens/customers_screen.dart';
@@ -89,21 +90,16 @@ class _AccountScreenState extends State<AccountScreen>
                         child: CircleAvatar(
                           radius: 60,
                           backgroundColor: AppTheme.customListBg(context),
-                          foregroundImage: avatar != null
-                              ? AssetImage(avatar)
-                              // : const AssetImage(
-                              //     "assets/images/avatars/boy_14.png",
-                              //   )
-                              : NetworkImage(
-                                  user!["UserImage"],
-                                ),
                           child: avatar != null
                               ? Icon(
                                   HugeIconsSolid.user03,
                                   size: 60,
                                   color: AppTheme.iconColorThree(context),
                                 )
-                              : null,
+                              : Image.network(
+                                  '${ApiService.getImagebaseUrl}${user!["UserImage"]}',
+                                  fit: BoxFit.cover,
+                                ),
                         ),
                       ),
                     ),
