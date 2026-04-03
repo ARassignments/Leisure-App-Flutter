@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:html' as html show document, Element;
 import 'package:hugeicons_pro/hugeicons.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:y2ksolutions/components/appsnackbar.dart';
 import 'package:y2ksolutions/services/api_service.dart';
 import '/components/dialog_bounce.global.dart';
 import '/screens/payments_screen.dart';
@@ -366,7 +369,9 @@ class _DashboardShellState extends State<DashboardShell>
                       userName: _isLoadingUser
                           ? ''
                           : user?["FullName"] ?? 'Unknown User',
-                      userImage: user!["UserImage"] != 'N/A'
+                      userImage: _isLoadingUser
+                          ? ''
+                          : user!["UserImage"] != 'N/A'
                           ? '${ApiService.getImagebaseUrl}${user!["UserImage"]}'
                           : '',
                     ),
@@ -492,26 +497,101 @@ class _DashboardShellState extends State<DashboardShell>
                           ),
                           Positioned(
                             bottom: 0,
+                            left: 0,
+                            right: 0,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
                                 vertical: 20,
                               ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                              child: Wrap(
+                                direction: Axis.horizontal,
+                                spacing: 16,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                runAlignment: WrapAlignment.center,
+                                alignment: WrapAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    "2026 © Y2k Solutions. All Right Reserved",
-                                    style: AppTheme.textLink(
-                                      context,
-                                    ).copyWith(fontSize: 14),
+                                  RichText(
+                                    textAlign: TextAlign.center,
+                                    text: TextSpan(
+                                      style: AppTheme.textLabel(
+                                        context,
+                                      ).copyWith(fontSize: 14),
+                                      children: [
+                                        TextSpan(text: '2026 © '),
+                                        TextSpan(
+                                          text: 'Y2k Solutions',
+                                          style: AppTheme.textLink(
+                                            context,
+                                          ).copyWith(fontSize: 14),
+                                          recognizer: TapGestureRecognizer()
+                                            ..onTap = () async {
+                                              final Uri url = Uri.parse(
+                                                'https://www.y2ksolutions.com/',
+                                              );
+                                              if (await canLaunchUrl(url)) {
+                                                await launchUrl(
+                                                  url,
+                                                  mode: LaunchMode
+                                                      .externalApplication, // opens in browser
+                                                );
+                                              } else {
+                                                AppSnackBar.show(
+                                                  context,
+                                                  message:
+                                                      "Could not open the website.",
+                                                  type: AppSnackBarType.error,
+                                                );
+                                              }
+                                              debugPrint(
+                                                "Y2k Solutions clicked",
+                                              );
+                                            },
+                                        ),
+                                        TextSpan(text: '. All Right Reserved'),
+                                      ],
+                                    ),
                                   ),
-                                  Text(
-                                    "Designed & Developed by AR Assignments",
-                                    style: AppTheme.textLink(
-                                      context,
-                                    ).copyWith(fontSize: 14),
+                                  RichText(
+                                    text: TextSpan(
+                                      style: AppTheme.textLabel(
+                                        context,
+                                      ).copyWith(fontSize: 14),
+                                      children: [
+                                        TextSpan(
+                                          text: 'Designed & Developed by ',
+                                        ),
+                                        TextSpan(
+                                          text: 'AR Assignments',
+                                          style: AppTheme.textLink(
+                                            context,
+                                          ).copyWith(fontSize: 14),
+                                          recognizer: TapGestureRecognizer()
+                                            ..onTap = () async {
+                                              final Uri url = Uri.parse(
+                                                'https://myfolio-web.netlify.app/',
+                                              );
+                                              if (await canLaunchUrl(url)) {
+                                                await launchUrl(
+                                                  url,
+                                                  mode: LaunchMode
+                                                      .externalApplication, // opens in browser
+                                                );
+                                              } else {
+                                                AppSnackBar.show(
+                                                  context,
+                                                  message:
+                                                      "Could not open the website.",
+                                                  type: AppSnackBarType.error,
+                                                );
+                                              }
+                                              debugPrint(
+                                                "AR Assignments clicked",
+                                              );
+                                            },
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -539,7 +619,9 @@ class _DashboardShellState extends State<DashboardShell>
                                   userName: _isLoadingUser
                                       ? ''
                                       : user?["FullName"] ?? 'Unknown User',
-                                  userImage: user!["UserImage"] != 'N/A'
+                                  userImage: _isLoadingUser
+                                      ? ''
+                                      : user!["UserImage"] != 'N/A'
                                       ? '${ApiService.getImagebaseUrl}${user!["UserImage"]}'
                                       : '',
                                 ),
@@ -1111,7 +1193,7 @@ class _Topbar extends StatefulWidget {
 class _TopbarState extends State<_Topbar> {
   bool _avatarHovered = false;
   Widget _defaultAvatar(BuildContext context) =>
-      Image.asset("assets/images/avatars/boy_14.png");
+      CircleAvatar(child: Image.asset("assets/images/avatars/boy_14.png"));
 
   @override
   Widget build(BuildContext context) {
@@ -1357,7 +1439,7 @@ class _ProfileDropdown extends StatelessWidget {
   }
 
   Widget _defaultAvatar(BuildContext context) =>
-      Image.asset("assets/images/avatars/boy_14.png");
+      CircleAvatar(child: Image.asset("assets/images/avatars/boy_14.png"));
 
   @override
   Widget build(BuildContext context) {

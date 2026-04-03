@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (remember && token != null && user != null) {
       if (!mounted) return;
-      if (MediaQuery.of(context).size.width >= 900 || kIsWeb) {
+      if (MediaQuery.of(context).size.width >= 900) {
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(

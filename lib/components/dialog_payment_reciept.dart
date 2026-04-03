@@ -81,618 +81,642 @@ class PaymentReceiptBottomSheet {
             final amount = NumberFormat('#,###.00').format(payment.Payment);
             return StatefulBuilder(
               builder: (context, setModalState) {
-                return Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: 20,
-                    left: 20,
-                    right: 20,
-                  ),
-                  child: Wrap(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          /// Main Receipt Box
-                          WidgetsToImage(
-                            controller: imageController,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(20),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.screenBg(
-                                      context,
-                                    ).withAlpha(0),
-                                    borderRadius: BorderRadius.circular(20),
-                                    image: DecorationImage(
-                                      image: AssetImage(
-                                        AppTheme.recieptBgImage(context),
-                                      ),
-                                      fit: BoxFit.cover,
-                                      alignment: Alignment.bottomCenter.add(
-                                        const Alignment(0, -0.2),
+                return SizedBox(
+                  width: MediaQuery.of(context).size.width >= 500
+                      ? 600
+                      : double.infinity,
+
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: 20,
+                      left: 20,
+                      right: 20,
+                    ),
+                    child: Wrap(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            /// Main Receipt Box
+                            WidgetsToImage(
+                              controller: imageController,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.screenBg(
+                                        context,
+                                      ).withAlpha(0),
+                                      borderRadius: BorderRadius.circular(20),
+                                      image: DecorationImage(
+                                        image: AssetImage(
+                                          AppTheme.recieptBgImage(context),
+                                        ),
+                                        fit: BoxFit.cover,
+                                        alignment: Alignment.bottomCenter.add(
+                                          const Alignment(0, -0.2),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      /// Header with logo & date
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Row(
-                                              children: [
-                                                Image.asset(
-                                                  AppTheme.appLogo(context),
-                                                  width: 60,
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Text(
-                                                  user!["FullName"]
-                                                      .toString()
-                                                      .split(' ')
-                                                      .first,
-                                                  style:
-                                                      AppTheme.textTitleActiveTwo(
-                                                        context,
-                                                      ).copyWith(
-                                                        fontSize: 20,
-                                                        fontFamily:
-                                                            AppFontFamily
-                                                                .poppinsBold,
-                                                      ),
-                                                ),
-                                                Text(
-                                                  user!["FullName"]
-                                                      .toString()
-                                                      .split(' ')
-                                                      .last,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style:
-                                                      AppTheme.textTitleActiveTwo(
-                                                        context,
-                                                      ).copyWith(
-                                                        fontSize: 20,
-                                                        fontFamily:
-                                                            AppFontFamily
-                                                                .poppinsLight,
-                                                      ),
-                                                ),
-                                                Text(
-                                                  ".",
-                                                  style:
-                                                      AppTheme.textTitleActive(
-                                                        context,
-                                                      ).copyWith(fontSize: 22),
-                                                ),
-                                              ],
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        /// Header with logo & date
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Image.asset(
+                                                    AppTheme.appLogo(context),
+                                                    width: 60,
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    user!["FullName"]
+                                                        .toString()
+                                                        .split(' ')
+                                                        .first,
+                                                    style:
+                                                        AppTheme.textTitleActiveTwo(
+                                                          context,
+                                                        ).copyWith(
+                                                          fontSize: 20,
+                                                          fontFamily:
+                                                              AppFontFamily
+                                                                  .poppinsBold,
+                                                        ),
+                                                  ),
+                                                  Text(
+                                                    user!["FullName"]
+                                                        .toString()
+                                                        .split(' ')
+                                                        .last,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style:
+                                                        AppTheme.textTitleActiveTwo(
+                                                          context,
+                                                        ).copyWith(
+                                                          fontSize: 20,
+                                                          fontFamily:
+                                                              AppFontFamily
+                                                                  .poppinsLight,
+                                                        ),
+                                                  ),
+                                                  Text(
+                                                    ".",
+                                                    style:
+                                                        AppTheme.textTitleActive(
+                                                          context,
+                                                        ).copyWith(
+                                                          fontSize: 22,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                          Text(
-                                            date,
-                                            style:
-                                                AppTheme.textSearchInfoLabeled(
-                                                  context,
-                                                ).copyWith(
-                                                  fontSize: 13,
-                                                  fontFamily: AppFontFamily
-                                                      .poppinsMedium,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 16),
-                                      Text(
-                                        "${DateFormat('MMMM').format(payment.PaymentDate)} ${payment.PaymentMode} Bill",
-                                        style: AppTheme.textTitle(
-                                          context,
-                                        ).copyWith(fontSize: 15),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      _infoRow(
-                                        context,
-                                        "Name",
-                                        "${payment.UserName}",
-                                      ),
-                                      _infoRow(
-                                        context,
-                                        "Phone Number",
-                                        "${customer!.PhoneNo}",
-                                      ),
-                                      _infoRow(
-                                        context,
-                                        "Address",
-                                        "${customer!.Address}, ${customer!.CityName}, ${customer!.StateName}",
-                                      ),
-                                      _infoRow(
-                                        context,
-                                        "Payment Type",
-                                        payment.PaymentType,
-                                      ),
-                                      _infoRow(
-                                        context,
-                                        "Payment Mode",
-                                        payment.PaymentMode,
-                                      ),
-                                      _infoRow(context, "Amount", "Rs $amount"),
-                                      _infoRow(
-                                        context,
-                                        "Remarks",
-                                        "${payment.Remarks.isEmpty ? "N/A" : payment.Remarks}",
-                                      ),
-                                      const SizedBox(height: 16),
-                                      DashedDivider(
-                                        color: AppTheme.dividerBg(context),
-                                        height: 2,
-                                        dashWidth: 6,
-                                        dashSpace: 3,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      _amountRow(
-                                        context,
-                                        "Total Amount",
-                                        "Rs $amount",
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                /// Watermark “PAID”
-                                Opacity(
-                                  opacity: 0.05,
-                                  child: Image.asset(
-                                    payment.PaymentMode.toString().contains(
-                                          "Paid",
-                                        )
-                                        ? AppTheme.paidRecieptImage(context)
-                                        : AppTheme.receivedRecieptImage(
+                                            Text(
+                                              date,
+                                              style:
+                                                  AppTheme.textSearchInfoLabeled(
+                                                    context,
+                                                  ).copyWith(
+                                                    fontSize: 13,
+                                                    fontFamily: AppFontFamily
+                                                        .poppinsMedium,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 16),
+                                        Text(
+                                          "${DateFormat('MMMM').format(payment.PaymentDate)} ${payment.PaymentMode} Bill",
+                                          style: AppTheme.textTitle(
                                             context,
-                                          ),
-                                    width: 220,
+                                          ).copyWith(fontSize: 15),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        _infoRow(
+                                          context,
+                                          "Name",
+                                          "${payment.UserName}",
+                                        ),
+                                        _infoRow(
+                                          context,
+                                          "Phone Number",
+                                          "${customer!.PhoneNo}",
+                                        ),
+                                        _infoRow(
+                                          context,
+                                          "Address",
+                                          "${customer!.Address}, ${customer!.CityName}, ${customer!.StateName}",
+                                        ),
+                                        _infoRow(
+                                          context,
+                                          "Payment Type",
+                                          payment.PaymentType,
+                                        ),
+                                        _infoRow(
+                                          context,
+                                          "Payment Mode",
+                                          payment.PaymentMode,
+                                        ),
+                                        _infoRow(
+                                          context,
+                                          "Amount",
+                                          "Rs $amount",
+                                        ),
+                                        _infoRow(
+                                          context,
+                                          "Remarks",
+                                          "${payment.Remarks.isEmpty ? "N/A" : payment.Remarks}",
+                                        ),
+                                        const SizedBox(height: 16),
+                                        DashedDivider(
+                                          color: AppTheme.dividerBg(context),
+                                          height: 2,
+                                          dashWidth: 6,
+                                          dashSpace: 3,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        _amountRow(
+                                          context,
+                                          "Total Amount",
+                                          "Rs $amount",
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
 
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: AppTheme.screenBg(context),
-                              borderRadius: BorderRadius.circular(16),
+                                  /// Watermark “PAID”
+                                  Opacity(
+                                    opacity: 0.05,
+                                    child: Image.asset(
+                                      payment.PaymentMode.toString().contains(
+                                            "Paid",
+                                          )
+                                          ? AppTheme.paidRecieptImage(context)
+                                          : AppTheme.receivedRecieptImage(
+                                              context,
+                                            ),
+                                      width: 220,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              spacing: 10,
-                              children: [
-                                FlatButton(
-                                  text: "Share Bill",
-                                  icon: HugeIconsSolid.linkSquare01,
-                                  onPressed: () async {
-                                    final message = Uri.encodeComponent(
-                                      "*🗒 Payment Receipt*\n"
-                                      "----------------------------------\n"
-                                      "🆔 *Reciept#:* ${payment.Id}\n"
-                                      "🪪 *Name:* ${payment.UserName}\n"
-                                      "📞 *Phone:* ${customer!.PhoneNo}\n"
-                                      "📍 *Address:* ${customer!.Address}, ${customer!.CityName}, ${customer!.StateName}\n"
-                                      "💳 *Payment Type:* ${payment.PaymentType}\n"
-                                      "🪙 *Payment Mode:* ${payment.PaymentMode}\n"
-                                      "💰 *Amount:* Rs $amount\n"
-                                      "📓 *Remarks:* ${payment.Remarks.isEmpty ? 'N/A' : payment.Remarks}\n"
-                                      "🗓 *Date:* $date\n"
-                                      "----------------------------------\n"
-                                      "Thank you for your payment!\n\n"
-                                      "👇 *Here is your payment reciept* 👇\n"
-                                      "$apiUrl",
-                                    );
-                                    String formatted = customer!.PhoneNo
-                                        .toString()
-                                        .replaceAll(" ", "");
-                                    if (formatted.startsWith("0")) {
-                                      formatted = formatted.substring(1);
-                                    }
-                                    final url = Uri.parse(
-                                      "https://wa.me/92$formatted?text=$message",
-                                    );
-                                    if (await canLaunchUrl(url)) {
-                                      await launchUrl(
-                                        url,
-                                        mode: LaunchMode.externalApplication,
-                                      );
-                                    } else {
-                                      AppSnackBar.show(
-                                        context,
-                                        message: "Unable to open WhatsApp",
-                                        type: AppSnackBarType.error,
-                                      );
-                                    }
-                                  },
-                                ),
-                                if (kIsWeb) ...[
-                                  OutlineButton(
-                                    text: "Download Bill",
-                                    icon: HugeIconsSolid.download03,
+                            const SizedBox(height: 20),
+
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: AppTheme.screenBg(context),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                spacing: 10,
+                                children: [
+                                  FlatButton(
+                                    text: "Share Bill",
+                                    icon: HugeIconsSolid.linkSquare01,
                                     onPressed: () async {
-                                      try {
-                                        final Uint8List? capturedImage =
-                                            await imageController.capturePng(
-                                              pixelRatio: 4.0, // 🔥 ULTRA HD
-                                              waitForAnimations: true,
-                                            );
-                                        if (capturedImage == null) {
-                                          AppSnackBar.show(
-                                            context,
-                                            message:
-                                                "Failed to capture receipt image",
-                                            type: AppSnackBarType.error,
-                                          );
-                                          return;
-                                        }
-
-                                        final blob = html.Blob([capturedImage]);
-                                        final url = html
-                                            .Url.createObjectUrlFromBlob(blob);
-                                        final anchor =
-                                            html.AnchorElement(href: url)
-                                              ..setAttribute(
-                                                "download",
-                                                "$fileName.png",
-                                              )
-                                              ..click();
-                                        html.Url.revokeObjectUrl(url);
-
-                                        AppSnackBar.show(
-                                          context,
-                                          message:
-                                              "Receipt downloaded successfully",
-                                          type: AppSnackBarType.success,
+                                      final message = Uri.encodeComponent(
+                                        "*🗒 Payment Receipt*\n"
+                                        "----------------------------------\n"
+                                        "🆔 *Reciept#:* ${payment.Id}\n"
+                                        "🪪 *Name:* ${payment.UserName}\n"
+                                        "📞 *Phone:* ${customer!.PhoneNo}\n"
+                                        "📍 *Address:* ${customer!.Address}, ${customer!.CityName}, ${customer!.StateName}\n"
+                                        "💳 *Payment Type:* ${payment.PaymentType}\n"
+                                        "🪙 *Payment Mode:* ${payment.PaymentMode}\n"
+                                        "💰 *Amount:* Rs $amount\n"
+                                        "📓 *Remarks:* ${payment.Remarks.isEmpty ? 'N/A' : payment.Remarks}\n"
+                                        "🗓 *Date:* $date\n"
+                                        "----------------------------------\n"
+                                        "Thank you for your payment!\n\n"
+                                        "👇 *Here is your payment reciept* 👇\n"
+                                        "$apiUrl",
+                                      );
+                                      String formatted = customer!.PhoneNo
+                                          .toString()
+                                          .replaceAll(" ", "");
+                                      if (formatted.startsWith("0")) {
+                                        formatted = formatted.substring(1);
+                                      }
+                                      final url = Uri.parse(
+                                        "https://wa.me/92$formatted?text=$message",
+                                      );
+                                      if (await canLaunchUrl(url)) {
+                                        await launchUrl(
+                                          url,
+                                          mode: LaunchMode.externalApplication,
                                         );
-                                      } catch (e) {
+                                      } else {
                                         AppSnackBar.show(
                                           context,
-                                          message: "Error saving receipt: $e",
+                                          message: "Unable to open WhatsApp",
                                           type: AppSnackBarType.error,
                                         );
                                       }
                                     },
                                   ),
-                                  GhostButton(
-                                    text: "Download PDF Bill",
-                                    icon: HugeIconsSolid.pdf01,
-                                    onPressed: () async {
-                                      try {
-                                        final Uint8List? capturedImage =
-                                            await imageController.capturePng(
-                                              pixelRatio: 4.0, // 🔥 ULTRA HD
-                                              waitForAnimations: true,
-                                            );
-
-                                        if (capturedImage == null) {
-                                          AppSnackBar.show(
-                                            context,
-                                            message:
-                                                "Failed to capture receipt image",
-                                            type: AppSnackBarType.error,
-                                          );
-                                          return;
-                                        }
-
-                                        final img = await decodeImageFromList(
-                                          capturedImage,
-                                        );
-                                        final width = img.width.toDouble();
-                                        final height = img.height.toDouble();
-
-                                        const screenDpi = 96.0;
-                                        const pdfDpi = 72.0;
-                                        final pdfWidth =
-                                            width * (pdfDpi / screenDpi);
-                                        final pdfHeight =
-                                            height * (pdfDpi / screenDpi);
-
-                                        final pdf = pw.Document();
-                                        final image = pw.MemoryImage(
-                                          capturedImage,
-                                        );
-                                        final fileNamePdf = "$fileName.pdf";
-
-                                        pdf.addPage(
-                                          pw.Page(
-                                            pageFormat: PdfPageFormat(
-                                              pdfWidth,
-                                              pdfHeight,
-                                            ),
-                                            margin: pw.EdgeInsets.zero,
-                                            build: (pw.Context context) {
-                                              return pw.Image(
-                                                image,
-                                                fit: pw.BoxFit.contain,
+                                  if (kIsWeb) ...[
+                                    OutlineButton(
+                                      text: "Download Bill",
+                                      icon: HugeIconsSolid.download03,
+                                      onPressed: () async {
+                                        try {
+                                          final Uint8List? capturedImage =
+                                              await imageController.capturePng(
+                                                pixelRatio: 4.0, // 🔥 ULTRA HD
+                                                waitForAnimations: true,
                                               );
-                                            },
-                                          ),
-                                        );
+                                          if (capturedImage == null) {
+                                            AppSnackBar.show(
+                                              context,
+                                              message:
+                                                  "Failed to capture receipt image",
+                                              type: AppSnackBarType.error,
+                                            );
+                                            return;
+                                          }
 
-                                        final pdfBytes = await pdf.save();
-
-                                        if (kIsWeb) {
-                                          // 🟢 WEB MODE: Create and download the PDF
                                           final blob = html.Blob([
-                                            pdfBytes,
-                                          ], 'application/pdf');
+                                            capturedImage,
+                                          ]);
                                           final url =
                                               html.Url.createObjectUrlFromBlob(
                                                 blob,
                                               );
-
                                           final anchor =
                                               html.AnchorElement(href: url)
                                                 ..setAttribute(
                                                   "download",
-                                                  fileNamePdf,
+                                                  "$fileName.png",
                                                 )
                                                 ..click();
-
                                           html.Url.revokeObjectUrl(url);
 
                                           AppSnackBar.show(
                                             context,
                                             message:
-                                                "Receipt PDF downloaded successfully",
+                                                "Receipt downloaded successfully",
                                             type: AppSnackBarType.success,
                                           );
-                                        } else {
-                                          // 📱 MOBILE MODE
-                                          final directory =
-                                              await getApplicationDocumentsDirectory();
-                                          final path =
-                                              "${directory.path}/$fileNamePdf";
-                                          final file = File(path);
-                                          await file.writeAsBytes(pdfBytes);
-                                          if (await Permission.storage
-                                              .request()
-                                              .isGranted) {
-                                            final downloadsPath =
-                                                await ExternalPath.getExternalStoragePublicDirectory(
-                                                  ExternalPath
-                                                      .DIRECTORY_DOWNLOAD,
+                                        } catch (e) {
+                                          AppSnackBar.show(
+                                            context,
+                                            message: "Error saving receipt: $e",
+                                            type: AppSnackBarType.error,
+                                          );
+                                        }
+                                      },
+                                    ),
+                                    GhostButton(
+                                      text: "Download PDF Bill",
+                                      icon: HugeIconsSolid.pdf01,
+                                      onPressed: () async {
+                                        try {
+                                          final Uint8List? capturedImage =
+                                              await imageController.capturePng(
+                                                pixelRatio: 4.0, // 🔥 ULTRA HD
+                                                waitForAnimations: true,
+                                              );
+
+                                          if (capturedImage == null) {
+                                            AppSnackBar.show(
+                                              context,
+                                              message:
+                                                  "Failed to capture receipt image",
+                                              type: AppSnackBarType.error,
+                                            );
+                                            return;
+                                          }
+
+                                          final img = await decodeImageFromList(
+                                            capturedImage,
+                                          );
+                                          final width = img.width.toDouble();
+                                          final height = img.height.toDouble();
+
+                                          const screenDpi = 96.0;
+                                          const pdfDpi = 72.0;
+                                          final pdfWidth =
+                                              width * (pdfDpi / screenDpi);
+                                          final pdfHeight =
+                                              height * (pdfDpi / screenDpi);
+
+                                          final pdf = pw.Document();
+                                          final image = pw.MemoryImage(
+                                            capturedImage,
+                                          );
+                                          final fileNamePdf = "$fileName.pdf";
+
+                                          pdf.addPage(
+                                            pw.Page(
+                                              pageFormat: PdfPageFormat(
+                                                pdfWidth,
+                                                pdfHeight,
+                                              ),
+                                              margin: pw.EdgeInsets.zero,
+                                              build: (pw.Context context) {
+                                                return pw.Image(
+                                                  image,
+                                                  fit: pw.BoxFit.contain,
                                                 );
-                                            final newPath =
-                                                "$downloadsPath/$fileNamePdf";
-                                            await file.copy(newPath);
+                                              },
+                                            ),
+                                          );
+
+                                          final pdfBytes = await pdf.save();
+
+                                          if (kIsWeb) {
+                                            // 🟢 WEB MODE: Create and download the PDF
+                                            final blob = html.Blob([
+                                              pdfBytes,
+                                            ], 'application/pdf');
+                                            final url =
+                                                html.Url.createObjectUrlFromBlob(
+                                                  blob,
+                                                );
+
+                                            final anchor =
+                                                html.AnchorElement(href: url)
+                                                  ..setAttribute(
+                                                    "download",
+                                                    fileNamePdf,
+                                                  )
+                                                  ..click();
+
+                                            html.Url.revokeObjectUrl(url);
 
                                             AppSnackBar.show(
                                               context,
                                               message:
-                                                  "PDF saved to Downloads successfully",
+                                                  "Receipt PDF downloaded successfully",
                                               type: AppSnackBarType.success,
                                             );
                                           } else {
-                                            AppSnackBar.show(
-                                              context,
-                                              message:
-                                                  "Storage permission denied",
-                                              type: AppSnackBarType.error,
-                                            );
-                                          }
-                                        }
-                                      } catch (e) {
-                                        AppSnackBar.show(
-                                          context,
-                                          message:
-                                              "Error creating receipt PDF: $e",
-                                          type: AppSnackBarType.error,
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ],
-                                if (!kIsWeb) ...[
-                                  CustomButton(
-                                    text: "Share PDF",
-                                    icon: HugeIconsSolid.whatsapp,
-                                    color: Colors.green.shade500,
-                                    disabled: isLoadingSharedPDF,
-                                    loading: isLoadingSharedPDF,
-                                    onPressed: !isLoadingSharedPDF
-                                        ? () async {
-                                            setModalState(
-                                              () => isLoadingSharedPDF = true,
-                                            );
-                                            try {
-                                              final Uint8List? capturedImage =
-                                                  await imageController
-                                                      .capturePng(
-                                                        pixelRatio: 4.0,
-                                                        waitForAnimations: true,
-                                                      );
+                                            // 📱 MOBILE MODE
+                                            final directory =
+                                                await getApplicationDocumentsDirectory();
+                                            final path =
+                                                "${directory.path}/$fileNamePdf";
+                                            final file = File(path);
+                                            await file.writeAsBytes(pdfBytes);
+                                            if (await Permission.storage
+                                                .request()
+                                                .isGranted) {
+                                              final downloadsPath =
+                                                  await ExternalPath.getExternalStoragePublicDirectory(
+                                                    ExternalPath
+                                                        .DIRECTORY_DOWNLOAD,
+                                                  );
+                                              final newPath =
+                                                  "$downloadsPath/$fileNamePdf";
+                                              await file.copy(newPath);
 
-                                              if (capturedImage == null) {
+                                              AppSnackBar.show(
+                                                context,
+                                                message:
+                                                    "PDF saved to Downloads successfully",
+                                                type: AppSnackBarType.success,
+                                              );
+                                            } else {
+                                              AppSnackBar.show(
+                                                context,
+                                                message:
+                                                    "Storage permission denied",
+                                                type: AppSnackBarType.error,
+                                              );
+                                            }
+                                          }
+                                        } catch (e) {
+                                          AppSnackBar.show(
+                                            context,
+                                            message:
+                                                "Error creating receipt PDF: $e",
+                                            type: AppSnackBarType.error,
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                  if (!kIsWeb) ...[
+                                    CustomButton(
+                                      text: "Share PDF",
+                                      icon: HugeIconsSolid.whatsapp,
+                                      color: Colors.green.shade500,
+                                      disabled: isLoadingSharedPDF,
+                                      loading: isLoadingSharedPDF,
+                                      onPressed: !isLoadingSharedPDF
+                                          ? () async {
+                                              setModalState(
+                                                () => isLoadingSharedPDF = true,
+                                              );
+                                              try {
+                                                final Uint8List? capturedImage =
+                                                    await imageController
+                                                        .capturePng(
+                                                          pixelRatio: 4.0,
+                                                          waitForAnimations:
+                                                              true,
+                                                        );
+
+                                                if (capturedImage == null) {
+                                                  AppSnackBar.show(
+                                                    context,
+                                                    message:
+                                                        "Failed to capture receipt image",
+                                                    type: AppSnackBarType.error,
+                                                  );
+                                                  return;
+                                                }
+
+                                                final img =
+                                                    await decodeImageFromList(
+                                                      capturedImage,
+                                                    );
+                                                final width = img.width
+                                                    .toDouble();
+                                                final height = img.height
+                                                    .toDouble();
+                                                const screenDpi = 96.0;
+                                                const pdfDpi = 72.0;
+                                                final pdfWidth =
+                                                    width *
+                                                    (pdfDpi / screenDpi);
+                                                final pdfHeight =
+                                                    height *
+                                                    (pdfDpi / screenDpi);
+                                                final pdf = pw.Document();
+                                                final image = pw.MemoryImage(
+                                                  capturedImage,
+                                                );
+
+                                                pdf.addPage(
+                                                  pw.Page(
+                                                    pageFormat: PdfPageFormat(
+                                                      pdfWidth,
+                                                      pdfHeight,
+                                                    ),
+                                                    margin: pw.EdgeInsets.zero,
+                                                    build: (context) {
+                                                      return pw.Image(
+                                                        image,
+                                                        fit: pw.BoxFit.contain,
+                                                      );
+                                                    },
+                                                  ),
+                                                );
+
+                                                final pdfBytes = await pdf
+                                                    .save();
+                                                final dir =
+                                                    await getTemporaryDirectory();
+                                                final filePath =
+                                                    "${dir.path}/$fileName.pdf";
+                                                final file = File(filePath);
+                                                await file.writeAsBytes(
+                                                  pdfBytes,
+                                                );
+                                                String formatted = customer!
+                                                    .PhoneNo
+                                                    .toString()
+                                                    .replaceAll(" ", "");
+
+                                                if (formatted.startsWith("0")) {
+                                                  formatted = formatted
+                                                      .substring(1);
+                                                }
+                                                final phoneNumber =
+                                                    "92$formatted";
+                                                await WhatsAppHelper.sendPdfToWhatsApp(
+                                                  file.path,
+                                                  phoneNumber,
+                                                );
+
                                                 AppSnackBar.show(
                                                   context,
                                                   message:
-                                                      "Failed to capture receipt image",
+                                                      "PDF shared to WhatsApp",
+                                                  type: AppSnackBarType.success,
+                                                );
+                                              } catch (e) {
+                                                AppSnackBar.show(
+                                                  context,
+                                                  message:
+                                                      "Error sharing PDF: $e",
                                                   type: AppSnackBarType.error,
                                                 );
-                                                return;
-                                              }
-
-                                              final img =
-                                                  await decodeImageFromList(
-                                                    capturedImage,
-                                                  );
-                                              final width = img.width
-                                                  .toDouble();
-                                              final height = img.height
-                                                  .toDouble();
-                                              const screenDpi = 96.0;
-                                              const pdfDpi = 72.0;
-                                              final pdfWidth =
-                                                  width * (pdfDpi / screenDpi);
-                                              final pdfHeight =
-                                                  height * (pdfDpi / screenDpi);
-                                              final pdf = pw.Document();
-                                              final image = pw.MemoryImage(
-                                                capturedImage,
-                                              );
-
-                                              pdf.addPage(
-                                                pw.Page(
-                                                  pageFormat: PdfPageFormat(
-                                                    pdfWidth,
-                                                    pdfHeight,
-                                                  ),
-                                                  margin: pw.EdgeInsets.zero,
-                                                  build: (context) {
-                                                    return pw.Image(
-                                                      image,
-                                                      fit: pw.BoxFit.contain,
-                                                    );
-                                                  },
-                                                ),
-                                              );
-
-                                              final pdfBytes = await pdf.save();
-                                              final dir =
-                                                  await getTemporaryDirectory();
-                                              final filePath =
-                                                  "${dir.path}/$fileName.pdf";
-                                              final file = File(filePath);
-                                              await file.writeAsBytes(pdfBytes);
-                                              String formatted = customer!
-                                                  .PhoneNo
-                                                  .toString()
-                                                  .replaceAll(" ", "");
-
-                                              if (formatted.startsWith("0")) {
-                                                formatted = formatted.substring(
-                                                  1,
+                                              } finally {
+                                                setModalState(
+                                                  () => isLoadingSharedPDF =
+                                                      false,
                                                 );
                                               }
-                                              final phoneNumber =
-                                                  "92$formatted";
-                                              await WhatsAppHelper.sendPdfToWhatsApp(
-                                                file.path,
-                                                phoneNumber,
-                                              );
-
-                                              AppSnackBar.show(
-                                                context,
-                                                message:
-                                                    "PDF shared to WhatsApp",
-                                                type: AppSnackBarType.success,
-                                              );
-                                            } catch (e) {
-                                              AppSnackBar.show(
-                                                context,
-                                                message:
-                                                    "Error sharing PDF: $e",
-                                                type: AppSnackBarType.error,
-                                              );
-                                            } finally {
+                                            }
+                                          : null,
+                                    ),
+                                    CustomButton(
+                                      text: "Share Image",
+                                      icon: HugeIconsSolid.whatsapp,
+                                      color: Colors.green.shade500,
+                                      disabled: isLoadingSharedImage,
+                                      loading: isLoadingSharedImage,
+                                      onPressed: !isLoadingSharedImage
+                                          ? () async {
                                               setModalState(
                                                 () =>
-                                                    isLoadingSharedPDF = false,
+                                                    isLoadingSharedImage = true,
                                               );
-                                            }
-                                          }
-                                        : null,
-                                  ),
-                                  CustomButton(
-                                    text: "Share Image",
-                                    icon: HugeIconsSolid.whatsapp,
-                                    color: Colors.green.shade500,
-                                    disabled: isLoadingSharedImage,
-                                    loading: isLoadingSharedImage,
-                                    onPressed: !isLoadingSharedImage
-                                        ? () async {
-                                            setModalState(
-                                              () => isLoadingSharedImage = true,
-                                            );
-                                            try {
-                                              final Uint8List? capturedImage =
-                                                  await imageController
-                                                      .capturePng(
-                                                        pixelRatio:
-                                                            4.0, // 🔥 ULTRA HD
-                                                        waitForAnimations: true,
-                                                      );
+                                              try {
+                                                final Uint8List? capturedImage =
+                                                    await imageController
+                                                        .capturePng(
+                                                          pixelRatio:
+                                                              4.0, // 🔥 ULTRA HD
+                                                          waitForAnimations:
+                                                              true,
+                                                        );
 
-                                              if (capturedImage == null) {
+                                                if (capturedImage == null) {
+                                                  AppSnackBar.show(
+                                                    context,
+                                                    message:
+                                                        "Failed to capture receipt image",
+                                                    type: AppSnackBarType.error,
+                                                  );
+                                                  return;
+                                                }
+
+                                                final dir =
+                                                    await getTemporaryDirectory();
+                                                final imagePath =
+                                                    "${dir.path}/$fileName.png";
+
+                                                final imageFile = File(
+                                                  imagePath,
+                                                );
+                                                await imageFile.writeAsBytes(
+                                                  capturedImage,
+                                                );
+
+                                                String formatted = customer!
+                                                    .PhoneNo
+                                                    .toString()
+                                                    .replaceAll(" ", "");
+
+                                                if (formatted.startsWith("0")) {
+                                                  formatted = formatted
+                                                      .substring(1);
+                                                }
+
+                                                final phoneNumber =
+                                                    "92$formatted";
+                                                await WhatsAppHelper.sendImageToWhatsApp(
+                                                  imageFile.path,
+                                                  phoneNumber,
+                                                );
                                                 AppSnackBar.show(
                                                   context,
                                                   message:
-                                                      "Failed to capture receipt image",
+                                                      "Image shared to WhatsApp",
+                                                  type: AppSnackBarType.success,
+                                                );
+                                              } catch (e) {
+                                                AppSnackBar.show(
+                                                  context,
+                                                  message:
+                                                      "Error sharing image: $e",
                                                   type: AppSnackBarType.error,
                                                 );
-                                                return;
-                                              }
-
-                                              final dir =
-                                                  await getTemporaryDirectory();
-                                              final imagePath =
-                                                  "${dir.path}/$fileName.png";
-
-                                              final imageFile = File(imagePath);
-                                              await imageFile.writeAsBytes(
-                                                capturedImage,
-                                              );
-
-                                              String formatted = customer!
-                                                  .PhoneNo
-                                                  .toString()
-                                                  .replaceAll(" ", "");
-
-                                              if (formatted.startsWith("0")) {
-                                                formatted = formatted.substring(
-                                                  1,
+                                              } finally {
+                                                setModalState(
+                                                  () => isLoadingSharedImage =
+                                                      false,
                                                 );
                                               }
-
-                                              final phoneNumber =
-                                                  "92$formatted";
-                                              await WhatsAppHelper.sendImageToWhatsApp(
-                                                imageFile.path,
-                                                phoneNumber,
-                                              );
-                                              AppSnackBar.show(
-                                                context,
-                                                message:
-                                                    "Image shared to WhatsApp",
-                                                type: AppSnackBarType.success,
-                                              );
-                                            } catch (e) {
-                                              AppSnackBar.show(
-                                                context,
-                                                message:
-                                                    "Error sharing image: $e",
-                                                type: AppSnackBarType.error,
-                                              );
-                                            } finally {
-                                              setModalState(
-                                                () => isLoadingSharedImage =
-                                                    false,
-                                              );
                                             }
-                                          }
-                                        : null,
-                                  ),
+                                          : null,
+                                    ),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:y2ksolutions/services/api_service.dart';
+import '/services/api_service.dart';
 import '/components/appsnackbar.dart';
 import '/notifiers/avatar_notifier.dart';
 import '/screens/customers_screen.dart';
@@ -71,8 +71,11 @@ class _AccountScreenState extends State<AccountScreen>
     return number;
   }
 
-  Widget _defaultAvatar(BuildContext context) =>
-      Image.asset("assets/images/avatars/boy_14.png");
+  Widget _defaultAvatar(BuildContext context) => CircleAvatar(
+    radius: 60,
+    backgroundColor: AppTheme.customListBg(context),
+    child: Image.asset("assets/images/avatars/boy_14.png"),
+  );
 
   Widget _accountsPage() {
     return SafeArea(

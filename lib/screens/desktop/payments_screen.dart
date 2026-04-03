@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:intl/intl.dart';
+import 'package:y2ksolutions/components/dialog_payment_reciept.dart';
+import 'package:y2ksolutions/components/loading_screen.dart';
 import '/components/appsnackbar.dart';
 import '/components/dialog_bounce.global.dart';
 import '/screens/manage_payments/edit_payment.dart';
@@ -309,6 +311,38 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
     }
   }
 
+  Future<void> fetchReciptPreview(PaymentModel payment, bool reciptPreview) async {
+    showDialog(
+      context: context,
+      useRootNavigator: true,
+      barrierDismissible: false,
+      builder: (_) => Container(
+        color: AppTheme.screenBg(context),
+        child: const Center(child: LoadingLogo()),
+      ),
+    );
+    try {
+      final id = payment.UserId;
+      final customer = await ApiService.getSingleCustomer(id);
+      if (!mounted) return;
+
+      Navigator.of(context, rootNavigator: true).pop();
+      setState(() {
+        _customer = customer;
+        PaymentReceiptBottomSheet.showRecieptPreview(
+          context,
+          payment,
+          "https://www.y2ksolutions.com/Payment/PaymentPrint/${payment.Id}",
+          "${payment.UserName}-${user!["FullName"]}-Payment_Reciept-${DateFormat('dd-MMM-yyyy').format(payment.PaymentDate)}_#${payment.Id}",
+          customer,
+          reciptPreview,
+        );
+      });
+    } catch (e) {
+      debugPrint("❌ Error fetching customer: $e");
+    }
+  }
+
   String _fmtAmount(double v) => NumberFormat('#,##0.00').format(v);
   String _fmtDate(DateTime d) => DateFormat('MMM dd, yyyy').format(d);
 
@@ -397,7 +431,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
                 hintText: 'Search by name or id no',
                 counter: const SizedBox.shrink(),
                 fillColor: Theme.of(context).brightness == Brightness.dark
-                    ? AppTheme.sliderHighlightBg(context)
+                    ? AppTheme.screenBg(context)
                     : Colors.white,
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 16.0, right: 8.0),
@@ -503,7 +537,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
           height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: AppTheme.sliderHighlightBg(context),
+            color: AppTheme.screenBg(context),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -599,7 +633,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
           height: 46,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            color: AppTheme.sliderHighlightBg(context),
+            color: AppTheme.screenBg(context),
           ),
           child: Icon(
             Icons.refresh_rounded,
@@ -634,28 +668,28 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
   // ── Summary Cards ─────────────────────────────────────────────────────────
 
   Widget _buildSummaryRow() => Row(
+    spacing: 10,
     children: [
       _SummaryCard(
         label: 'Total Entries',
-        value: '${_filteredPayments.length}',
+        value: _filteredPayments.length.toString() == '0'
+            ? '0'
+            : _filteredPayments.length.toString().padLeft(2, '0'),
         icon: Icons.receipt_long_outlined,
         color: const Color(0xFFD13838),
       ),
-      const SizedBox(width: 10),
       _SummaryCard(
         label: 'Total Received',
         value: 'Rs ${_fmtAmount(totalReceived)}',
         icon: Icons.south_west_rounded,
         color: kReceived,
       ),
-      const SizedBox(width: 10),
       _SummaryCard(
         label: 'Total Paid',
         value: 'Rs ${_fmtAmount(totalPaid)}',
         icon: Icons.north_east_rounded,
         color: kPaid,
       ),
-      const SizedBox(width: 10),
       _SummaryCard(
         label: 'Net Balance',
         value: 'Rs ${_fmtAmount(totalReceived - totalPaid)}',
@@ -669,7 +703,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
 
   Widget _buildTable() => Container(
     decoration: BoxDecoration(
-      color: AppTheme.sliderHighlightBg(context),
+      color: AppTheme.screenBg(context),
       borderRadius: BorderRadius.circular(14),
       border: Border.all(
         color: Theme.of(context).brightness == Brightness.dark
@@ -709,7 +743,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
     height: 44,
     decoration: BoxDecoration(
       color: Theme.of(context).brightness == Brightness.dark
-          ? AppTheme.screenBg(context).withOpacity(0.30)
+          ? AppTheme.sliderHighlightBg(context).withOpacity(0.30)
           : Color(0xFFF8F9FC),
       borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
       border: Border(
@@ -837,7 +871,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
           onSort: _onSort,
           align: TextAlign.right,
         ),
-        const SizedBox(width: 100), // actions
+        const SizedBox(width: 120), // actions
       ],
     ),
   );
@@ -870,7 +904,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
                     ? AppColor.neutral_70.withOpacity(0.20)
                     : const Color(0xFFF8F9FC)
               : Theme.of(context).brightness == Brightness.dark
-              ? AppTheme.sliderHighlightBg(context)
+              ? AppTheme.screenBg(context)
               : kCard,
           border: Border(
             bottom: BorderSide(
@@ -1093,9 +1127,10 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
 
             // Actions
             SizedBox(
-              width: 100,
+              width: 120,
               child: isHovered
                   ? Row(
+                      spacing: 4,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _ActionBtn(
@@ -1140,21 +1175,28 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
                             }
                           },
                         ),
-                        const SizedBox(width: 4),
                         _ActionBtn(
                           icon: HugeIconsSolid.delete01,
                           color: const Color(0xFFE53935),
                           onTap: () async {
-                            final bool? confirmDelete = await BounceDialog.showBounceDialog<bool>(
-                              context: context,
-                              child: _confirmDeleteModal(
-                                context,
-                                "Id#${p.Id} ${p.UserName} (${p.PaymentMode})",
-                              ),
-                            );
+                            final bool? confirmDelete =
+                                await BounceDialog.showBounceDialog<bool>(
+                                  context: context,
+                                  child: _confirmDeleteModal(
+                                    context,
+                                    "Id#${p.Id} ${p.UserName} (${p.PaymentMode})",
+                                  ),
+                                );
                             if (confirmDelete == true) {
                               deletePaymentById(p.Id);
                             }
+                          },
+                        ),
+                        _ActionBtn(
+                          icon: HugeIconsSolid.pdf01,
+                          color: AppTheme.iconColorThree(context),
+                          onTap: () async {
+                            await fetchReciptPreview(p,true);
                           },
                         ),
                       ],
@@ -1172,7 +1214,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
   Widget _buildFooter() => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     decoration: BoxDecoration(
-      color: AppTheme.sliderHighlightBg(context),
+      color: AppTheme.screenBg(context),
       borderRadius: BorderRadius.circular(12),
       border: Border.all(
         color: Theme.of(context).brightness == Brightness.dark
@@ -1490,7 +1532,7 @@ class _SummaryCard extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.sliderHighlightBg(context),
+        color: AppTheme.screenBg(context),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Theme.of(context).brightness == Brightness.dark

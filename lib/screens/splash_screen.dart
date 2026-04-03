@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '/screens/dashboard_shell.dart';
 import '/screens/dashboard_screen.dart';
@@ -61,7 +60,7 @@ class _AnimatedSplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (remember && token != null && user != null) {
-      if (MediaQuery.of(context).size.width >= 900 || kIsWeb) {
+      if (MediaQuery.of(context).size.width >= 900) {
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
