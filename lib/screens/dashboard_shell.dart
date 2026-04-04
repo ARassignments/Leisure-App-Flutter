@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'dart:html' as html show document, Element;
 import 'package:hugeicons_pro/hugeicons.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:y2ksolutions/components/appsnackbar.dart';
-import 'package:y2ksolutions/services/api_service.dart';
+import '/components/appsnackbar.dart';
+import '/services/api_service.dart';
 import '/components/dialog_bounce.global.dart';
 import '/screens/payments_screen.dart';
 import '/screens/desktop/payments_screen.dart';
@@ -598,35 +598,55 @@ class _DashboardShellState extends State<DashboardShell>
                             ),
                           ),
                           // Profile dropdown
-                          if (_profileMenuOpen)
-                            Positioned(
-                              top: 0,
-                              right: 20,
-                              child: MouseRegion(
-                                onEnter: (_) =>
-                                    setState(() => _dropdownHovered = true),
-                                onExit: (_) {
-                                  setState(() => _dropdownHovered = false);
-                                  _closeProfileIfNotHovered();
-                                },
-                                child: _ProfileDropdown(
-                                  onClose: () => setState(() {
-                                    _profileMenuOpen = false;
-                                    _dropdownHovered = false;
-                                  }),
-                                  activeNavigatorKey:
-                                      _navigatorKeys[_activeIndex],
-                                  userName: _isLoadingUser
-                                      ? ''
-                                      : user?["FullName"] ?? 'Unknown User',
-                                  userImage: _isLoadingUser
-                                      ? ''
-                                      : user!["UserImage"] != 'N/A'
-                                      ? '${ApiService.getImagebaseUrl}${user!["UserImage"]}'
-                                      : '',
-                                ),
-                              ),
+                          // if (_profileMenuOpen)
+                          AnimatedPositioned(
+                            duration: Duration(milliseconds: 500),
+                            curve: Curves.bounceInOut,
+                            top: _profileMenuOpen ? 0 : 50,
+                            right: 20,
+                            child: AnimatedOpacity(
+                              duration: Duration(microseconds: 300),
+                              opacity: _profileMenuOpen ? 1.0 : 0.0,
+                              child: _profileMenuOpen
+                                  ? MouseRegion(
+                                      onEnter: (_) => setState(
+                                        () => _dropdownHovered = true,
+                                      ),
+                                      onExit: (_) {
+                                        setState(
+                                          () => _dropdownHovered = false,
+                                        );
+                                        _closeProfileIfNotHovered();
+                                      },
+                                      child: _ProfileDropdown(
+                                        onClose: () => setState(() {
+                                          _profileMenuOpen = false;
+                                          _dropdownHovered = false;
+                                        }),
+                                        activeNavigatorKey:
+                                            _navigatorKeys[_activeIndex],
+                                        userName: _isLoadingUser
+                                            ? ''
+                                            : user?["FullName"] ??
+                                                  'Unknown User',
+                                        userImage: _isLoadingUser
+                                            ? ''
+                                            : user!["UserImage"] != 'N/A'
+                                            ? '${ApiService.getImagebaseUrl}${user!["UserImage"]}'
+                                            : '',
+                                        userType: _isLoadingUser
+                                            ? ''
+                                            : user?["UserType"] ??
+                                                  'Unknown User',
+                                        userEmail: _isLoadingUser
+                                            ? ''
+                                            : user?["Email"] ??
+                                                  'info@y2ksolutions.com',
+                                      ),
+                                    )
+                                  : null,
                             ),
+                          ),
                         ],
                       ),
                     ),
@@ -768,6 +788,19 @@ class _Sidebar extends StatelessWidget {
                     ),
                   )
                   .toList(),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 6),
+            child: Opacity(
+              opacity: ((animValue - 0.5) / 0.5).clamp(0.0, 1.0),
+              child: Text(
+                'SETTINGS',
+                style: AppTheme.textSearchInfoLabeled(
+                  context,
+                ).copyWith(fontSize: 9, fontWeight: FontWeight.w700),
+              ),
             ),
           ),
 
@@ -1192,8 +1225,9 @@ class _Topbar extends StatefulWidget {
 
 class _TopbarState extends State<_Topbar> {
   bool _avatarHovered = false;
-  Widget _defaultAvatar(BuildContext context) =>
-      CircleAvatar(child: Image.asset("assets/images/avatars/boy_14.png"));
+  Widget _defaultAvatar(BuildContext context) => CircleAvatar(
+    foregroundImage: AssetImage("assets/images/avatars/boy_14.png"),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -1399,11 +1433,15 @@ class _ProfileDropdown extends StatelessWidget {
   final VoidCallback onClose;
   final String userName;
   final String userImage;
+  final String userType;
+  final String userEmail;
   final GlobalKey<NavigatorState> activeNavigatorKey;
   const _ProfileDropdown({
     required this.onClose,
     required this.userName,
     required this.userImage,
+    required this.userType,
+    required this.userEmail,
     required this.activeNavigatorKey,
   });
 
@@ -1438,8 +1476,9 @@ class _ProfileDropdown extends StatelessWidget {
     );
   }
 
-  Widget _defaultAvatar(BuildContext context) =>
-      CircleAvatar(child: Image.asset("assets/images/avatars/boy_14.png"));
+  Widget _defaultAvatar(BuildContext context) => CircleAvatar(
+    foregroundImage: AssetImage("assets/images/avatars/boy_14.png"),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -1456,7 +1495,9 @@ class _ProfileDropdown extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         shadowColor: Colors.black26,
         child: Container(
-          width: 200,
+          width: MediaQuery.of(context).size.width >= 500
+              ? 300
+              : MediaQuery.of(context).size.width - 40,
           padding: EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
             color: AppTheme.cardBg(context),
@@ -1506,9 +1547,10 @@ class _ProfileDropdown extends StatelessWidget {
                               ),
                             )
                           : Container(
-                              width: 32,
-                              height: 32,
+                              width: 62,
+                              height: 62,
                               decoration: BoxDecoration(shape: BoxShape.circle),
+                              clipBehavior: Clip.antiAlias,
                               child: CircleAvatar(
                                 backgroundColor: AppTheme.sliderHighlightBg(
                                   context,
@@ -1528,17 +1570,59 @@ class _ProfileDropdown extends StatelessWidget {
                                 ),
                               ),
                             ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 14),
                       Expanded(
-                        child: Text(
-                          'HI! ${userName.toUpperCase()}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.iconColor(context),
-                            letterSpacing: 0.3,
-                          ),
-                          maxLines: 2,
+                        child: Column(
+                          spacing: 4,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'HI! ${userName.toUpperCase()}',
+                              style: AppTheme.textLabel(context).copyWith(
+                                fontFamily: 'Poppins',
+                                fontSize: 13,
+                              ),
+                              maxLines: 2,
+                            ),
+                            Row(
+                              spacing: 4,
+                              children: [
+                                Icon(
+                                  HugeIconsStroke.userStory,
+                                  size: 15,
+                                  color: AppTheme.iconColorThree(context),
+                                ),
+                                Text(
+                                  userType,
+                                  style: AppTheme.textSearchInfoLabeled(context)
+                                      .copyWith(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 12,
+                                      ),
+                                  maxLines: 1,
+                                ),
+                              ],
+                            ),
+                            Row(
+                              spacing: 4,
+                              children: [
+                                Icon(
+                                  HugeIconsStroke.mail02,
+                                  size: 15,
+                                  color: AppTheme.iconColorThree(context),
+                                ),
+                                Text(
+                                  userEmail,
+                                  style: AppTheme.textSearchInfoLabeled(context)
+                                      .copyWith(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 12,
+                                      ),
+                                  maxLines: 1,
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -1549,8 +1633,8 @@ class _ProfileDropdown extends StatelessWidget {
 
               // Menu items
               _DropdownItem(
-                icon: Icons.person_outline_rounded,
-                label: 'Profile',
+                icon: HugeIconsStroke.user03,
+                label: 'My Profile',
                 color: AppTheme.iconColorTwo(context),
                 onTap: () {
                   onClose();
@@ -1567,7 +1651,7 @@ class _ProfileDropdown extends StatelessWidget {
               ),
               Divider(color: AppTheme.dividerBg(context)),
               _DropdownItem(
-                icon: Icons.logout_rounded,
+                icon: HugeIconsStroke.logout01,
                 label: 'Logout',
                 color: AppColor.accent_50,
                 onTap: () {
