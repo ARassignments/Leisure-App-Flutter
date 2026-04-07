@@ -397,7 +397,7 @@ class _LoginScreenState extends State<LoginScreen> {
             message: 'Login successful!',
             type: AppSnackBarType.success,
           );
-          if (MediaQuery.of(context).size.width >= 900 || kIsWeb) {
+          if (MediaQuery.of(context).size.width >= 900) {
             Navigator.pushReplacement(
               context,
               PageRouteBuilder(

@@ -1372,6 +1372,7 @@ class _TopbarState extends State<_Topbar> {
   void _showCalculator(BuildContext context) {
     BounceDialog.showBounceDialog<bool>(
       context: context,
+      barrierDismissible: true,
       child: const _CalculatorDialog(),
     );
   }

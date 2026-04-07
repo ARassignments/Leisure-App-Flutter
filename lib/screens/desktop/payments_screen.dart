@@ -417,6 +417,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
   // ── Search + Filter Row ───────────────────────────────────────────────────
 
   Widget _buildSearchRow() => Row(
+    spacing: 10,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       // Search
@@ -528,7 +529,6 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
           ],
         ),
       ),
-      const SizedBox(width: 10),
 
       // Date range pill
       InkWell(
@@ -566,7 +566,6 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
           ),
         ),
       ),
-      const SizedBox(width: 10),
 
       // Add Payment
       InkWell(
@@ -625,7 +624,7 @@ class _PaymentsTableScreenState extends ConsumerState<PaymentsTableScreen>
           ),
         ),
       ),
-      const SizedBox(width: 10),
+
       InkWell(
         onTap: _refreshPayments,
         child: Container(
