@@ -77,33 +77,69 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-          child: Column(
-            children: [
-              // Title
-              _buildHeader(),
-              const SizedBox(height: 36),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              int crossAxisCount = constraints.maxWidth < 500
+                  ? 1 // small screen → 1 cards per row
+                  : 3; // large screen → 3 cards per row
+              return Column(
+                children: [
+                  // Title
+                  _buildHeader(),
+                  const SizedBox(height: 36),
 
-              // Cards
-              ...List.generate(
-                _plans.length,
-                (i) => Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: FadeTransition(
-                    opacity: _fadeAnims[i],
-                    child: SlideTransition(
-                      position: _slideAnims[i],
-                      child: _PricingCard(
-                        plan: _plans[i],
-                        isSelected: _selectedPlan == i,
-                        onTap: () => setState(
-                          () => _selectedPlan = _selectedPlan == i ? null : i,
+                  // Cards
+                  // GridView.builder(
+                  //   shrinkWrap: true,
+                  //   physics: const NeverScrollableScrollPhysics(),
+                  //   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  //     crossAxisCount: crossAxisCount,
+                  //     crossAxisSpacing: 20,
+                  //     mainAxisSpacing: 20,
+                  //     childAspectRatio: constraints.maxWidth < 500 ? 0.96 : 1.22,
+                  //   ),
+                  //   itemCount: _plans.length,
+                  //   itemBuilder: (context, index) {
+                  //     // final item = _plans[index];
+                  //     return FadeTransition(
+                  //       opacity: _fadeAnims[index],
+                  //       child: SlideTransition(
+                  //         position: _slideAnims[index],
+                  //         child: _PricingCard(
+                  //           plan: _plans[index],
+                  //           isSelected: _selectedPlan == index,
+                  //           onTap: () => setState(
+                  //             () => _selectedPlan = _selectedPlan == index
+                  //                 ? null
+                  //                 : index,
+                  //           ),
+                  //         ),
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
+                  ...List.generate(
+                    _plans.length,
+                    (i) => Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: FadeTransition(
+                        opacity: _fadeAnims[i],
+                        child: SlideTransition(
+                          position: _slideAnims[i],
+                          child: _PricingCard(
+                            plan: _plans[i],
+                            isSelected: _selectedPlan == i,
+                            onTap: () => setState(
+                              () => _selectedPlan = _selectedPlan == i ? null : i,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ),

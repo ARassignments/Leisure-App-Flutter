@@ -723,6 +723,10 @@ class _Sidebar extends StatelessWidget {
             height: 60,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
+              spacing: 10,
+              mainAxisAlignment: animValue > 0.5
+                  ? MainAxisAlignment.start
+                  : MainAxisAlignment.center,
               children: [
                 Image.asset(
                   AppTheme.appLogoLauncher(context),
@@ -730,7 +734,6 @@ class _Sidebar extends StatelessWidget {
                   width: 45,
                 ),
                 if (animValue > 0.4) ...[
-                  const SizedBox(width: 10),
                   Opacity(
                     opacity: ((animValue - 0.4) / 0.6).clamp(0.0, 1.0),
                     child: Column(
@@ -1579,10 +1582,9 @@ class _ProfileDropdown extends StatelessWidget {
                           children: [
                             Text(
                               'HI! ${userName.toUpperCase()}',
-                              style: AppTheme.textLabel(context).copyWith(
-                                fontFamily: 'Poppins',
-                                fontSize: 13,
-                              ),
+                              style: AppTheme.textLabel(
+                                context,
+                              ).copyWith(fontFamily: 'Poppins', fontSize: 13),
                               maxLines: 2,
                             ),
                             Row(
